@@ -174,6 +174,28 @@ struct MenuBarView: View {
             
             Divider()
             
+            // Sound Settings Button
+            Button(action: {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.sound") {
+                    NSWorkspace.shared.open(url)
+                }
+            }) {
+                HStack {
+                    Image(systemName: "gearshape")
+                        .foregroundColor(.secondary)
+                        .frame(width: 16)
+                    Text("Sound Settings...")
+                        .foregroundColor(.primary)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 2)
+            .padding(.horizontal, 12)
+            
+            Divider()
+            
             QuitButton()
         }
         .padding(.vertical, 4)
