@@ -17,29 +17,42 @@ struct DeviceButton: View {
 struct DeviceListItem: View {
     let device: AudioDevice
     let isSelected: Bool
-    let iconName: String
-    let action: () -> Void
+    let onTap: () -> Void
+    
+    var deviceIcon: String {
+        if device.name.contains("MacBook Pro") {
+            return device.isInput ? "laptopcomputer" : "laptopcomputer"
+        } else if device.name.contains("HDR") || device.name.contains("Display") {
+            return "display"
+        } else if device.name.contains("AirPods") || device.name.contains("Headphones") {
+            return "airpodspro"
+        } else if device.name.contains("iPhone") {
+            return "iphone"
+        } else {
+            return device.isInput ? "mic" : "speaker.wave.2"
+        }
+    }
     
     var body: some View {
-        Button(action: action) {
+        Button(action: onTap) {
             HStack {
-                Image(systemName: iconName)
-                    .foregroundColor(isSelected ? .green : .primary)
+                Image(systemName: deviceIcon)
+                    .font(.system(size: 14))
+                    .foregroundColor(isSelected ? .green : .secondary)
+                    .frame(width: 20)
                 
                 Text(device.name)
-                    .foregroundColor(.primary)
+                    .font(.system(size: 14))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
                 
                 Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.green)
-                }
             }
             .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
         }
-        .buttonStyle(.plain)
-        .padding(.vertical, 2)
-        .padding(.horizontal, 12)
+        .buttonStyle(DeviceButtonStyle())
     }
 }
 
@@ -47,53 +60,107 @@ struct DeviceSection: View {
     let title: String
     let devices: [AudioDevice]
     let selectedDevice: AudioDevice?
-    let iconName: String
-    let onSelect: (AudioDevice) -> Void
+    let onDeviceSelected: (AudioDevice) -> Void
+    let volumeControl: (() -> VolumeSlider)?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.system(size: 12))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 4)
+                .padding(.vertical, 6)
             
-            ForEach(devices, id: \.id) { device in
-                DeviceListItem(
-                    device: device,
-                    isSelected: device.id == selectedDevice?.id,
-                    iconName: iconName,
-                    action: { onSelect(device) }
-                )
+            ForEach(devices) { device in
+                DeviceListItem(device: device, isSelected: device.id == selectedDevice?.id) {
+                    onDeviceSelected(device)
+                }
+            }
+            
+            if let volumeControl = volumeControl {
+                volumeControl()
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
             }
         }
     }
 }
 
 struct VolumeControl: View {
-    let title: String
-    let device: AudioDevice
-    let isInput: Bool
-    let audioManager: AudioManager
+    @ObservedObject var audioManager: AudioManager
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            if let outputDevice = audioManager.selectedOutputDevice {
+                VolumeSlider(
+                    icon: "speaker.wave.2.fill",
+                    volume: Binding(
+                        get: { audioManager.outputVolume },
+                        set: { audioManager.setVolumeForDevice(device: outputDevice, volume: $0, isInput: false) }
+                    )
+                )
+            }
+            
+            if let inputDevice = audioManager.selectedInputDevice {
+                VolumeSlider(
+                    icon: "mic.fill",
+                    volume: Binding(
+                        get: { audioManager.inputVolume },
+                        set: { audioManager.setVolumeForDevice(device: inputDevice, volume: $0, isInput: true) }
+                    )
+                )
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+    }
+}
+
+struct VolumeSlider: View {
+    let icon: String
     @Binding var volume: Float
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
+        HStack(spacing: 8) {
+            Image(systemName: icon)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
-                .padding(.horizontal, 12)
+                .frame(width: 16)
             
-            HStack {
-                Slider(value: $volume, onEditingChanged: { isEditing in
-                    if !isEditing {
-                        audioManager.setVolumeForDevice(device: device, volume: volume, isInput: isInput)
-                    }
-                })
-                .padding(.horizontal, 12)
-            }
-            .padding(.bottom, 4)
+            Slider(value: $volume, in: 0...1)
+                .controlSize(.small)
+            
+            Text("\(Int(volume * 100))%")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .frame(width: 35, alignment: .trailing)
         }
+    }
+}
+
+struct SoundSettingsButton: View {
+    var body: some View {
+        Button(action: {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.sound") {
+                NSWorkspace.shared.open(url)
+            }
+        }) {
+            HStack {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .frame(width: 20)
+                
+                Text("Sound Settings...")
+                    .font(.system(size: 14))
+                
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(DeviceButtonStyle())
     }
 }
 
@@ -104,102 +171,98 @@ struct QuitButton: View {
         }) {
             HStack {
                 Image(systemName: "power")
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
-                    .frame(width: 16)
+                    .frame(width: 20)
+                
                 Text("Quit")
-                    .foregroundColor(.primary)
+                    .font(.system(size: 14))
+                
                 Spacer()
             }
             .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
         }
-        .buttonStyle(.plain)
-        .padding(.vertical, 2)
-        .padding(.horizontal, 12)
+        .buttonStyle(DeviceButtonStyle())
+    }
+}
+
+struct DeviceButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) var colorScheme
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? (colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1)) : Color.clear)
     }
 }
 
 @available(macOS 13.0, *)
 struct MenuBarView: View {
-    @EnvironmentObject private var audioManager: AudioManager
-    @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject var audioManager = AudioManager.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack(spacing: 4) {
-            // Input Devices Section
-            DeviceSection(
-                title: "Input Devices",
-                devices: audioManager.inputDevices,
-                selectedDevice: audioManager.selectedInputDevice,
-                iconName: "mic",
-                onSelect: { device in
-                    audioManager.selectInputDevice(device)
-                }
-            )
-            
-            Divider()
-            
-            // Output Devices Section
+        VStack(spacing: 0) {
             DeviceSection(
                 title: "Output Devices",
                 devices: audioManager.outputDevices,
                 selectedDevice: audioManager.selectedOutputDevice,
-                iconName: "speaker.wave.3",
-                onSelect: { device in
-                    audioManager.selectOutputDevice(device)
+                onDeviceSelected: { device in
+                    audioManager.setDefaultDevice(device, forInput: false)
+                },
+                volumeControl: audioManager.selectedOutputDevice.map { device in
+                    {
+                        VolumeSlider(
+                            icon: "speaker.wave.2.fill",
+                            volume: Binding(
+                                get: { audioManager.outputVolume },
+                                set: { audioManager.setVolumeForDevice(device: device, volume: $0, isInput: false) }
+                            )
+                        )
+                    }
                 }
             )
             
-            Divider()
-            
-            // Volume Controls
-            if let inputDevice = audioManager.selectedInputDevice {
-                VolumeControl(
-                    title: "Input Volume",
-                    device: inputDevice,
-                    isInput: true,
-                    audioManager: audioManager,
-                    volume: $audioManager.inputVolume
+            if !audioManager.inputDevices.isEmpty {
+                Divider()
+                DeviceSection(
+                    title: "Input Devices",
+                    devices: audioManager.inputDevices,
+                    selectedDevice: audioManager.selectedInputDevice,
+                    onDeviceSelected: { device in
+                        audioManager.setDefaultDevice(device, forInput: true)
+                    },
+                    volumeControl: audioManager.selectedInputDevice.map { device in
+                        {
+                            VolumeSlider(
+                                icon: "mic.fill",
+                                volume: Binding(
+                                    get: { audioManager.inputVolume },
+                                    set: { audioManager.setVolumeForDevice(device: device, volume: $0, isInput: true) }
+                                )
+                            )
+                        }
+                    }
                 )
             }
             
-            if let outputDevice = audioManager.selectedOutputDevice {
-                VolumeControl(
-                    title: "Output Volume",
-                    device: outputDevice,
-                    isInput: false,
-                    audioManager: audioManager,
-                    volume: $audioManager.outputVolume
-                )
-            }
-            
             Divider()
             
-            // Sound Settings Button
-            Button(action: {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.sound") {
-                    NSWorkspace.shared.open(url)
-                }
-            }) {
-                HStack {
-                    Image(systemName: "gearshape")
-                        .foregroundColor(.secondary)
-                        .frame(width: 16)
-                    Text("Sound Settings...")
-                        .foregroundColor(.primary)
-                    Spacer()
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.vertical, 2)
-            .padding(.horizontal, 12)
+            SoundSettingsButton()
             
             Divider()
             
             QuitButton()
         }
-        .padding(.vertical, 4)
-        .frame(width: 260)
-        .background(Color(NSColor.windowBackgroundColor))
+        .padding(.vertical, 5)
+        .background {
+            if colorScheme == .dark {
+                Color.black.opacity(0.2)
+            }
+            Rectangle()
+                .fill(.thinMaterial)
+        }
+        .cornerRadius(6)
     }
 }
