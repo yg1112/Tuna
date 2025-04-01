@@ -15,52 +15,130 @@ struct DeviceButton: View {
     }
 }
 
-struct DeviceListItem: View {
+// 修改后的 DeviceMenuItem，支持完整展示设备名称，避免截断，并添加 tooltip
+struct DeviceMenuItem: View {
     let device: AudioDevice
     let isSelected: Bool
-    let onTap: () -> Void
-    
-    var deviceIcon: String {
-        if device.name.contains("MacBook Pro") {
-            return device.hasInput ? "laptopcomputer" : "laptopcomputer"
-        } else if device.name.contains("HDR") || device.name.contains("Display") {
-            return "display"
-        } else if device.name.contains("AirPods") || device.name.contains("Headphones") {
-            return "airpodspro"
-        } else if device.name.contains("iPhone") {
-            return "iphone"
-        } else {
-            return device.hasInput ? "mic" : "speaker.wave.2"
-        }
-    }
+    let onSelect: () -> Void
     
     var body: some View {
-        Button(action: onTap) {
-            HStack {
-                Image(systemName: deviceIcon)
+        Button(action: onSelect) {
+            HStack(spacing: 8) {
+                // 设备图标 - 根据设备类型显示不同图标
+                deviceIcon
                     .font(.system(size: 13))
                     .foregroundColor(isSelected ? Color(red: 0.4, green: 0.9, blue: 0.6) : .secondary)
                     .frame(width: 18)
                 
+                // 设备名称
                 Text(device.name)
                     .font(.system(size: 13))
                     .foregroundColor(.white)
                     .lineLimit(1)
-                    .truncationMode(.middle)
                 
                 Spacer()
                 
+                // 选中标记
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                        .frame(width: 16)
                 }
             }
-            .contentShape(Rectangle())
             .padding(.horizontal, 12)
-            .padding(.vertical, 4)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(DeviceButtonStyle())
+        .buttonStyle(PlainButtonStyle())
+        .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
+        .help(device.name) // 添加tooltip提示
+    }
+    
+    // 根据设备名称选择合适的图标
+    var deviceIcon: some View {
+        let iconName: String
+        
+        if device.name.contains("MacBook Pro") {
+            iconName = device.hasInput ? "laptopcomputer" : "laptopcomputer"
+        } else if device.name.contains("HDR") || device.name.contains("Display") {
+            iconName = "display"
+        } else if device.name.contains("AirPods") || device.name.contains("Headphones") {
+            iconName = "airpodspro"
+        } else if device.name.contains("iPhone") {
+            iconName = "iphone"
+        } else {
+            iconName = device.hasInput ? "mic" : "speaker.wave.2"
+        }
+        
+        return Image(systemName: iconName)
+    }
+}
+
+// 设备菜单列表组件
+struct DeviceMenuList: View {
+    let devices: [AudioDevice]
+    let selectedDeviceName: String
+    let onDeviceSelected: (AudioDevice) -> Void
+    
+    // 计算所需的最小宽度以完整显示所有设备名称
+    private var minWidth: CGFloat {
+        // 基础宽度（包含边距和图标空间）
+        let baseWidth: CGFloat = 220
+        
+        // 计算最长设备名称的宽度
+        let maxDeviceNameWidth = devices.map { device in
+            let font = NSFont.systemFont(ofSize: 13)
+            let attributes = [NSAttributedString.Key.font: font]
+            return device.name.size(withAttributes: attributes).width
+        }.max() ?? 0
+        
+        // 考虑图标、checkmark和边距的额外宽度
+        let extraWidth: CGFloat = 70
+        
+        // 返回至少为baseWidth，但如果有更长的设备名称则可能更大
+        return max(baseWidth, maxDeviceNameWidth + extraWidth)
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // 标题
+            Text("Select Device")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color.white.opacity(0.8))
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 8)
+                .background(Color.black.opacity(0.4))
+            
+            Divider()
+                .background(Color.white.opacity(0.1))
+            
+            // 设备列表
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(devices) { device in
+                        DeviceMenuItem(
+                            device: device,
+                            isSelected: device.name == selectedDeviceName,
+                            onSelect: { onDeviceSelected(device) }
+                        )
+                        
+                        if device.id != devices.last?.id {
+                            Divider()
+                                .background(Color.white.opacity(0.2))
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: min(CGFloat(devices.count) * 36, 300)) // 限制最大高度，避免菜单过长
+        }
+        .frame(width: minWidth) // 使用动态计算的宽度
+        .background(Color.black.opacity(0.9))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+        )
     }
 }
 
@@ -238,13 +316,14 @@ struct DeviceSelectionInfo {
     let isInput: Bool
 }
 
-// 创建自定义的设备选择弹出菜单
+ 
+// 修改后的 DeviceSelectionPopover：完整显示设备名并支持 tooltip
 struct DeviceSelectionPopover: View {
     let devices: [AudioDevice]
     let selectedDevice: AudioDevice?
     let onDeviceSelected: (AudioDevice) -> Void
     let onDismiss: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 0) {
             ForEach(devices) { device in
@@ -253,13 +332,17 @@ struct DeviceSelectionPopover: View {
                     onDismiss()
                 }) {
                     HStack {
+                        // 显示设备名称 + tooltip
                         Text(device.name)
                             .font(.system(size: 13))
                             .foregroundColor(.white)
                             .lineLimit(1)
-                        
+                            .truncationMode(.middle)
+                            .help(device.name) // 悬停显示完整设备名
+
                         Spacer()
-                        
+
+                        // 显示选中标记
                         if selectedDevice?.id == device.id {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 12))
@@ -272,82 +355,26 @@ struct DeviceSelectionPopover: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .background(selectedDevice?.id == device.id ? Color.white.opacity(0.1) : Color.clear)
-                
+
+                // 分隔线（非最后一个）
                 if device.id != devices.last?.id {
                     Divider()
                         .background(Color.white.opacity(0.2))
                 }
             }
         }
-        .frame(width: 220)
+        .fixedSize(horizontal: true, vertical: false) // 自动根据内容宽度调整
         .background(Color.black.opacity(0.9))
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
         )
+        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+        .padding(.horizontal, 4)
     }
 }
 
-// 设备菜单项组件
-struct DeviceMenuItem: View {
-    let device: AudioDevice
-    let isSelected: Bool
-    let onSelect: () -> Void
-    
-    var body: some View {
-        Button(action: onSelect) {
-            HStack {
-                Text(device.name)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                
-                Spacer()
-                
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PlainButtonStyle())
-        .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
-    }
-}
-
-// 设备菜单列表组件
-struct DeviceMenuList: View {
-    let devices: [AudioDevice]
-    let selectedDeviceName: String
-    let onDeviceSelected: (AudioDevice) -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            ForEach(devices) { device in
-                DeviceMenuItem(
-                    device: device,
-                    isSelected: device.name == selectedDeviceName,
-                    onSelect: { onDeviceSelected(device) }
-                )
-                
-                if device.id != devices.last?.id {
-                    Divider()
-                        .background(Color.white.opacity(0.2))
-                }
-            }
-        }
-        .background(Color.black.opacity(0.7))
-        .cornerRadius(8)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
-        .transition(.opacity)
-    }
-}
 
 // 音频设备卡片视图
 struct AudioDeviceCard: View {
@@ -360,7 +387,9 @@ struct AudioDeviceCard: View {
     let onDeviceSelected: (AudioDevice) -> Void
     var currentDevice: AudioDevice? = nil
     
-    @State private var popoverAnchorPoint: CGPoint = .zero
+    @State private var isHovering = false
+    @State private var hoverTimer: Timer? = nil
+    @State private var anchorPoint = CGPoint.zero
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -379,14 +408,15 @@ struct AudioDeviceCard: View {
                 Spacer()
                 
                 // 显示音量百分比
-                if !showDeviceMenu {
-                    Text("\(Int(volume * 100))%")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.8))
-                        .padding(.trailing, 4)
-                }
+                Text("\(Int(volume * 100))%")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.trailing, 4)
                 
-                Button(action: { showDeviceMenu.toggle() }) {
+                // 设备选择按钮
+                Button(action: {
+                    showDeviceMenu.toggle()
+                }) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10))
                         .foregroundColor(.white.opacity(0.6))
@@ -397,7 +427,7 @@ struct AudioDeviceCard: View {
                 .background(GeometryReader { geo -> Color in
                     DispatchQueue.main.async {
                         let rect = geo.frame(in: .global)
-                        popoverAnchorPoint = CGPoint(x: rect.midX, y: rect.midY)
+                        anchorPoint = CGPoint(x: rect.midX, y: rect.midY)
                     }
                     return Color.clear
                 })
@@ -406,10 +436,13 @@ struct AudioDeviceCard: View {
             .padding(.top, 16)
             .padding(.bottom, 8)
             
-            // 设备名称
+            // 设备名称 - 添加提示并处理长文本
             Text(deviceName)
                 .font(.system(size: 16))
                 .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .help(deviceName) // 添加tooltip提示
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
             
@@ -420,15 +453,6 @@ struct AudioDeviceCard: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
-            
-            // 设备菜单（当showDeviceMenu为true时显示）
-            if showDeviceMenu {
-                DeviceMenuList(
-                    devices: devices,
-                    selectedDeviceName: deviceName,
-                    onDeviceSelected: onDeviceSelected
-                )
-            }
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
@@ -438,7 +462,40 @@ struct AudioDeviceCard: View {
                 .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
         )
         .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
-        .animation(.spring(), value: showDeviceMenu)
+        // 使用自定义位置的popover
+        .background(
+            EmptyView()
+                .frame(width: 0, height: 0)
+                .allowsHitTesting(false)
+                .popover(isPresented: $showDeviceMenu, arrowEdge: .trailing) {
+                    DeviceMenuList(
+                        devices: devices,
+                        selectedDeviceName: deviceName,
+                        onDeviceSelected: { device in
+                            onDeviceSelected(device)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                // 选择设备后延迟关闭菜单
+                                showDeviceMenu = false
+                            }
+                        }
+                    )
+                }
+        )
+        // 混合悬停和点击交互
+        .onHover { hovering in
+            isHovering = hovering
+            if hovering {
+                // 可选：增加悬停效果
+                hoverTimer?.invalidate()
+                hoverTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
+                    if isHovering && !showDeviceMenu {
+                        showDeviceMenu = true
+                    }
+                }
+            } else {
+                hoverTimer?.invalidate()
+            }
+        }
     }
 }
 
@@ -651,8 +708,9 @@ struct MenuBarView: View {
                     devices: audioManager.outputDevices,
                     onDeviceSelected: { device in
                         audioManager.setDefaultDevice(device, forInput: false)
-                        showOutputDeviceMenu = false  // 选择后自动关闭菜单
-                    }
+                        // 不需要在这里关闭菜单，由悬停逻辑处理
+                    },
+                    currentDevice: audioManager.selectedOutputDevice
                 )
                 
                 // 输入设备
@@ -672,8 +730,9 @@ struct MenuBarView: View {
                     devices: audioManager.inputDevices,
                     onDeviceSelected: { device in
                         audioManager.setDefaultDevice(device, forInput: true)
-                        showInputDeviceMenu = false  // 选择后自动关闭菜单
-                    }
+                        // 不需要在这里关闭菜单，由悬停逻辑处理
+                    },
+                    currentDevice: audioManager.selectedInputDevice
                 )
                 
                 // 听写功能
@@ -825,4 +884,54 @@ struct DictationCard: View {
 func hoverColorView(isHovered: Binding<Bool>, isSelected: Bool) -> some View {
     Color(isSelected ? .selectedControlColor : (isHovered.wrappedValue ? .controlBackgroundColor : .clear))
         .opacity(isSelected ? 0.6 : (isHovered.wrappedValue ? 0.3 : 0))
+}
+
+struct DeviceListItem: View {
+    let device: AudioDevice
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var deviceIcon: String {
+        if device.name.contains("MacBook Pro") {
+            return device.hasInput ? "laptopcomputer" : "laptopcomputer"
+        } else if device.name.contains("HDR") || device.name.contains("Display") {
+            return "display"
+        } else if device.name.contains("AirPods") || device.name.contains("Headphones") {
+            return "airpodspro"
+        } else if device.name.contains("iPhone") {
+            return "iphone"
+        } else {
+            return device.hasInput ? "mic" : "speaker.wave.2"
+        }
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                Image(systemName: deviceIcon)
+                    .font(.system(size: 13))
+                    .foregroundColor(isSelected ? Color(red: 0.4, green: 0.9, blue: 0.6) : .secondary)
+                    .frame(width: 18)
+                
+                Text(device.name)
+                    .font(.system(size: 13))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                }
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(DeviceButtonStyle())
+        .help(device.name)
+    }
 }
