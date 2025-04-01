@@ -39,12 +39,12 @@ struct DeviceListItem: View {
             HStack {
                 Image(systemName: deviceIcon)
                     .font(.system(size: 13))
-                    .foregroundColor(isSelected ? .accentColor : .secondary)
+                    .foregroundColor(isSelected ? Color(red: 0.4, green: 0.9, blue: 0.6) : .secondary)
                     .frame(width: 18)
                 
                 Text(device.name)
                     .font(.system(size: 13))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 
@@ -53,7 +53,7 @@ struct DeviceListItem: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11))
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
                 }
             }
             .contentShape(Rectangle())
@@ -131,7 +131,7 @@ struct VolumeSlider: View {
     var body: some View {
         Slider(value: $volume, in: 0...1)
             .controlSize(.regular)
-            .accentColor(.green)
+            .accentColor(Color(red: 0.4, green: 0.9, blue: 0.6))
     }
 }
 
@@ -229,7 +229,7 @@ struct DeviceButtonStyle: ButtonStyle {
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(configuration.isPressed ? (colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1)) : Color.clear)
+            .background(configuration.isPressed ? Color.white.opacity(0.1) : Color.clear)
     }
 }
 
@@ -289,133 +289,289 @@ struct DeviceSelectionPopover: View {
     }
 }
 
-struct DeviceControlCard: View {
-    let icon: String
-    let title: String
-    let device: AudioDevice?
-    let devices: [AudioDevice]
-    let onDeviceSelected: (AudioDevice) -> Void
-    var volume: Binding<Float>?
-    var isBalanceLocked: Binding<Bool>?
-    var onToggleBalanceLock: (() -> Void)?
-    var showVolume: Bool = true
-    var showBalanceLock: Bool = false
-    var isDisabled: Bool = false
-    
-    @State private var showDevicePopover = false
-    @State private var popoverAnchor = CGPoint.zero
+// 设备菜单项组件
+struct DeviceMenuItem: View {
+    let device: AudioDevice
+    let isSelected: Bool
+    let onSelect: () -> Void
     
     var body: some View {
-        VStack(spacing: 0) {
+        Button(action: onSelect) {
             HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
+                Text(device.name)
+                    .font(.system(size: 13))
                     .foregroundColor(.white)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white)
-                    
-                    if let device = device {
-                        Text(device.name)
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-                }
+                    .lineLimit(1)
                 
                 Spacer()
                 
-                if !devices.isEmpty {
-                    Button(action: {
-                        showDevicePopover.toggle()
-                    }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.secondary)
-                            .frame(width: 20, height: 20)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .background(GeometryReader { geo -> Color in
-                        DispatchQueue.main.async {
-                            // 获取按钮位置以便正确定位弹出窗口
-                            let rect = geo.frame(in: .global)
-                            popoverAnchor = CGPoint(x: rect.midX, y: rect.midY)
-                        }
-                        return Color.clear
-                    })
-                    .popover(isPresented: $showDevicePopover, arrowEdge: .trailing) {
-                        DeviceSelectionPopover(
-                            devices: devices,
-                            selectedDevice: device,
-                            onDeviceSelected: onDeviceSelected,
-                            onDismiss: { showDevicePopover = false }
-                        )
-                    }
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            
-            // 音量控制
-            if showVolume, let volume = volume {
-                VolumeSlider(
-                    icon: icon,
-                    volume: volume
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
+    }
+}
+
+// 设备菜单列表组件
+struct DeviceMenuList: View {
+    let devices: [AudioDevice]
+    let selectedDeviceName: String
+    let onDeviceSelected: (AudioDevice) -> Void
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(devices) { device in
+                DeviceMenuItem(
+                    device: device,
+                    isSelected: device.name == selectedDeviceName,
+                    onSelect: { onDeviceSelected(device) }
                 )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            }
-            
-            // 平衡锁定按钮
-            if showBalanceLock, let isLocked = isBalanceLocked, let toggleLock = onToggleBalanceLock {
-                BalanceLockButton(
-                    isLocked: isLocked,
-                    onToggleLock: toggleLock,
-                    device: device
-                )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                
+                if device.id != devices.last?.id {
+                    Divider()
+                        .background(Color.white.opacity(0.2))
+                }
             }
         }
         .background(Color.black.opacity(0.7))
         .cornerRadius(8)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+        .transition(.opacity)
     }
 }
 
-struct ModeSelectionCard: View {
-    @State private var selectedMode = 0
-    let modes = ["自动", "工作", "娱乐", "会议"]
+// 音频设备卡片视图
+struct AudioDeviceCard: View {
+    let icon: String
+    let title: String
+    let deviceName: String
+    @Binding var volume: Float
+    @Binding var showDeviceMenu: Bool
+    let devices: [AudioDevice]
+    let onDeviceSelected: (AudioDevice) -> Void
+    var currentDevice: AudioDevice? = nil
+    
+    @State private var popoverAnchorPoint: CGPoint = .zero
     
     var body: some View {
-        VStack(spacing: 8) {
-            Text("模式")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-            
-            HStack(spacing: 8) {
-                ForEach(0..<modes.count, id: \.self) { index in
-                    Button(action: { selectedMode = index }) {
-                        Text(modes[index])
-                            .font(.system(size: 12))
-                            .foregroundColor(selectedMode == index ? .white : .primary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(selectedMode == index ? Color.accentColor : Color.clear)
-                            .cornerRadius(6)
-                    }
-                    .buttonStyle(PlainButtonStyle())
+        VStack(alignment: .leading, spacing: 0) {
+            // 标题区域
+            HStack {
+                Image(systemName: title.contains("Output") ? "speaker.wave.2" : "mic")
+                    .font(.system(size: 18))
+                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .frame(width: 24)
+                
+                Text(title)
+                    .font(.system(size: 18, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                // 显示音量百分比
+                if !showDeviceMenu {
+                    Text("\(Int(volume * 100))%")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.trailing, 4)
                 }
+                
+                Button(action: { showDeviceMenu.toggle() }) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white.opacity(0.6))
+                        .rotationEffect(.degrees(showDeviceMenu ? 90 : 0))
+                        .animation(.spring(), value: showDeviceMenu)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .background(GeometryReader { geo -> Color in
+                    DispatchQueue.main.async {
+                        let rect = geo.frame(in: .global)
+                        popoverAnchorPoint = CGPoint(x: rect.midX, y: rect.midY)
+                    }
+                    return Color.clear
+                })
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
             .padding(.bottom, 8)
+            
+            // 设备名称
+            Text(deviceName)
+                .font(.system(size: 16))
+                .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            
+            // 音量滑块
+            HStack {
+                Slider(value: $volume, in: 0...1)
+                    .accentColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            
+            // 设备菜单（当showDeviceMenu为true时显示）
+            if showDeviceMenu {
+                DeviceMenuList(
+                    devices: devices,
+                    selectedDeviceName: deviceName,
+                    onDeviceSelected: onDeviceSelected
+                )
+            }
         }
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
-        .cornerRadius(8)
+        .frame(maxWidth: .infinity)
+        .background(Color.black.opacity(0.2))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+        .animation(.spring(), value: showDeviceMenu)
+    }
+}
+
+// 模式选择卡片
+struct ModeCard: View {
+    @StateObject private var modeManager = AudioModeManager.shared
+    @State private var isAddingNewMode = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // 标题区域
+            HStack {
+                Image(systemName: "waveform.path.ecg")
+                    .font(.system(size: 18))
+                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .frame(width: 24)
+                
+                Text("MODE")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text("Automatic")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.leading, 4)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.black.opacity(0.2))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+        .sheet(isPresented: $isAddingNewMode) {
+            AddModeView(isPresented: $isAddingNewMode)
+        }
+    }
+}
+
+// 添加模式视图
+struct AddModeView: View {
+    @Binding var isPresented: Bool
+    @State private var newModeName = ""
+    @StateObject private var modeManager = AudioModeManager.shared
+    @StateObject private var audioManager = AudioManager.shared
+    @FocusState private var isTextFieldFocused: Bool
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Add New Mode")
+                .font(.headline)
+                .foregroundColor(.white)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Mode Name")
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                TextField("Enter mode name", text: $newModeName)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .padding(8)
+                    .background(Color.black.opacity(0.3))
+                    .cornerRadius(6)
+                    .foregroundColor(.white)
+                    .focused($isTextFieldFocused)
+                    .onAppear {
+                        // 确保在视图出现时自动获得焦点
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            self.isTextFieldFocused = true
+                        }
+                    }
+                    // 确保接收按键事件
+                    .focusable(true)
+                    // 提高对比度使文本更明显
+                    .colorScheme(.dark)
+            }
+            .padding(.horizontal)
+            
+            HStack {
+                Button("Cancel") {
+                    isPresented = false
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.gray.opacity(0.3))
+                .cornerRadius(8)
+                
+                Spacer()
+                
+                Button("Add") {
+                    // 添加新模式
+                    if !newModeName.isEmpty {
+                        let outputUID = audioManager.selectedOutputDevice?.uid ?? ""
+                        let inputUID = audioManager.selectedInputDevice?.uid ?? ""
+                        let outputVolume = audioManager.outputVolume
+                        let inputVolume = audioManager.inputVolume
+                        
+                        let newMode = modeManager.createCustomMode(
+                            name: newModeName,
+                            outputDeviceUID: outputUID,
+                            inputDeviceUID: inputUID,
+                            outputVolume: outputVolume,
+                            inputVolume: inputVolume
+                        )
+                        
+                        // 自动切换到新模式
+                        modeManager.currentModeID = newMode.id
+                    }
+                    isPresented = false
+                }
+                .disabled(newModeName.isEmpty)
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(newModeName.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.4, green: 0.9, blue: 0.6))
+                .cornerRadius(8)
+            }
+            .padding()
+        }
+        .padding()
+        .frame(width: 400, height: 200)
+        .background(Color(red: 0.0, green: 0.12, blue: 0.06))
+        .cornerRadius(12)
     }
 }
 
@@ -460,34 +616,30 @@ struct VisualEffectView: NSViewRepresentable {
 @available(macOS 13.0, *)
 struct MenuBarView: View {
     @StateObject private var audioManager = AudioManager.shared
-    @State private var showSettings = false
     @State private var showOutputDeviceMenu = false
     @State private var showInputDeviceMenu = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // 顶部Logo
-            HStack {
-                Image(systemName: "fish.fill")
-                    .font(.system(size: 28))
+        VStack(spacing: 16) {
+            // 标题和图标
+            VStack(spacing: 8) {
+                Image(systemName: "fish")
+                    .font(.system(size: 36))
                     .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
                 
                 Text("Tuna")
-                    .font(.system(size: 42, weight: .medium))
+                    .font(.system(size: 40, weight: .bold))
                     .foregroundColor(.white)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 20)
-            .padding(.bottom, 10)
+            .padding(.top, 16)
             
-            // 内容区域
-            VStack(spacing: 1) {
-                // 音频输出设备
+            VStack(spacing: 12) {
+                // 输出设备
                 AudioDeviceCard(
-                    icon: "headphones",
+                    icon: "speaker.wave.2",
                     title: "Audio Output",
                     deviceName: audioManager.selectedOutputDevice?.name ?? "None",
-                    volume: Binding(
+                    volume: Binding<Float>(
                         get: { audioManager.outputVolume },
                         set: { volume in
                             if let device = audioManager.selectedOutputDevice {
@@ -499,19 +651,16 @@ struct MenuBarView: View {
                     devices: audioManager.outputDevices,
                     onDeviceSelected: { device in
                         audioManager.setDefaultDevice(device, forInput: false)
-                        showOutputDeviceMenu = false
-                    },
-                    isBalanceLocked: audioManager.isOutputBalanceLocked,
-                    onToggleBalanceLock: { audioManager.toggleOutputBalanceLock() },
-                    currentDevice: audioManager.selectedOutputDevice
+                        showOutputDeviceMenu = false  // 选择后自动关闭菜单
+                    }
                 )
                 
-                // 音频输入设备
+                // 输入设备
                 AudioDeviceCard(
-                    icon: "mic.fill",
+                    icon: "mic",
                     title: "Audio Input",
                     deviceName: audioManager.selectedInputDevice?.name ?? "None",
-                    volume: Binding(
+                    volume: Binding<Float>(
                         get: { audioManager.inputVolume },
                         set: { volume in
                             if let device = audioManager.selectedInputDevice {
@@ -523,7 +672,7 @@ struct MenuBarView: View {
                     devices: audioManager.inputDevices,
                     onDeviceSelected: { device in
                         audioManager.setDefaultDevice(device, forInput: true)
-                        showInputDeviceMenu = false
+                        showInputDeviceMenu = false  // 选择后自动关闭菜单
                     }
                 )
                 
@@ -533,185 +682,78 @@ struct MenuBarView: View {
                 // 模式选择
                 ModeCard()
             }
-            .background(Color.black.opacity(0.3))
-            .cornerRadius(12)
             .padding(.horizontal, 16)
             
             // 底部按钮
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 // Exit 按钮
                 Button {
                     NSApplication.shared.terminate(nil)
                 } label: {
                     Text("Exit")
-                        .font(.system(size: 16))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 10)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .background(Color(red: 0.2, green: 0.5, blue: 0.4))
-                .cornerRadius(8)
+                .background(Color.black.opacity(0.2))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.1), lineWidth: 0.5)
+                )
                 
-                // System Settings 按钮
+                // Settings 按钮
                 Button {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.sound") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    NotificationCenter.default.post(name: NSNotification.Name("showSettings"), object: nil)
                 } label: {
-                    Text("System Settings")
-                        .font(.system(size: 16))
+                    Text("Settings")
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 10)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .background(Color(red: 0.2, green: 0.3, blue: 0.3))
-                .cornerRadius(8)
+                .background(Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(red: 0.4, green: 0.9, blue: 0.6), lineWidth: 1.5)
+                )
+                .cornerRadius(12)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 20)
+            .padding(.bottom, 16)
         }
-        .frame(width: 320)
-        .background(Color(red: 0.08, green: 0.25, blue: 0.2))
-    }
-}
-
-// 音频设备卡片视图
-struct AudioDeviceCard: View {
-    let icon: String
-    let title: String
-    let deviceName: String
-    @Binding var volume: Float
-    @Binding var showDeviceMenu: Bool
-    let devices: [AudioDevice]
-    let onDeviceSelected: (AudioDevice) -> Void
-    var isBalanceLocked: Bool? = nil
-    var onToggleBalanceLock: (() -> Void)? = nil
-    var currentDevice: AudioDevice? = nil
-    
-    var supportsBalanceControl: Bool {
-        return currentDevice?.supportsBalanceControl ?? false
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 标题区域
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(.white)
-                    .frame(width: 24)
-                
-                Text(title)
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Button(action: { showDeviceMenu.toggle() }) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                .buttonStyle(PlainButtonStyle())
-                .popover(isPresented: $showDeviceMenu, arrowEdge: .trailing) {
-                    VStack(spacing: 0) {
-                        ForEach(devices) { device in
-                            Button(action: {
-                                onDeviceSelected(device)
-                            }) {
-                                HStack {
-                                    Text(device.name)
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                    
-                                    Spacer()
-                                    
-                                    if device.name == deviceName {
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
-                                    }
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .background(device.name == deviceName ? Color.white.opacity(0.1) : Color.clear)
-                            
-                            if device.id != devices.last?.id {
-                                Divider()
-                                    .background(Color.white.opacity(0.2))
-                            }
-                        }
-                    }
-                    .frame(width: 220)
-                    .background(Color(red: 0.1, green: 0.3, blue: 0.25))
-                    .cornerRadius(8)
-                }
+        .padding(.vertical, 10)
+        .frame(width: 300)
+        .background(
+            ZStack {
+                Color(red: 0.0, green: 0.12, blue: 0.06)
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black.opacity(0.0),
+                        Color.black.opacity(0.3)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-            .padding(.bottom, 4)
-            
-            // 设备名称
-            Text(deviceName)
-                .font(.system(size: 18))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-            
-            // 音量滑块
-            HStack {
-                Slider(value: $volume, in: 0...1)
-                    .accentColor(Color(red: 0.4, green: 0.9, blue: 0.6))
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            
-            // 平衡锁定按钮 (仅适用于音频输出)
-            if let isLocked = isBalanceLocked, let toggleLock = onToggleBalanceLock {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Lock Balance")
-                            .font(.system(size: 13))
-                            .foregroundColor(.white)
-                        
-                        if isLocked && !supportsBalanceControl {
-                            Text("(Device not supported)")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: toggleLock) {
-                        Image(systemName: isLocked ? "lock.fill" : "lock.open.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(isLocked ? 
-                                            (supportsBalanceControl ? .white : Color(red: 0.4, green: 0.9, blue: 0.6).opacity(0.5)) 
-                                            : .secondary)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .help(isLocked ? "Unlock balance" : "Lock balance")
-                }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 10)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.2))
+        )
+        .cornerRadius(24)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
     }
 }
 
 // 听写功能卡片
 struct DictationCard: View {
-    @State private var visualizerLevels = Array(repeating: CGFloat.random(in: 0.1...0.9), count: 20)
-    let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    @State private var isListening = true
+    private let animationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+    @State private var animationPhase = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -719,85 +761,68 @@ struct DictationCard: View {
             HStack {
                 Image(systemName: "text.bubble.fill")
                     .font(.system(size: 18))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
                     .frame(width: 24)
                 
-                Text("Dictation")
-                    .font(.system(size: 24, weight: .medium))
+                Text("DICTATION")
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                 
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-            .padding(.bottom, 4)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
             
-            // 状态文本
-            Text("Listening...")
-                .font(.system(size: 18))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-            
-            // 音频可视化
-            HStack(spacing: 3) {
-                ForEach(0..<visualizerLevels.count, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(Color(red: 0.4, green: 0.9, blue: 0.6))
-                        .frame(width: 3, height: visualizerLevels[index] * 40)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 40)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
-            .onReceive(timer) { _ in
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    for i in 0..<visualizerLevels.count {
-                        visualizerLevels[i] = CGFloat.random(in: 0.1...0.9)
+            // 状态指示和波形图并排
+            HStack(alignment: .center) {
+                Text("Listening...")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                
+                Spacer()
+                
+                // 音频波形可视化
+                HStack(spacing: 4) {
+                    ForEach(0..<10, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 1.5)
+                            .fill(Color(red: 0.4, green: 0.9, blue: 0.6))
+                            .frame(width: 3, height: getBarHeight(index: index))
                     }
                 }
+                .frame(height: 30)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .onReceive(animationTimer) { _ in
+                animationPhase = (animationPhase + 1) % 100
             }
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+    }
+    
+    private func getBarHeight(index: Int) -> CGFloat {
+        let baseHeight: CGFloat = 3
+        let maxAdditionalHeight: CGFloat = 25
+        
+        // 创建看起来随机但有模式的高度变化
+        let phaseOffset = (index * 7 + animationPhase) % 100
+        let percentage = sin(Double(phaseOffset) / 15.0)
+        let height = baseHeight + (abs(percentage) * maxAdditionalHeight)
+        
+        return height
     }
 }
 
-// 模式选择卡片
-struct ModeCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 标题区域
-            HStack {
-                Image(systemName: "waveform.path")
-                    .font(.system(size: 18))
-                    .foregroundColor(.white)
-                    .frame(width: 24)
-                
-                Text("Mode")
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Button(action: {}) {
-                    HStack {
-                        Text("Automatic")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white)
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 16)
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.2))
-    }
+// 添加hoverColorView函数
+func hoverColorView(isHovered: Binding<Bool>, isSelected: Bool) -> some View {
+    Color(isSelected ? .selectedControlColor : (isHovered.wrappedValue ? .controlBackgroundColor : .clear))
+        .opacity(isSelected ? 0.6 : (isHovered.wrappedValue ? 0.3 : 0))
 }

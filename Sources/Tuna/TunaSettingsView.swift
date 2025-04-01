@@ -1,17 +1,19 @@
 import SwiftUI
+import AppKit
+import os.log
 
 struct SystemToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         Button(action: { configuration.isOn.toggle() }) {
             RoundedRectangle(cornerRadius: 16)
-                .fill(configuration.isOn ? Color.accentColor : Color(NSColor.controlColor))
-                .frame(width: 36, height: 20)
+                .fill(configuration.isOn ? Color.green : Color(NSColor.darkGray))
+                .frame(width: 50, height: 28)
                 .overlay(
                     Circle()
                         .fill(Color.white)
                         .shadow(radius: 1)
-                        .frame(width: 18, height: 18)
-                        .offset(x: configuration.isOn ? 8 : -8)
+                        .frame(width: 22, height: 22)
+                        .offset(x: configuration.isOn ? 12 : -12)
                         .animation(.spring(response: 0.2), value: configuration.isOn)
                 )
         }
@@ -20,129 +22,102 @@ struct SystemToggleStyle: ToggleStyle {
 }
 
 struct TunaSettingsView: View {
-    @StateObject private var audioManager = AudioManager.shared
     @StateObject private var settings = TunaSettings.shared
-    
-    private var uniqueOutputDevices: [AudioDevice] {
-        // 使用 Dictionary 的方式去重，保留最新的设备状态
-        var devices: [String: AudioDevice] = [:]
-        // 先添加当前可用设备
-        for device in audioManager.outputDevices {
-            var updatedDevice = device
-            updatedDevice.isDefault = true  // 标记为当前可用
-            devices[device.uid] = updatedDevice
-        }
-        // 再添加历史设备（如果没有被当前设备覆盖）
-        for device in audioManager.historicalOutputDevices {
-            if devices[device.uid] == nil {
-                var updatedDevice = device
-                updatedDevice.isDefault = false  // 标记为历史设备
-                devices[device.uid] = updatedDevice
-            }
-        }
-        return Array(devices.values).sorted { $0.name < $1.name }
-    }
-    
-    private var uniqueInputDevices: [AudioDevice] {
-        var devices: [String: AudioDevice] = [:]
-        for device in audioManager.inputDevices {
-            var updatedDevice = device
-            updatedDevice.isDefault = true
-            devices[device.uid] = updatedDevice
-        }
-        for device in audioManager.historicalInputDevices {
-            if devices[device.uid] == nil {
-                var updatedDevice = device
-                updatedDevice.isDefault = false
-                devices[device.uid] = updatedDevice
-            }
-        }
-        return Array(devices.values).sorted { $0.name < $1.name }
-    }
+    @State private var isProcessingLoginSetting = false
+    @State private var actionFeedback = ""
+    private let logger = Logger(subsystem: "com.tuna.app", category: "SettingsView")
     
     var body: some View {
         VStack(spacing: 20) {
-            // Launch at Login with system settings style
+            Text("Debug Settings")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.top, 20)
+            
+            // Launch at Login - 最简化版本
             HStack {
                 Text("Launch at Login")
-                    .foregroundColor(.primary)
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
                 Spacer()
-                Toggle("", isOn: $settings.launchAtLogin)
-                    .toggleStyle(SystemToggleStyle())
-                    .labelsHidden()
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(Color(NSColor.controlBackgroundColor))
-            
-            GroupBox {
-                VStack(alignment: .leading, spacing: 15) {
-                    // Output Device
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Default Output Device")
-                            .fontWeight(.medium)
-                        Picker("", selection: $settings.preferredOutputDeviceUID) {
-                            Text("None").tag("")
-                            ForEach(uniqueOutputDevices) { device in
-                                HStack {
-                                    Image(systemName: "speaker.wave.2")
-                                        .foregroundColor(device.isDefault ? .primary : .secondary)
-                                    Text(device.name)
-                                        .foregroundColor(.primary)  // 设备名称始终使用正常颜色
-                                    if !device.isDefault {  // 使用 isDefault 判断设备是否可用
-                                        Text("(Unavailable)")
-                                            .foregroundColor(.secondary)
-                                            .italic()
-                                    }
-                                }
-                                .tag(device.uid)
-                            }
-                        }
-                        .labelsHidden()
-                    }
-                    
-                    Divider()
-                    
-                    // Input Device
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Default Input Device")
-                            .fontWeight(.medium)
-                        Picker("", selection: $settings.preferredInputDeviceUID) {
-                            Text("None").tag("")
-                            ForEach(uniqueInputDevices) { device in
-                                HStack {
-                                    Image(systemName: "mic")
-                                        .foregroundColor(device.isDefault ? .primary : .secondary)
-                                    Text(device.name)
-                                        .foregroundColor(.primary)  // 设备名称始终使用正常颜色
-                                    if !device.isDefault {  // 使用 isDefault 判断设备是否可用
-                                        Text("(Unavailable)")
-                                            .foregroundColor(.secondary)
-                                            .italic()
-                                    }
-                                }
-                                .tag(device.uid)
-                            }
-                        }
-                        .labelsHidden()
-                    }
+                
+                Button(action: {
+                    toggleLoginItem()
+                }) {
+                    Text(settings.launchAtLogin ? "Disable" : "Enable")
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.blue)
+                        .cornerRadius(8)
                 }
-                .padding()
+                .disabled(isProcessingLoginSetting)
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 15)
+            .background(Color.black.opacity(0.3))
+            .cornerRadius(12)
+            
+            if !actionFeedback.isEmpty {
+                Text(actionFeedback)
+                    .foregroundColor(.white)
+                    .padding(10)
+                    .background(Color.gray.opacity(0.3))
+                    .cornerRadius(8)
+            }
+            
+            // 添加一个日志按钮，用于验证日志刷新是否正常工作
+            Button(action: {
+                print("[测试] 这是一个测试日志消息")
+                fflush(stdout)
+            }) {
+                Text("生成测试日志")
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.green)
+                    .cornerRadius(8)
+            }
+            .padding(.top, 20)
             
             Spacer()
         }
-        .padding(.vertical)
-        .frame(minWidth: 400, minHeight: 300)
-        .onChange(of: settings.launchAtLogin) { newValue in
-            print("开机自启动状态更改为: \(newValue)")
+        .frame(width: 400, height: 300)
+        .padding(20)
+        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+        .onAppear {
+            print("[视图] 设置视图已显示")
+            fflush(stdout)
         }
-        .onChange(of: settings.preferredOutputDeviceUID) { newValue in
-            print("设置优先输出设备: \(newValue)")
-        }
-        .onChange(of: settings.preferredInputDeviceUID) { newValue in
-            print("设置优先输入设备: \(newValue)")
+    }
+    
+    private func toggleLoginItem() {
+        // 防止重复点击
+        isProcessingLoginSetting = true
+        
+        // 清除旧反馈
+        actionFeedback = ""
+        
+        print("[调试] 切换开机启动设置")
+        
+        // 设置新状态
+        let newValue = !settings.launchAtLogin
+        settings.launchAtLogin = newValue
+        
+        // 短暂延迟后检查结果并更新UI
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            let isSuccess = LaunchAtLogin.isEnabled == newValue
+            
+            // 更新反馈状态
+            self.actionFeedback = isSuccess 
+                ? "成功: 开机启动" + (newValue ? "已启用" : "已禁用") 
+                : "失败: 请重试"
+            
+            print("[结果] \(self.actionFeedback)")
+            fflush(stdout)
+            
+            // 完成处理
+            self.isProcessingLoginSetting = false
         }
     }
 } 
