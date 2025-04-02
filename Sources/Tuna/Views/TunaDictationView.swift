@@ -180,7 +180,8 @@ struct TunaDictationView: View {
                     .font(.system(size: 14))
                     .foregroundColor(.white)
                     .background(Color.clear)
-                    .padding(2)
+                    .frame(minHeight: 72, maxHeight: .infinity)
+                    .padding(4)
                     .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
                     .onChange(of: dictationManager.transcribedText) { newText in
                         onTranscriptionTextChange(newText)
@@ -189,8 +190,9 @@ struct TunaDictationView: View {
                         // 当用户点击文本框时，标记为聚焦状态
                         onTextFieldFocus()
                     }
-                    // 添加选择文本高亮颜色
-                    .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5)) // 使用半透明的mint绿色作为选择高亮色
+                    // 添加选择文本高亮颜色 - 使用更明显的颜色
+                    .accentColor(Color(red: 0.0, green: 0.9, blue: 0.7).opacity(0.7)) // 更明显的mint绿色作为选择高亮色
+                    .colorScheme(.dark) // 使用深色模式以确保文本选择高亮可见
                 
                 // 使用条件渲染来简化光标逻辑
                 CursorView(

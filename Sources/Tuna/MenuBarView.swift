@@ -429,7 +429,6 @@ struct AudioDeviceCard: View {
                         .padding(.vertical, 6)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .focusable(false)  
                 .popover(isPresented: $showDeviceMenu, arrowEdge: .trailing) {
                     // 使用标准SwiftUI popover
                     DeviceMenuList(
@@ -538,7 +537,6 @@ struct AddModeView: View {
     @State private var newModeName = ""
     @StateObject private var modeManager = AudioModeManager.shared
     @StateObject private var audioManager = AudioManager.shared
-    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         VStack(spacing: 20) {
@@ -556,17 +554,12 @@ struct AddModeView: View {
                     .background(Color.black.opacity(0.3))
                     .cornerRadius(6)
                     .foregroundColor(.white)
-                    .focused($isTextFieldFocused)
                     .onAppear {
                         // 确保在视图出现时自动获得焦点
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            self.isTextFieldFocused = true
+                            self.newModeName = "New Mode"
                         }
                     }
-                    // 确保接收按键事件
-                    .focusable(false)
-                    // 提高对比度使文本更明显
-                    .colorScheme(.dark)
             }
             .padding(.horizontal)
             
@@ -776,22 +769,25 @@ struct MenuBarView: View {
     @State private var showingInputDeviceList = false
     
     var body: some View {
-        VStack(spacing: 16) {
-            // 应用标题
+        VStack(spacing: 0) {
+            // 顶部标题
             HStack {
-                Image(systemName: "fish")
-                    .font(.system(size: 24))
-                    .foregroundColor(Color(red: 0.3, green: 0.9, blue: 0.7))
+                Image("TunaIcon") // 使用小图标
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                    .padding(.trailing, 4)
                 
                 Text("Tuna")
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
+                    .alignmentGuide(.leading) { d in d[.leading] }
+                
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.bottom, 16)
             
-            // 各部分都使用圆角卡片背景
-            Group {
+            // 设备控制部分
+            VStack(spacing: 16) {
                 // 输出设备部分
                 audioDeviceSection(isInput: false)
                 
@@ -833,7 +829,10 @@ struct MenuBarView: View {
             .padding(.top, 8)
         }
         .padding(16)
-        .background(Color(red: 0.08, green: 0.12, blue: 0.12))
+        .background(
+            Color(red: 0.08, green: 0.12, blue: 0.12)
+                .edgesIgnoringSafeArea(.all)
+        )
         .cornerRadius(20)
         .frame(width: 350)
     }
@@ -878,6 +877,7 @@ struct MenuBarView: View {
                                                    (showingOutputDeviceList ? 90 : 0)))
                             .padding(.trailing, 4)
                     }
+                    .contentShape(Rectangle())
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(Color.black.opacity(0.2))
