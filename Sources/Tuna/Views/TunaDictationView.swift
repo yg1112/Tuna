@@ -25,7 +25,6 @@ struct TunaDictationView: View {
             }
         }
     }
-    @State private var userHasEditedText: Bool = false
     
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
@@ -124,39 +123,15 @@ struct TunaDictationView: View {
             onTextFieldFocus: {
                 isFocused = true
                 print("Text field focused")
-                
-                // 当用户聚焦文本框时，认为用户开始编辑
-                if !editableText.isEmpty && editableText != "This is the live transcription..." {
-                    userHasEditedText = true
-                }
             },
             onTranscriptionTextChange: { newText in
                 if !newText.isEmpty {
-                    // 如果用户已编辑过文本且不是新录音，保留用户编辑的文本
-                    if userHasEditedText && dictationManager.state != .idle {
-                        // 仅添加新内容，而不是用完整转录替换
-                        if let existingText = dictationManager.getPreviousTranscription(),
-                           newText.count > existingText.count {
-                            // 获取新增的部分
-                            let newAddition = String(newText.dropFirst(existingText.count))
-                            // 只添加新增内容到已编辑的文本后
-                            editableText += newAddition
-                        }
-                    } else {
-                        // 如果用户未编辑或是新录音，直接使用转录结果
-                        isPlaceholderVisible = false
-                        editableText = newText
-                    }
-                    
+                    isPlaceholderVisible = false
+                    editableText = newText
                     if !isFocused {
                         startCursorAnimation()
                     }
                 }
-            },
-            onUserTextEdit: {
-                // 当用户手动编辑文本时标记此状态
-                userHasEditedText = true
-                print("User has edited text")
             }
         )
         .frame(height: 78)
@@ -188,7 +163,6 @@ struct TunaDictationView: View {
         let dictationManager: DictationManager
         let onTextFieldFocus: () -> Void
         let onTranscriptionTextChange: (String) -> Void
-        let onUserTextEdit: () -> Void  // 添加用户编辑回调
         
         var body: some View {
             ZStack(alignment: .topLeading) {
@@ -223,13 +197,17 @@ struct TunaDictationView: View {
                     .onChange(of: dictationManager.transcribedText) { newText in
                         onTranscriptionTextChange(newText)
                     }
-                    // 为TextEditor添加onChange来检测用户的手动编辑
-                    .onChange(of: editableText) { _ in
-                        // 如果文本内容与dictationManager中的不同，说明用户手动编辑了
-                        if editableText != dictationManager.transcribedText && 
-                           editableText != "This is the live transcription..." &&
-                           !editableText.isEmpty {
-                            onUserTextEdit()
+                    // 增加对editableText的监听，当用户手动编辑时同步到dictationManager
+                    .onChange(of: editableText) { newEditedText in
+                        if !isFocused { return } // 仅在用户焦点时同步，避免循环更新
+                        
+                        // 如果是占位符文本，不进行同步
+                        if newEditedText == "This is the live transcription..." { return }
+                        
+                        // 当用户手动编辑时，同步到dictationManager
+                        if !isPlaceholderVisible {
+                            print("用户编辑了文本，同步到dictationManager")
+                            dictationManager.transcribedText = newEditedText
                         }
                     }
                     // 使用正确的手势处理，不阻挡默认右键菜单
@@ -247,14 +225,12 @@ struct TunaDictationView: View {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(editableText, forType: .string)
                             editableText = ""
-                            onUserTextEdit() // 标记用户编辑
                         }
                         
                         Button("Paste") {
                             if let clipboardContent = NSPasteboard.general.string(forType: .string) {
                                 editableText = clipboardContent
                                 isPlaceholderVisible = false
-                                onUserTextEdit() // 标记用户编辑
                             }
                         }
                         
@@ -369,7 +345,7 @@ struct TunaDictationView: View {
                         width: geometry.size.width / 4 - 6
                     )
                     
-                    // 导出按钮 - 改名为Export
+                    // 保存按钮
                     controlButton(
                         icon: "arrow.down.doc.fill",
                         title: "Export",
@@ -419,15 +395,25 @@ struct TunaDictationView: View {
     private func handlePlayPauseAction() {
         switch dictationManager.state {
         case .idle:
-            // 开始新录音时重置占位符状态和文本编辑标志
-            isPlaceholderVisible = true
-            editableText = "This is the live transcription..."
-            userHasEditedText = false  // 重置编辑标志
+            // 开始新录音时重置占位符状态，但保留用户可能编辑过的文本
+            if editableText == "This is the live transcription..." || editableText.isEmpty {
+                isPlaceholderVisible = true
+                editableText = "This is the live transcription..."
+            } else {
+                // 如果用户已经有文本，保留它
+                isPlaceholderVisible = false
+                // 确保dictationManager使用当前编辑框中的文本
+                dictationManager.transcribedText = editableText
+            }
             dictationManager.startRecording()
         case .recording:
             dictationManager.pauseRecording()
         case .paused:
-            // 继续录音时不重置文本框，保留用户编辑
+            // 继续录音时不重置文本框，使用当前编辑的文本
+            if !editableText.isEmpty && editableText != "This is the live transcription..." {
+                // 确保dictationManager使用当前编辑框中的文本
+                dictationManager.transcribedText = editableText
+            }
             dictationManager.startRecording()
         case .processing:
             // 处理中不执行任何操作
