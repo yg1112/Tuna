@@ -121,80 +121,26 @@ struct TunaDictationView: View {
     
     // 文本框
     private var transcriptionTextView: some View {
-        ScrollView {
-            ZStack(alignment: .topLeading) {
-                // 背景和占位符
-                if isPlaceholderVisible && editableText.isEmpty {
-                    Text("This is the live transcription...")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 6)
-                        .focusable(false)
-                }
-                
-                // 文本编辑器
-                TextEditor(text: $editableText)
-                    .font(.system(size: 14))
-                    .foregroundColor(.white)
-                    .background(Color.clear)
-                    .frame(height: 72)
-                    .padding(2)
-                    .overlay(
-                        // 添加边框效果，在有文本时更明显
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.3 : 0.1), 
-                                    lineWidth: !dictationManager.transcribedText.isEmpty ? 1.5 : 1)
-                            .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
-                    )
-                    .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
-                    .onChange(of: dictationManager.transcribedText) { newText in
-                        if !newText.isEmpty {
-                            isPlaceholderVisible = false
-                            // 始终更新可编辑文本，而不是仅在首次接收时更新
-                            editableText = newText
-                            // 确保光标闪烁动画在文本更新时激活
-                            if !isFocused {
-                                startCursorAnimation()
-                            }
-                        }
-                    }
-                    .onTapGesture {
-                        // 当用户点击文本框时，标记为聚焦状态
-                        isFocused = true
-                        print("Text field focused")
-                    }
-                    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-                        // 当应用激活时，确保光标显示
-                        if !isFocused {
-                            startCursorAnimation()
-                        }
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .colorScheme(.dark)
-                    .focusable(true)
-                
-                // 使用 Group + ZStack 在现有文本框上叠加一个带光标的层
-                Group {
-                    if !isFocused && !editableText.isEmpty && !isPlaceholderVisible && editableText != "This is the live transcription..." {
-                        // 显示跟随文本末尾的光标
-                        FollowingCursorView(text: editableText, isBlinking: blinkState)
-                            .padding(6)
-                    }
-                    
-                    // 原始的初始光标，仅在文本为空或显示占位符时显示
-                    if !isFocused && (isPlaceholderVisible || editableText.isEmpty) {
-                        // 使用绿色光标，与应用的其他部分一致
-                        Rectangle()
-                            .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
-                            .frame(width: 2, height: 18)
-                            .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
-                            .padding(.leading, 6)
-                            .padding(.top, 6)
+        TranscriptionTextBoxView(
+            editableText: $editableText,
+            isPlaceholderVisible: isPlaceholderVisible,
+            isFocused: $isFocused,
+            blinkState: blinkState,
+            dictationManager: dictationManager,
+            onTextFieldFocus: {
+                isFocused = true
+                print("Text field focused")
+            },
+            onTranscriptionTextChange: { newText in
+                if !newText.isEmpty {
+                    isPlaceholderVisible = false
+                    editableText = newText
+                    if !isFocused {
+                        startCursorAnimation()
                     }
                 }
             }
-        }
+        )
         .frame(height: 78)
         .background(Color.black.opacity(0.3))
         .cornerRadius(8)
@@ -213,6 +159,103 @@ struct TunaDictationView: View {
         }
         .onDisappear {
             stopCursorAnimation()
+        }
+    }
+    
+    // 创建独立的转录文本框视图组件
+    struct TranscriptionTextBoxView: View {
+        @Binding var editableText: String
+        let isPlaceholderVisible: Bool
+        @Binding var isFocused: Bool
+        let blinkState: Bool
+        let dictationManager: DictationManager
+        let onTextFieldFocus: () -> Void
+        let onTranscriptionTextChange: (String) -> Void
+        
+        var body: some View {
+            ScrollView {
+                ZStack(alignment: .topLeading) {
+                    // 背景和占位符
+                    if isPlaceholderVisible && editableText.isEmpty {
+                        Text("This is the live transcription...")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 6)
+                            .focusable(false)
+                    }
+                    
+                    // 文本编辑器
+                    TextEditor(text: $editableText)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                        .background(Color.clear)
+                        .frame(height: 72)
+                        .padding(2)
+                        .overlay(
+                            // 添加边框效果，在有文本时更明显
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.3 : 0.1), 
+                                        lineWidth: !dictationManager.transcribedText.isEmpty ? 1.5 : 1)
+                                .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
+                        )
+                        .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
+                        .onChange(of: dictationManager.transcribedText) { newText in
+                            onTranscriptionTextChange(newText)
+                        }
+                        .onTapGesture {
+                            // 当用户点击文本框时，标记为聚焦状态
+                            onTextFieldFocus()
+                        }
+                        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                            // 这部分逻辑移到了主视图
+                        }
+                        .fixedSize(horizontal: false, vertical: true)
+                        .colorScheme(.dark)
+                        .focusable(true)
+                        // 添加选择文本高亮颜色
+                        .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5)) // 使用半透明的mint绿色作为选择高亮色
+                    
+                    // 使用条件渲染来简化光标逻辑
+                    CursorView(
+                        editableText: editableText,
+                        isPlaceholderVisible: isPlaceholderVisible,
+                        isFocused: isFocused,
+                        blinkState: blinkState
+                    )
+                }
+            }
+        }
+    }
+    
+    // 提取光标视图为单独的组件
+    struct CursorView: View {
+        let editableText: String
+        let isPlaceholderVisible: Bool
+        let isFocused: Bool
+        let blinkState: Bool
+        
+        var body: some View {
+            Group {
+                // 只在未聚焦且有文本时显示一个跟随光标
+                if !isFocused && !editableText.isEmpty && editableText != "This is the live transcription..." {
+                    // 显示跟随文本末尾的光标
+                    FollowingCursorView(text: editableText, isBlinking: blinkState)
+                        .padding(6)
+                        .id("following-cursor") // 添加ID确保视图刷新
+                }
+                // 只在未聚焦且无文本或仅有占位符时显示起始光标
+                else if !isFocused && (isPlaceholderVisible || editableText.isEmpty) {
+                    // 使用绿色光标，与应用的其他部分一致
+                    Rectangle()
+                        .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
+                        .frame(width: 2, height: 18)
+                        .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
+                        .padding(.leading, 6)
+                        .padding(.top, 6)
+                        .id("start-cursor") // 添加ID确保视图刷新
+                }
+            }
         }
     }
     

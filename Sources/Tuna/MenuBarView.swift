@@ -1,5 +1,12 @@
 import SwiftUI
+import Views
 import AppKit
+
+// 确保导入 DictationView 和相关模型
+@_exported import struct Views.DictationView
+
+// 重复声明，已在 DictationSettingsView.swift 中定义
+// extension DictationManager: DictationManagerProtocol {}
 
 struct DeviceButton: View {
     let device: AudioDevice
@@ -23,12 +30,12 @@ struct DeviceMenuItem: View {
     
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 // 设备图标 - 根据设备类型显示不同图标
                 deviceIcon
                     .font(.system(size: 13))
-                    .foregroundColor(isSelected ? Color.white : .secondary)
-                    .frame(width: 18)
+                    .foregroundColor(isSelected ? Color.white : Color.white.opacity(0.6))
+                    .frame(width: 16)
                 
                 // 设备名称
                 Text(device.name)
@@ -41,20 +48,19 @@ struct DeviceMenuItem: View {
                 // 选中标记
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                         .foregroundColor(.white)
                         .frame(width: 16)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
-        .cornerRadius(4) // 添加圆角，避免锐利边缘
+        .cornerRadius(4)
         .help(device.name) // 添加tooltip提示
-        .focusable(false) // 禁用系统焦点环
     }
     
     // 根据设备名称选择合适的图标
@@ -102,20 +108,19 @@ struct DeviceMenuList: View {
         return max(baseWidth, maxDeviceNameWidth + extraWidth)
     }
     
+    // 计算列表内容的精确高度
+    private var exactContentHeight: CGFloat {
+        // 单个项目高度
+        let itemHeight: CGFloat = 36
+        // 设备数量
+        let count = CGFloat(devices.count)
+        // 总高度 = 所有设备项目高度
+        return count * itemHeight
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
-            // 标题
-            Text("Select Device")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color.white.opacity(0.8))
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 8)
-                .background(Color.black.opacity(0.4))
-            
-            Divider()
-                .background(Color.white.opacity(0.1))
-            
-            // 设备列表
+            // 直接显示设备列表，移除标题栏
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(devices) { device in
@@ -124,20 +129,21 @@ struct DeviceMenuList: View {
                             isSelected: device.name == selectedDeviceName,
                             onSelect: { onDeviceSelected(device) }
                         )
-                        .focusable(false) // 禁用系统焦点环
-                        
-                        if device.id != devices.last?.id {
-                            Divider()
-                                .background(Color.white.opacity(0.2))
-                        }
                     }
                 }
+                .padding(.vertical, 4)
             }
-            .frame(maxHeight: min(CGFloat(devices.count) * 36, 300)) // 限制最大高度，避免菜单过长
+            // 使用计算的内容精确高度，但限制最大高度为屏幕高度的40%
+            .frame(height: min(exactContentHeight + 8, NSScreen.main?.frame.height ?? 1000 * 0.4))
         }
         .frame(width: minWidth) // 使用动态计算的宽度
-        .background(Color.black.opacity(0.9))
-        .cornerRadius(8) // 使用更小的圆角，类似macOS系统菜单
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.85))
+        )
+        .cornerRadius(8)
+        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 3) // 添加阴影增强视觉层次
+        .fixedSize(horizontal: true, vertical: false) // 强制使用计算的宽度
     }
 }
 
@@ -354,12 +360,7 @@ struct DeviceSelectionPopover: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .background(selectedDevice?.id == device.id ? Color.white.opacity(0.1) : Color.clear)
-
-                // 分隔线（非最后一个）
-                if device.id != devices.last?.id {
-                    Divider()
-                        .background(Color.white.opacity(0.2))
-                }
+                // 移除分隔线
             }
         }
         .fixedSize(horizontal: true, vertical: false) // 自动根据内容宽度调整
@@ -391,7 +392,7 @@ struct AudioDeviceCard: View {
     @State private var menuSize: CGSize = CGSize(width: 280, height: 300)
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 8) {  // 增加整体间距
             // 标题区域
             HStack {
                 Image(systemName: title.contains("Output") ? "speaker.wave.2" : "mic")
@@ -400,7 +401,7 @@ struct AudioDeviceCard: View {
                     .frame(width: 24)
                 
                 Text(title)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))  // 减小标题字体大小
                     .textCase(.uppercase)
                     .foregroundColor(.white)
                 
@@ -444,13 +445,13 @@ struct AudioDeviceCard: View {
                 .id("deviceMenuButton-\(title)")
             }
             .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
+            .padding(.top, 12)
+            .padding(.bottom, 4)  // 减少底部间距
             
             // 设备名称 - 添加提示并处理长文本
             Text(deviceName)
-                .font(.system(size: 16))
-                .foregroundColor(.white)
+                .font(.system(size: 14))  // 减小设备名称字体大小
+                .foregroundColor(.white.opacity(0.9))  // 略微降低不透明度以区分标题
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .help(deviceName)
@@ -463,7 +464,7 @@ struct AudioDeviceCard: View {
                     .accentColor(.white.opacity(0.8))
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
@@ -563,7 +564,7 @@ struct AddModeView: View {
                         }
                     }
                     // 确保接收按键事件
-                    .focusable(true)
+                    .focusable(false)
                     // 提高对比度使文本更明显
                     .colorScheme(.dark)
             }
@@ -767,128 +768,196 @@ struct CustomPopover<Content: View>: NSViewRepresentable {
 
 @available(macOS 13.0, *)
 struct MenuBarView: View {
-    @StateObject private var audioManager = AudioManager.shared
-    @State private var showOutputDeviceMenu = false
-    @State private var showInputDeviceMenu = false
+    @ObservedObject private var audioManager = AudioManager.shared
+    @ObservedObject private var dictationManager = DictationManager.shared
+    @State private var showingSettings = false
+    @State private var showingDictationSettings = false
+    @State private var showingOutputDeviceList = false
+    @State private var showingInputDeviceList = false
     
     var body: some View {
         VStack(spacing: 16) {
-            // 标题和图标
-            VStack(spacing: 8) {
+            // 应用标题
+            HStack {
                 Image(systemName: "fish")
-                    .font(.system(size: 36))
-                    .foregroundColor(.white)
+                    .font(.system(size: 24))
+                    .foregroundColor(Color(red: 0.3, green: 0.9, blue: 0.7))
                 
                 Text("Tuna")
-                    .font(.system(size: 40, weight: .bold))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.white)
             }
-            .padding(.top, 16)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
             
-            VStack(spacing: 12) {
-                // 输出设备
-                AudioDeviceCard(
-                    icon: "speaker.wave.2",
-                    title: "AUDIO OUTPUT",
-                    deviceName: audioManager.selectedOutputDevice?.name ?? "None",
-                    volume: Binding<Float>(
-                        get: { audioManager.outputVolume },
-                        set: { volume in
-                            if let device = audioManager.selectedOutputDevice {
-                                audioManager.setVolumeForDevice(device: device, volume: volume, isInput: false)
-                            }
-                        }
-                    ),
-                    showDeviceMenu: $showOutputDeviceMenu,
-                    devices: audioManager.outputDevices,
-                    onDeviceSelected: { device in
-                        audioManager.setDefaultDevice(device, forInput: false)
-                    },
-                    currentDevice: audioManager.selectedOutputDevice
-                )
+            // 各部分都使用圆角卡片背景
+            Group {
+                // 输出设备部分
+                audioDeviceSection(isInput: false)
                 
-                // 输入设备
-                AudioDeviceCard(
-                    icon: "mic",
-                    title: "AUDIO INPUT",
-                    deviceName: audioManager.selectedInputDevice?.name ?? "None",
-                    volume: Binding<Float>(
-                        get: { audioManager.inputVolume },
-                        set: { volume in
-                            if let device = audioManager.selectedInputDevice {
-                                audioManager.setVolumeForDevice(device: device, volume: volume, isInput: true)
-                            }
-                        }
-                    ),
-                    showDeviceMenu: $showInputDeviceMenu,
-                    devices: audioManager.inputDevices,
-                    onDeviceSelected: { device in
-                        audioManager.setDefaultDevice(device, forInput: true)
-                    },
-                    currentDevice: audioManager.selectedInputDevice
-                )
+                // 输入设备部分
+                audioDeviceSection(isInput: true)
                 
-                // 听写功能
-                DictationCard()
-                
-                // 模式选择
-                ModeCard()
+                // Dictation 部分
+                TunaDictationView()
             }
-            .padding(.horizontal, 16)
             
-            // 底部按钮
-            HStack(spacing: 12) {
-                // Exit 按钮
-                Button {
+            // 底部按钮区
+            HStack {
+                Button(action: {
                     NSApplication.shared.terminate(nil)
-                } label: {
-                    Text("Exit")
-                        .font(.system(size: 14, weight: .medium))
+                }) {
+                    Text("Quit")
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.white)
+                        .frame(height: 36)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.4))
+                        .cornerRadius(6)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .background(Color.black.opacity(0.2))
-                .cornerRadius(6)
                 
-                // Settings 按钮
-                Button {
-                    NotificationCenter.default.post(name: NSNotification.Name("showSettings"), object: nil)
-                } label: {
+                Button(action: {
+                    openSettings()
+                }) {
                     Text("Settings")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.white)
+                        .frame(height: 36)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.4))
+                        .cornerRadius(6)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .background(Color.clear)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                )
-                .cornerRadius(6)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.top, 8)
         }
-        .padding(.vertical, 10)
-        .frame(width: 300)
-        .background(
-            ZStack {
-                Color(red: 0.0, green: 0.12, blue: 0.06)
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.black.opacity(0.0),
-                        Color.black.opacity(0.3)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+        .padding(16)
+        .background(Color(red: 0.08, green: 0.12, blue: 0.12))
+        .cornerRadius(20)
+        .frame(width: 350)
+    }
+    
+    // 音频设备区域视图（显示设备名称和音量滑块）
+    private func audioDeviceSection(isInput: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // 标题行
+            HStack {
+                Image(systemName: isInput ? "mic.fill" : "headphones")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+                    .frame(width: 20)
+                
+                Text(isInput ? "AUDIO INPUT" : "AUDIO OUTPUT")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                Spacer()
+                
+                // 箭头图标
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .padding(.trailing, 4)
             }
-        )
-        .cornerRadius(8) // 改用更小的圆角，类似macOS系统菜单
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.black.opacity(0.2))
+            .cornerRadius(8)
+            .focusable(false) // 禁用焦点高亮
+            .onTapGesture {
+                if isInput {
+                    showingInputDeviceList.toggle()
+                    showingOutputDeviceList = false
+                } else {
+                    showingOutputDeviceList.toggle()
+                    showingInputDeviceList = false
+                }
+            }
+            
+            // 设备名称行
+            HStack {
+                Text(isInput ? 
+                    (audioManager.selectedInputDevice?.name ?? "No Input Device") : 
+                    (audioManager.selectedOutputDevice?.name ?? "No Output Device"))
+                    .font(.system(size: 15))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
+            .focusable(false) // 禁用焦点高亮
+            
+            // 音量滑块
+            volumeSlider(isInput: isInput)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+                .focusable(false) // 禁用焦点高亮
+        }
+        .background(Color(red: 0.12, green: 0.15, blue: 0.16).opacity(0.6))
+        .cornerRadius(12)
+        .focusable(false) // 禁用整个部分的焦点高亮
+    }
+    
+    // 音量滑块
+    private func volumeSlider(isInput: Bool) -> some View {
+        let volume = isInput ? 
+            Binding(
+                get: { audioManager.inputVolume },
+                set: { 
+                    if let device = audioManager.selectedInputDevice {
+                        audioManager.setVolumeForDevice(device: device, volume: $0, isInput: true)
+                    } 
+                }
+            ) :
+            Binding(
+                get: { audioManager.outputVolume },
+                set: { 
+                    if let device = audioManager.selectedOutputDevice {
+                        audioManager.setVolumeForDevice(device: device, volume: $0, isInput: false)
+                    }
+                }
+            )
+        
+        return HStack {
+            Slider(value: volume, in: 0...1)
+                .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7))
+                .frame(height: 16)
+                .focusable(false) // 禁用滑块的焦点高亮
+        }
+    }
+    
+    private func openSettings() {
+        // 关闭所有popover
+        showingSettings = false
+        showingDictationSettings = false
+        showingOutputDeviceList = false
+        showingInputDeviceList = false
+        
+        // 关闭主卡片
+        if let popover = NSApp.windows.first(where: { $0.className.contains("NSPopover") }) {
+            popover.close()
+        }
+        
+        // 使用延迟确保主卡片已关闭
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // 打开设置窗口
+            let settingsWindow = SettingsWindowController.createSettingsWindow()
+            settingsWindow.showWindow(nil)
+            settingsWindow.window?.orderFrontRegardless()
+        }
+    }
+    
+    private func openDictationSettings() {
+        // 打开听写设置窗口（可能作为设置窗口的一部分）
+        let settingsWindow = SettingsWindowController.createSettingsWindow()
+        settingsWindow.showWindow(nil)
+        settingsWindow.window?.orderFrontRegardless()
+        
+        // 切换到听写设置选项卡（如果有）
+        NotificationCenter.default.post(name: NSNotification.Name("SwitchToSettingsTab"), object: "dictation")
     }
 }
 
