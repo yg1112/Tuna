@@ -798,47 +798,8 @@ struct MenuBarView: View {
                 TunaDictationView()
             }
             
-            // 底部按钮区
-            HStack {
-                // Quit按钮 - 使用与功能按钮相同的样式和大小
-                Button(action: {
-                    NSApplication.shared.terminate(nil)
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "power")
-                            .font(.system(size: 16))
-                        Text("Quit")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundColor(.white)
-                    .frame(height: 34)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.black.opacity(0.7))
-                    .cornerRadius(6)
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                Spacer()
-                
-                // Settings按钮 - 使用与功能按钮相同的样式和大小
-                Button(action: {
-                    openSettings()
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 16))
-                        Text("Settings")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundColor(.white)
-                    .frame(height: 34)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.black.opacity(0.7))
-                    .cornerRadius(6)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(.top, 8)
+            // 底部按钮区 - 使用新的组件
+            bottomButtons
         }
         .padding(16)
         .background(
@@ -1010,6 +971,43 @@ struct MenuBarView: View {
         
         // 切换到听写设置选项卡（如果有）
         NotificationCenter.default.post(name: NSNotification.Name("SwitchToSettingsTab"), object: "dictation")
+    }
+    
+    // 添加一个通用的按钮样式函数
+    private func smallButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundColor(.white)
+            .frame(width: 150, height: 34)
+            .background(Color.black.opacity(0.7))
+            .cornerRadius(6)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // 底部按钮区，修改为使用统一样式
+    private var bottomButtons: some View {
+        HStack(spacing: 8) {
+            smallButton(
+                icon: "xmark.circle",
+                title: "Quit",
+                action: {
+                    NSApplication.shared.terminate(nil)
+                }
+            )
+            
+            smallButton(
+                icon: "gear",
+                title: "Settings",
+                action: openSettings
+            )
+        }
+        .padding(.top, 8)
     }
 }
 
