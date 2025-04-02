@@ -11,17 +11,17 @@ struct TunaDictationView: View {
     @State private var isPlaceholderVisible = true
     @State private var editableText: String = "This is the live transcription..."
     @State private var showEditHint: Bool = false
-    @State private var showCursor: Bool = true
+    @State private var blinkState: Bool = false // 控制光标闪烁状态
     @State private var cursorTimer: Timer? = nil
     @State private var isFocused: Bool = false {
         didSet {
             // 当焦点状态变化时，强制更新UI
             if isFocused {
                 // 当获得焦点时，确保停止自定义光标
-                showCursor = false
+                stopCursorAnimation()
             } else {
                 // 当失去焦点时，恢复自定义光标
-                showCursor = true
+                startCursorAnimation()
             }
         }
     }
@@ -122,7 +122,7 @@ struct TunaDictationView: View {
     // 文本框
     private var transcriptionTextView: some View {
         ScrollView {
-            ZStack(alignment: .leading) {
+            ZStack(alignment: .topLeading) { // 确保绿色光标始终在左上角
                 // 背景和占位符
                 if isPlaceholderVisible && editableText.isEmpty {
                     Text("This is the live transcription...")
@@ -163,25 +163,22 @@ struct TunaDictationView: View {
                     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                         // 当应用激活时，确保光标显示
                         if !isFocused {
-                            showCursor = true
+                            startCursorAnimation()
                         }
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     .colorScheme(.dark)
                     .focusable(true)
                 
-                // 闪烁的光标 - 确保总是在没有聚焦时显示
-                if showCursor && !isFocused {
-                    HStack {
-                        // 使用绿色光标，与应用的其他部分一致
-                        Rectangle()
-                            .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
-                            .frame(width: 2, height: 18)
-                            .opacity(1) // 始终保持完全不透明
-                            .animation(Animation.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: showCursor)
-                            .padding(.leading, 6)
-                            .id("cursor") // 给光标一个唯一ID，确保视图刷新
-                    }
+                // 闪烁的光标 - 仅在没有聚焦且应显示占位符时显示在开始位置
+                if !isFocused && (isPlaceholderVisible || editableText.isEmpty) {
+                    // 使用绿色光标，与应用的其他部分一致
+                    Rectangle()
+                        .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
+                        .frame(width: 2, height: 18)
+                        .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
+                        .padding(.leading, 6)
+                        .padding(.top, 6)
                 }
             }
         }
@@ -198,11 +195,11 @@ struct TunaDictationView: View {
         .focusable(false)
         .onAppear {
             // 启动光标闪烁动画
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                showCursor = true
-                print("Cursor enabled after slight delay")
-            }
+            startCursorAnimation()
             print("Transcription text view appeared")
+        }
+        .onDisappear {
+            stopCursorAnimation()
         }
     }
     
@@ -414,16 +411,31 @@ struct TunaDictationView: View {
         // 确保先停止现有动画
         stopCursorAnimation()
         
-        // 显示光标 - 无条件显示，不依赖于文本内容
-        showCursor = true
+        // 创建真正的闪烁计时器，每0.6秒切换一次状态
+        cursorTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
+            // 使用MainActor确保在主线程更新UI
+            Task { @MainActor in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    self.blinkState.toggle() // 切换闪烁状态
+                }
+            }
+        }
         
-        // 确保调试输出，查看动画是否被触发
-        print("Cursor animation started")
+        // 立即开始第一个闪烁周期
+        blinkState = true
+        
+        // 确保计时器被添加到RunLoop
+        RunLoop.current.add(cursorTimer!, forMode: .common)
+        
+        print("Cursor animation started with timer")
     }
     
     // 停止光标动画
     private func stopCursorAnimation() {
-        showCursor = false
+        cursorTimer?.invalidate()
+        cursorTimer = nil
+        blinkState = false
+        print("Cursor animation stopped")
     }
 }
 
