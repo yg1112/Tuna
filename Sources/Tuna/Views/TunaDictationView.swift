@@ -11,9 +11,20 @@ struct TunaDictationView: View {
     @State private var isPlaceholderVisible = true
     @State private var editableText: String = "This is the live transcription..."
     @State private var showEditHint: Bool = false
-    @State private var showCursor: Bool = false
+    @State private var showCursor: Bool = true
     @State private var cursorTimer: Timer? = nil
-    @State private var isFocused: Bool = false
+    @State private var isFocused: Bool = false {
+        didSet {
+            // 当焦点状态变化时，强制更新UI
+            if isFocused {
+                // 当获得焦点时，确保停止自定义光标
+                showCursor = false
+            } else {
+                // 当失去焦点时，恢复自定义光标
+                showCursor = true
+            }
+        }
+    }
     
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
@@ -52,6 +63,8 @@ struct TunaDictationView: View {
         .onAppear {
             // 启动音频可视化效果定时器
             startVisualizing()
+            // 直接在这里也启动光标动画，确保视图出现时就显示
+            startCursorAnimation()
         }
         .onDisappear {
             // 停止音频可视化效果定时器
@@ -140,24 +153,18 @@ struct TunaDictationView: View {
                             isPlaceholderVisible = false
                             // 始终更新可编辑文本，而不是仅在首次接收时更新
                             editableText = newText
-                            
-                            // 当获得新转录文本时，显示光标动画
-                            startCursorAnimation()
-                        }
-                    }
-                    .onHover { hovering in
-                        // 当鼠标悬停在文本框上时显示光标
-                        if hovering && !isFocused {
-                            startCursorAnimation()
-                        } else if !hovering && !isFocused {
-                            stopCursorAnimation()
                         }
                     }
                     .onTapGesture {
                         // 当用户点击文本框时，标记为聚焦状态
                         isFocused = true
-                        // 停止光标动画（因为真实光标会显示）
-                        stopCursorAnimation()
+                        print("Text field focused")
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                        // 当应用激活时，确保光标显示
+                        if !isFocused {
+                            showCursor = true
+                        }
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     .colorScheme(.dark)
@@ -166,13 +173,14 @@ struct TunaDictationView: View {
                 // 闪烁的光标 - 确保总是在没有聚焦时显示
                 if showCursor && !isFocused {
                     HStack {
-                        // 使光标更显眼
+                        // 使用绿色光标，与应用的其他部分一致
                         Rectangle()
-                            .fill(Color.white.opacity(0.8))
-                            .frame(width: 2, height: 16)
-                            .opacity(showCursor ? 1 : 0)
-                            .animation(Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: showCursor)
+                            .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
+                            .frame(width: 2, height: 18)
+                            .opacity(1) // 始终保持完全不透明
+                            .animation(Animation.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: showCursor)
                             .padding(.leading, 6)
+                            .id("cursor") // 给光标一个唯一ID，确保视图刷新
                     }
                 }
             }
@@ -190,7 +198,11 @@ struct TunaDictationView: View {
         .focusable(false)
         .onAppear {
             // 启动光标闪烁动画
-            startCursorAnimation()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                showCursor = true
+                print("Cursor enabled after slight delay")
+            }
+            print("Transcription text view appeared")
         }
     }
     
