@@ -52,12 +52,58 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         setupRecordingSession()
         
         if state == .paused && audioRecorder != nil {
-            // 继续录音
-            audioRecorder?.record()
-            state = .recording
-            progressMessage = "继续录音..."
-            logger.debug("Resumed recording")
+            // 当前处于暂停状态，此时我们需要创建一个新的录音文件来继续录音
+            // 保存已有的audioRecorder用于清理
+            let oldRecorder = audioRecorder
+            
+            // 创建新的录音文件
+            let fileName = "dictation_\(Date().timeIntervalSince1970).m4a"
+            recordingURL = tempDirectory?.appendingPathComponent(fileName)
+            
+            guard let recordingURL = recordingURL else {
+                logger.error("Failed to create recording URL")
+                progressMessage = "无法创建录音文件"
+                return
+            }
+            
+            // 设置录音参数
+            let settings: [String: Any] = [
+                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                AVSampleRateKey: 44100.0,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ]
+            
+            do {
+                audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
+                audioRecorder?.delegate = nil
+                audioRecorder?.record()
+                
+                // 添加到录音部分列表
+                recordingParts.append(recordingURL)
+                
+                // 停止并释放旧的录音器
+                oldRecorder?.stop()
+                
+                state = .recording
+                progressMessage = "继续录音..."
+                logger.debug("Created new recording segment at \(recordingURL.path)")
+            } catch {
+                logger.error("Failed to continue recording: \(error.localizedDescription)")
+                progressMessage = "继续录音失败: \(error.localizedDescription)"
+                
+                // 恢复旧的录音器状态
+                audioRecorder = oldRecorder
+            }
+            
             return
+        }
+        
+        // 如果不是从暂停状态继续，则清除已有的转录内容并开始新录音
+        if state == .idle {
+            // 清除转录文本以开始新录音
+            transcribedText = ""
+            recordingParts = []
         }
         
         // 创建新的录音文件
@@ -103,8 +149,19 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         
         audioRecorder.pause()
         state = .paused
-        progressMessage = "录音已暂停"
-        logger.debug("Recording paused")
+        progressMessage = "录音已暂停，正在转录已有内容..."
+        logger.debug("Recording paused, transcribing current segment")
+        
+        // 获取当前录音文件并转录
+        if let currentRecordingURL = recordingURL, FileManager.default.fileExists(atPath: currentRecordingURL.path) {
+            // 记录当前录音URL以便继续录音
+            let currentURL = recordingURL
+            
+            // 转录当前片段但不清理录音状态
+            transcribeCurrentSegment(currentURL!)
+        } else {
+            progressMessage = "录音已暂停"
+        }
     }
     
     public func stopRecording() {
@@ -177,15 +234,59 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
         
-        // 如果有多个录音部分，需要合并它们
-        logger.debug("Merging \(self.recordingParts.count) recording parts")
-        progressMessage = "合并录音部分..."
+        // 如果有多个录音部分，依次处理每个部分
+        logger.debug("Processing \(self.recordingParts.count) recording parts sequentially")
+        progressMessage = "正在处理多个录音部分..."
         
-        // 这里应该是合并音频文件的代码
-        // 由于合并音频需要额外的处理，我们先使用第一个部分进行转录
-        // 实际应用中应该实现音频文件的合并
-        logger.warning("Audio merging not implemented, using first recording part")
-        transcribeAudio(self.recordingParts.first!)
+        // 使用递归函数处理每个录音片段
+        transcribeSegmentsSequentially(self.recordingParts, currentIndex: 0, accumulator: "")
+    }
+    
+    // 依次处理多个录音片段
+    private func transcribeSegmentsSequentially(_ segments: [URL], currentIndex: Int, accumulator: String) {
+        // 基础情况：所有片段都已处理
+        if currentIndex >= segments.count {
+            // 全部处理完成，更新状态
+            self.transcribedText = accumulator
+            finalizeTranscription()
+            
+            // 清理
+            self.recordingParts = []
+            self.audioRecorder = nil
+            return
+        }
+        
+        // 获取当前片段
+        let currentSegment = segments[currentIndex]
+        
+        progressMessage = "正在转录第 \(currentIndex + 1)/\(segments.count) 部分..."
+        logger.debug("Transcribing segment \(currentIndex + 1)/\(segments.count): \(currentSegment.path)")
+        
+        // 转录当前片段
+        callWhisperAPI(audioURL: currentSegment) { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let segmentText):
+                    // 将当前片段的转录结果添加到累加器
+                    var newAccumulator = accumulator
+                    if !newAccumulator.isEmpty && !segmentText.isEmpty {
+                        newAccumulator += "\n"
+                    }
+                    newAccumulator += segmentText
+                    
+                    // 递归处理下一个片段
+                    self.transcribeSegmentsSequentially(segments, currentIndex: currentIndex + 1, accumulator: newAccumulator)
+                    
+                case .failure(let error):
+                    self.logger.error("Failed to transcribe segment \(currentIndex + 1): \(error.localizedDescription)")
+                    
+                    // 即使当前片段失败，也继续处理下一个片段
+                    self.transcribeSegmentsSequentially(segments, currentIndex: currentIndex + 1, accumulator: accumulator)
+                }
+            }
+        }
     }
     
     private func transcribeAudio(_ audioURL: URL) {
@@ -230,6 +331,50 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 // 清理
                 self.recordingParts = []
                 self.audioRecorder = nil
+            }
+        }
+    }
+    
+    // 转录当前录音片段，但保持录音状态
+    private func transcribeCurrentSegment(_ audioURL: URL) {
+        guard !apiKey.isEmpty else {
+            progressMessage = "请在设置中设置API密钥"
+            logger.error("API key not set")
+            return
+        }
+        
+        progressMessage = "正在转录当前片段..."
+        logger.debug("Transcribing current segment from \(audioURL.path)")
+        
+        // 检查音频文件是否可读
+        guard FileManager.default.fileExists(atPath: audioURL.path) else {
+            progressMessage = "无法读取音频文件"
+            logger.error("Failed to read audio file")
+            return
+        }
+        
+        // 调用Whisper API转录当前片段
+        callWhisperAPI(audioURL: audioURL) { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let segmentText):
+                    // 追加转录文本，而不是替换
+                    if self.transcribedText.isEmpty {
+                        self.transcribedText = segmentText
+                    } else {
+                        self.transcribedText += "\n" + segmentText
+                    }
+                    
+                    // 更新状态消息
+                    self.progressMessage = "暂停中 - 部分内容已转录"
+                    self.logger.debug("Current segment transcribed successfully")
+                    
+                case .failure(let error):
+                    self.progressMessage = "部分转录失败: \(error.localizedDescription)"
+                    self.logger.error("Segment transcription failed: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -337,12 +482,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         
         // 启动任务
         task.resume()
-        
-        logger.debug("API request sent to Whisper API")
     }
     
-    // 设置录音中状态为处理中
-    func finalizeTranscription() {
+    private func finalizeTranscription() {
         state = .idle
         if transcribedText.isEmpty {
             progressMessage = "转录失败，未获得文本结果"
