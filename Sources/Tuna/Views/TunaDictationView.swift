@@ -220,8 +220,8 @@ struct TunaDictationView: View {
     
     // 按钮行
     private var buttonRowView: some View {
-        VStack(spacing: 8) {
-            // 功能按钮行 - 使用GeometryReader获取可用宽度
+        HStack {
+            // 使用GeometryReader获取可用宽度
             GeometryReader { geometry in
                 HStack(spacing: 8) {
                     // 暂停/播放按钮
@@ -251,7 +251,7 @@ struct TunaDictationView: View {
                         width: geometry.size.width / 4 - 6
                     )
                     
-                    // 导出按钮
+                    // 保存按钮
                     controlButton(
                         icon: "arrow.down.doc.fill",
                         title: "Export",
@@ -263,29 +263,6 @@ struct TunaDictationView: View {
                 .frame(width: geometry.size.width)
             }
             .frame(height: 38)
-            
-            // 底部退出和设置按钮行
-            HStack {
-                // 退出按钮
-                controlButton(
-                    icon: "power",
-                    title: "Quit",
-                    action: { NSApplication.shared.terminate(nil) },
-                    isDisabled: false,
-                    width: 80
-                )
-                
-                Spacer()
-                
-                // 设置按钮
-                controlButton(
-                    icon: "gearshape",
-                    title: "Settings",
-                    action: { openDictationSettings() },
-                    isDisabled: false,
-                    width: 90
-                )
-            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -338,11 +315,12 @@ struct TunaDictationView: View {
         case .recording:
             dictationManager.pauseRecording()
         case .paused:
-            // 继续录音时不重置文本框，使用当前编辑的文本
-            if !editableText.isEmpty && editableText != "This is the live transcription..." {
-                // 确保dictationManager使用当前编辑框中的文本
-                dictationManager.transcribedText = editableText
-            }
+            // 继续录音时使用当前编辑框中的文本，确保不恢复被删除的内容
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 从暂停恢复录音，使用当前编辑文本: \(editableText)")
+            // 明确将当前用户编辑的文本设置为转录文本，覆盖任何可能的旧内容
+            dictationManager.transcribedText = editableText
+            // 确保占位符状态正确
+            isPlaceholderVisible = editableText.isEmpty || editableText == "This is the live transcription..."
             dictationManager.startRecording()
         case .processing:
             // 处理中不执行任何操作
@@ -450,16 +428,6 @@ struct TunaDictationView: View {
     // 在获得转录结果后显示编辑提示
     private func showEditingHint() {
         // 由于不再需要显示编辑提示，此函数可以为空或完全移除
-    }
-    
-    // 在类中添加打开设置的方法
-    private func openDictationSettings() {
-        // 打开设置窗口 (可以调用现有的DictationSettingsView)
-        let settingsWindow = SettingsWindowController.createSettingsWindow()
-        settingsWindow.showWindow(nil)
-        settingsWindow.window?.orderFrontRegardless()
-        
-        // 如果需要，可以切换到特定的设置选项卡
     }
 }
 

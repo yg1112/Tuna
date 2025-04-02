@@ -798,7 +798,7 @@ struct MenuBarView: View {
                 TunaDictationView()
             }
             
-            // 底部按钮区 - 使用新的组件
+            // 底部按钮区，修改为使用统一样式，Quit在左侧，Settings在右侧
             bottomButtons
         }
         .padding(16)
@@ -991,9 +991,10 @@ struct MenuBarView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // 底部按钮区，修改为使用统一样式
+    // 底部按钮区，修改为使用统一样式，Quit在左侧，Settings在右侧
     private var bottomButtons: some View {
-        HStack(spacing: 8) {
+        HStack {
+            // 左侧Quit按钮
             smallButton(
                 icon: "xmark.circle",
                 title: "Quit",
@@ -1002,6 +1003,9 @@ struct MenuBarView: View {
                 }
             )
             
+            Spacer() // 添加空间将两个按钮推到两侧
+            
+            // 右侧Settings按钮
             smallButton(
                 icon: "gear",
                 title: "Settings",
