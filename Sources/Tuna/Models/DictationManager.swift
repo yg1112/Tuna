@@ -88,8 +88,18 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 // 停止并释放旧的录音器
                 oldRecorder?.stop()
                 
-                state = .recording
-                progressMessage = "继续录音..."
+                // 更新状态 - 确保UI能够更新
+                DispatchQueue.main.async {
+                    // 这里特意使用主线程来确保UI能及时更新
+                    self.state = .recording
+                    self.progressMessage = "继续录音..."
+                    
+                    // 触发一个值变化的通知，确保转录内容更新到UI
+                    let current = self.transcribedText
+                    self.transcribedText = ""
+                    self.transcribedText = current
+                }
+                
                 logger.debug("Created new recording segment at \(recordingURL.path)")
             } catch {
                 logger.error("Failed to continue recording: \(error.localizedDescription)")
@@ -396,7 +406,10 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                     if self.transcribedText.isEmpty {
                         self.transcribedText = segmentText
                     } else {
-                        self.transcribedText += "\n" + segmentText
+                        // 先备份当前值，然后设置新值以确保UI更新
+                        let newText = self.transcribedText + "\n" + segmentText
+                        self.transcribedText = ""
+                        self.transcribedText = newText
                     }
                     
                     // 更新状态消息

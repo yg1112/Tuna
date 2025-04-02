@@ -126,10 +126,8 @@ struct TunaDictationView: View {
                     .onChange(of: dictationManager.transcribedText) { newText in
                         if !newText.isEmpty {
                             isPlaceholderVisible = false
-                            // 只有在首次收到转录或文本框是占位符时才更新可编辑文本
-                            if editableText == "This is the live transcription..." || editableText.isEmpty {
-                                editableText = newText
-                            }
+                            // 始终更新可编辑文本，而不是仅在首次接收时更新
+                            editableText = newText
                         }
                     }
                     // 自动调整文本编辑器大小以适应内容
@@ -242,6 +240,7 @@ struct TunaDictationView: View {
         case .recording:
             dictationManager.pauseRecording()
         case .paused:
+            // 继续录音时不重置文本框
             dictationManager.startRecording()
         case .processing:
             // 处理中不执行任何操作
