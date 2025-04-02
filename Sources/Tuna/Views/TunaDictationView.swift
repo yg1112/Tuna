@@ -133,10 +133,13 @@ struct TunaDictationView: View {
         @Binding var editableText: String
         @Binding var isPlaceholderVisible: Bool
         @Binding var isFocused: Bool
-        @Binding var cursorPosition: Int // 添加光标位置绑定
+        @Binding var cursorPosition: Int
         let dictationManager: DictationManager
         let onTextFieldFocus: () -> Void
         let onTranscriptionTextChange: (String) -> Void
+        
+        // 添加一个状态变量来跟踪上一次的转录文本
+        @State private var lastTranscribedText: String = ""
         
         // NSTextView代理声明，但不实现复杂功能，只用来准备代码结构
         class TextViewCoordinator: NSObject {
@@ -188,6 +191,8 @@ struct TunaDictationView: View {
                         if !isPlaceholderVisible {
                             print("\u{001B}[36m[DEBUG]\u{001B}[0m 用户编辑了文本，同步到dictationManager")
                             dictationManager.transcribedText = newEditedText
+                            // 更新上次转录文本，避免重复插入
+                            lastTranscribedText = newEditedText
                             
                             // 尝试使用NSTextView API获取光标位置的简单方法
                             if let firstResponder = NSApp.keyWindow?.firstResponder as? NSTextView {
@@ -227,6 +232,10 @@ struct TunaDictationView: View {
                     .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7))
                     .colorScheme(.dark)
             }
+            .onAppear {
+                // 初始化上次转录文本
+                lastTranscribedText = dictationManager.transcribedText
+            }
         }
         
         // 在光标位置插入新文本
@@ -235,24 +244,26 @@ struct TunaDictationView: View {
             if editableText.isEmpty || editableText == "This is the live transcription..." {
                 editableText = newText
                 isPlaceholderVisible = false
+                lastTranscribedText = newText // 更新上次文本
                 onTranscriptionTextChange(newText)
                 return
             }
             
             // 确保转录文本确实有变化
-            if dictationManager.transcribedText.isEmpty || dictationManager.transcribedText == editableText {
+            if newText.isEmpty || newText == lastTranscribedText {
                 return
             }
             
             print("\u{001B}[36m[DEBUG]\u{001B}[0m 准备在光标位置(\(cursorPosition))插入新文本")
             
-            // 检查是否可以确定新增文本
-            let currentDictationText = dictationManager.transcribedText
+            // 检查光标位置是否有效
+            let cursorPos = min(cursorPosition, editableText.count)
             
-            // 避免比较前缀，直接判断新内容
-            if currentDictationText != editableText {
-                // 检查光标位置是否有效
-                let cursorPos = min(cursorPosition, editableText.count)
+            // 找出新增的文本部分
+            let actualNewContent = findNewContent(from: lastTranscribedText, to: newText)
+            
+            if !actualNewContent.isEmpty {
+                print("\u{001B}[36m[DEBUG]\u{001B}[0m 检测到新增文本: \(actualNewContent)")
                 
                 // 开始部分和结束部分
                 let startIndex = editableText.startIndex
@@ -261,24 +272,66 @@ struct TunaDictationView: View {
                 let textBeforeCursor = String(editableText[startIndex..<cursorIndex])
                 let textAfterCursor = String(editableText[cursorIndex...])
                 
-                // 检测新的转录内容（整段新文本）
-                let newDictationText = currentDictationText
-                
-                print("\u{001B}[36m[DEBUG]\u{001B}[0m 新转录文本: \(newDictationText)")
-                
-                // 更新文本 - 在光标位置插入新文本
-                let updatedText = textBeforeCursor + newDictationText + textAfterCursor
+                // 更新文本 - 只在光标位置插入新增文本
+                let updatedText = textBeforeCursor + actualNewContent + textAfterCursor
                 
                 // 更新UI
                 editableText = updatedText
                 isPlaceholderVisible = false
                 
+                // 更新上次转录文本
+                lastTranscribedText = newText
+                
                 // 更新光标位置 - 移动到插入内容之后
-                cursorPosition = cursorPos + newDictationText.count
+                cursorPosition = cursorPos + actualNewContent.count
                 print("\u{001B}[36m[DEBUG]\u{001B}[0m 更新后的光标位置: \(cursorPosition)")
                 
                 // 通知变更
                 onTranscriptionTextChange(updatedText)
+            } else {
+                // 如果没有检测到新增内容，则更新上次文本以防止差异检测错误
+                lastTranscribedText = newText
+            }
+        }
+        
+        // 查找新增的文本部分
+        private func findNewContent(from oldText: String, to newText: String) -> String {
+            // 如果新文本比旧文本短，可能是因为用户删除了部分内容，这时应该只考虑新增的部分
+            if newText.count < oldText.count {
+                // 用户可能删除了部分内容，转录又添加了新内容
+                // 尝试识别新增的部分
+                
+                // 首先查看新文本是否包含于旧文本
+                if oldText.contains(newText) {
+                    // 如果新文本完全是旧文本的子集，说明没有新增内容
+                    return ""
+                } else {
+                    // 新文本不是旧文本的子集，可能有新内容
+                    // 查找最长公共前缀
+                    let commonPrefix = newText.commonPrefix(with: oldText)
+                    
+                    // 如果有公共前缀，则新文本剩余部分可能是新增内容
+                    if commonPrefix.count < newText.count {
+                        let newContentStart = newText.index(newText.startIndex, offsetBy: commonPrefix.count)
+                        return String(newText[newContentStart...])
+                    } else {
+                        // 无法确定新增内容，谨慎起见返回空
+                        return ""
+                    }
+                }
+            } else {
+                // 新文本更长，查找新增部分
+                // 找到公共前缀
+                let commonPrefix = oldText.commonPrefix(with: newText)
+                
+                // 除去公共前缀，剩余部分就是新增内容
+                if commonPrefix.count < newText.count {
+                    let newContentStart = newText.index(newText.startIndex, offsetBy: commonPrefix.count)
+                    return String(newText[newContentStart...])
+                } else {
+                    // 可能是完全替换或其他情况
+                    return ""
+                }
             }
         }
     }
