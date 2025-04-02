@@ -307,7 +307,7 @@ struct TunaDictationView: View {
     private func saveTranscription() {
         guard !dictationManager.transcribedText.isEmpty else { return }
         
-        // 使用dictationManager的保存方法
+        // 使用editableText而不是dictationManager.transcribedText，以便用户的编辑也会被保存
         let text = editableText
         let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
                 .replacingOccurrences(of: "/", with: "-")
@@ -320,12 +320,31 @@ struct TunaDictationView: View {
         let outputURL = outputDir.appendingPathComponent(outputFileName)
         
         do {
-            try text.write(to: outputURL, atomically: true, encoding: .utf8)
-            // 更新状态消息
+            // 根据输出格式生成不同格式的文件
+            switch outputFormat {
+            case "txt":
+                try text.write(to: outputURL, atomically: true, encoding: .utf8)
+            case "json":
+                let json = """
+                {
+                    "text": "\(text.replacingOccurrences(of: "\"", with: "\\\""))",
+                    "timestamp": "\(timestamp)",
+                    "duration": 0
+                }
+                """
+                try json.write(to: outputURL, atomically: true, encoding: .utf8)
+            default:
+                try text.write(to: outputURL, atomically: true, encoding: .utf8)
+            }
+            
+            // 更新状态消息和剪贴板
+            dictationManager.progressMessage = "已保存到: \(outputURL.lastPathComponent)"
             NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString("Saved to: \(outputURL.path)", forType: .string)
+            NSPasteboard.general.setString(outputURL.path, forType: .string)
+            print("保存成功: \(outputURL.path)")
         } catch {
-            print("Failed to save: \(error.localizedDescription)")
+            dictationManager.progressMessage = "保存失败: \(error.localizedDescription)"
+            print("保存失败: \(error.localizedDescription)")
         }
     }
 }

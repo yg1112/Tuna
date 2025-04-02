@@ -214,50 +214,22 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let transcribedText):
-                    // 创建输出文件
-                    let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
-                            .replacingOccurrences(of: "/", with: "-")
-                            .replacingOccurrences(of: ":", with: "-")
-                    let outputFileName = "dictation_\(timestamp).\(self.outputFormat)"
-                    let outputURL = self.getDocumentsDirectory().appendingPathComponent(outputFileName)
+                    // 设置转录文本，使用API返回的实际内容
+                    self.transcribedText = transcribedText
                     
-                    do {
-                        // 设置转录文本，使用API返回的实际内容
-                        self.transcribedText = transcribedText
-                        
-                        // 根据输出格式生成不同格式的文件
-                        switch self.outputFormat {
-                        case "txt":
-                            try transcribedText.write(to: outputURL, atomically: true, encoding: .utf8)
-                        case "json":
-                            let json = """
-                            {
-                                "text": "\(transcribedText.replacingOccurrences(of: "\"", with: "\\\""))",
-                                "timestamp": "\(timestamp)",
-                                "duration": 0
-                            }
-                            """
-                            try json.write(to: outputURL, atomically: true, encoding: .utf8)
-                        default:
-                            try transcribedText.write(to: outputURL, atomically: true, encoding: .utf8)
-                        }
-                        
-                        self.progressMessage = "转录完成并保存到: \(outputURL.lastPathComponent)"
-                        self.logger.debug("Transcription saved to \(outputURL.path)")
-                    } catch {
-                        self.progressMessage = "保存结果失败: \(error.localizedDescription)"
-                        self.logger.error("Failed to save transcription: \(error.localizedDescription)")
-                    }
+                    // 更新状态并设置消息
+                    self.finalizeTranscription()
+                    self.logger.debug("Transcription completed successfully")
                     
                 case .failure(let error):
                     self.progressMessage = "转录失败: \(error.localizedDescription)"
                     self.logger.error("Transcription failed: \(error.localizedDescription)")
+                    self.state = .idle
                 }
                 
                 // 清理
                 self.recordingParts = []
                 self.audioRecorder = nil
-                self.state = .idle
             }
         }
     }
@@ -365,5 +337,17 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         
         // 启动任务
         task.resume()
+        
+        logger.debug("API request sent to Whisper API")
+    }
+    
+    // 设置录音中状态为处理中
+    func finalizeTranscription() {
+        state = .idle
+        if transcribedText.isEmpty {
+            progressMessage = "转录失败，未获得文本结果"
+        } else {
+            progressMessage = "转录完成 - 点击Save保存"
+        }
     }
 } 
