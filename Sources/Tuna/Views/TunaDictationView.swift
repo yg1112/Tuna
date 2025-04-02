@@ -5,6 +5,15 @@ import Views
 @_exported import struct Views.DictationView
 @_exported import enum Views.DictationState
 
+// 扩展String添加条件前缀功能 - 文件级别扩展
+extension String {
+    func addPrefixIfNeeded(_ prefix: String) -> String {
+        if self.isEmpty { return self }
+        if self.hasPrefix(prefix) { return self }
+        return prefix + self
+    }
+}
+
 struct TunaDictationView: View {
     @ObservedObject private var dictationManager = DictationManager.shared
     @State private var isVisualizing = false
@@ -240,6 +249,12 @@ struct TunaDictationView: View {
         
         // 在光标位置插入新文本
         private func insertTextAtCursor(_ newText: String) {
+            // 调试日志
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 接收到新转录文本: \(newText)")
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 上次转录文本: \(lastTranscribedText)")
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 当前编辑框文本: \(editableText)")
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 当前光标位置: \(cursorPosition)")
+            
             // 如果当前是空文本或占位符，直接替换
             if editableText.isEmpty || editableText == "This is the live transcription..." {
                 editableText = newText
@@ -254,85 +269,118 @@ struct TunaDictationView: View {
                 return
             }
             
-            print("\u{001B}[36m[DEBUG]\u{001B}[0m 准备在光标位置(\(cursorPosition))插入新文本")
-            
             // 检查光标位置是否有效
             let cursorPos = min(cursorPosition, editableText.count)
             
-            // 找出新增的文本部分
-            let actualNewContent = findNewContent(from: lastTranscribedText, to: newText)
-            
-            if !actualNewContent.isEmpty {
-                print("\u{001B}[36m[DEBUG]\u{001B}[0m 检测到新增文本: \(actualNewContent)")
+            // 获取真正新增的部分 - 使用更精确的差异检测
+            if let newlyAddedText = getActualNewContent(from: lastTranscribedText, to: newText) {
+                print("\u{001B}[36m[DEBUG]\u{001B}[0m 精确检测到的新增文本: \(newlyAddedText)")
                 
-                // 开始部分和结束部分
+                // 准备在光标位置插入文本
                 let startIndex = editableText.startIndex
                 let cursorIndex = editableText.index(startIndex, offsetBy: cursorPos)
                 
                 let textBeforeCursor = String(editableText[startIndex..<cursorIndex])
                 let textAfterCursor = String(editableText[cursorIndex...])
                 
-                // 更新文本 - 只在光标位置插入新增文本
-                let updatedText = textBeforeCursor + actualNewContent + textAfterCursor
-                
-                // 更新UI
-                editableText = updatedText
+                // 在光标位置插入新文本
+                editableText = textBeforeCursor + newlyAddedText + textAfterCursor
                 isPlaceholderVisible = false
                 
-                // 更新上次转录文本
+                // 更新光标位置到新插入内容之后
+                cursorPosition = cursorPos + newlyAddedText.count
+                
+                // 记录这次处理过的文本，避免重复处理
                 lastTranscribedText = newText
                 
-                // 更新光标位置 - 移动到插入内容之后
-                cursorPosition = cursorPos + actualNewContent.count
-                print("\u{001B}[36m[DEBUG]\u{001B}[0m 更新后的光标位置: \(cursorPosition)")
-                
-                // 通知变更
-                onTranscriptionTextChange(updatedText)
+                // 通知外部文本已变更
+                onTranscriptionTextChange(editableText)
             } else {
-                // 如果没有检测到新增内容，则更新上次文本以防止差异检测错误
+                // 如果无法确定新增内容，但文本确实变了，仅更新跟踪状态
+                print("\u{001B}[36m[DEBUG]\u{001B}[0m 无法确定新增内容，更新跟踪状态")
                 lastTranscribedText = newText
             }
         }
         
-        // 查找新增的文本部分
-        private func findNewContent(from oldText: String, to newText: String) -> String {
-            // 如果新文本比旧文本短，可能是因为用户删除了部分内容，这时应该只考虑新增的部分
-            if newText.count < oldText.count {
-                // 用户可能删除了部分内容，转录又添加了新内容
-                // 尝试识别新增的部分
+        // 新的更精确的差异检测函数
+        private func getActualNewContent(from oldText: String, to newText: String) -> String? {
+            // 情况1: 旧文本为空，则新文本就是全部新增内容
+            if oldText.isEmpty {
+                return newText
+            }
+            
+            // 情况2: 新文本是旧文本的完全延续（附加在末尾）
+            if newText.hasPrefix(oldText) && newText.count > oldText.count {
+                let newContentStartIndex = newText.index(newText.startIndex, offsetBy: oldText.count)
+                return String(newText[newContentStartIndex...])
+            }
+            
+            // 情况3: 使用词语比较找出差异
+            // 首先尝试直接比较两个文本的最后部分，看是否为简单附加
+            let oldTextWords = oldText.split(separator: " ")
+            let newTextWords = newText.split(separator: " ")
+            
+            // 如果新文本比旧文本多几个词，可能是简单附加
+            if newTextWords.count > oldTextWords.count {
+                // 检查新文本的前部分是否与旧文本相同
+                let overlap = min(oldTextWords.count, newTextWords.count)
+                var isAppend = true
                 
-                // 首先查看新文本是否包含于旧文本
-                if oldText.contains(newText) {
-                    // 如果新文本完全是旧文本的子集，说明没有新增内容
-                    return ""
-                } else {
-                    // 新文本不是旧文本的子集，可能有新内容
-                    // 查找最长公共前缀
-                    let commonPrefix = newText.commonPrefix(with: oldText)
-                    
-                    // 如果有公共前缀，则新文本剩余部分可能是新增内容
-                    if commonPrefix.count < newText.count {
-                        let newContentStart = newText.index(newText.startIndex, offsetBy: commonPrefix.count)
-                        return String(newText[newContentStart...])
-                    } else {
-                        // 无法确定新增内容，谨慎起见返回空
-                        return ""
+                for i in 0..<overlap {
+                    if oldTextWords[i] != newTextWords[i] {
+                        isAppend = false
+                        break
                     }
                 }
-            } else {
-                // 新文本更长，查找新增部分
-                // 找到公共前缀
-                let commonPrefix = oldText.commonPrefix(with: newText)
                 
-                // 除去公共前缀，剩余部分就是新增内容
-                if commonPrefix.count < newText.count {
-                    let newContentStart = newText.index(newText.startIndex, offsetBy: commonPrefix.count)
-                    return String(newText[newContentStart...])
-                } else {
-                    // 可能是完全替换或其他情况
-                    return ""
+                if isAppend {
+                    // 是简单附加，取出新增的部分
+                    let addedWords = newTextWords[oldTextWords.count...]
+                    let newContent = addedWords.joined(separator: " ")
+                    return newContent.isEmpty ? nil : " " + newContent
                 }
             }
+            
+            // 情况4: 检查是否在末尾添加了内容（通过反向查找）
+            let oldReversed = String(oldText.reversed())
+            let newReversed = String(newText.reversed())
+            let commonSuffixLength = newReversed.commonPrefix(with: oldReversed).count
+            
+            if commonSuffixLength < newText.count {
+                // 从末尾开始有共同部分，前面部分可能有变化
+                let diffStart = newText.count - commonSuffixLength
+                let diffStartIndex = newText.index(newText.startIndex, offsetBy: diffStart)
+                let newStart = newText[newText.startIndex..<diffStartIndex]
+                
+                // 检查这个部分是否是真正的新增内容
+                if !oldText.contains(String(newStart)) {
+                    let newContent = String(newStart)
+                    return newContent.isEmpty ? nil : newContent
+                }
+            }
+            
+            // 情况5: 使用最简单的方法 - 假设新的句子总是附加的
+            // 查找最后一个标点符号或空格，认为之后的是新内容
+            if let lastSentenceStart = newText.lastIndex(where: { $0 == "." || $0 == "?" || $0 == "!" || $0 == "," }) {
+                let afterIndex = newText.index(after: lastSentenceStart)
+                let potentialNewContent = String(newText[afterIndex...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                // 确认这部分不在旧文本中
+                if !oldText.contains(potentialNewContent) && !potentialNewContent.isEmpty {
+                    return " " + potentialNewContent
+                }
+            }
+            
+            // 如果所有策略都失败，尝试直接取最后一个词
+            let lastSpaceIndex = newText.lastIndex(of: " ") ?? newText.startIndex
+            let potentialLastWord = String(newText[newText.index(after: lastSpaceIndex)...])
+            
+            if !oldText.contains(potentialLastWord) && !potentialLastWord.isEmpty {
+                return " " + potentialLastWord
+            }
+            
+            // 无法确定新增内容
+            return nil
         }
     }
     
