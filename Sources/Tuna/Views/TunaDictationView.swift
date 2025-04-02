@@ -10,6 +10,10 @@ struct TunaDictationView: View {
     @State private var isVisualizing = false
     @State private var isPlaceholderVisible = true
     @State private var editableText: String = "This is the live transcription..."
+    @State private var showEditHint: Bool = false
+    @State private var showCursor: Bool = false
+    @State private var cursorTimer: Timer? = nil
+    @State private var isFocused: Bool = false
     
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
@@ -52,6 +56,7 @@ struct TunaDictationView: View {
         .onDisappear {
             // 停止音频可视化效果定时器
             stopVisualizing()
+            stopCursorAnimation()
         }
     }
     
@@ -115,36 +120,97 @@ struct TunaDictationView: View {
                         .focusable(false)
                 }
                 
+                // 文本编辑器
                 TextEditor(text: $editableText)
                     .font(.system(size: 14))
                     .foregroundColor(.white)
-                    // 使用通用的方法隐藏背景
                     .background(Color.clear)
-                    .frame(height: 72) // 增加高度30%
+                    .frame(height: 72)
                     .padding(2)
+                    .overlay(
+                        // 添加边框效果，在有文本时更明显
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.3 : 0.1), 
+                                    lineWidth: !dictationManager.transcribedText.isEmpty ? 1.5 : 1)
+                            .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
+                    )
                     .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
                     .onChange(of: dictationManager.transcribedText) { newText in
                         if !newText.isEmpty {
                             isPlaceholderVisible = false
                             // 始终更新可编辑文本，而不是仅在首次接收时更新
                             editableText = newText
+                            
+                            // 当获得新转录文本时，显示编辑提示和光标动画
+                            showEditingHint()
+                            startCursorAnimation()
                         }
                     }
-                    // 自动调整文本编辑器大小以适应内容
+                    .onHover { hovering in
+                        // 当鼠标悬停在文本框上时显示光标
+                        if hovering && !isFocused && !dictationManager.transcribedText.isEmpty {
+                            startCursorAnimation()
+                        } else if !hovering && !isFocused {
+                            stopCursorAnimation()
+                        }
+                    }
+                    .onTapGesture {
+                        // 当用户点击文本框时，标记为聚焦状态
+                        isFocused = true
+                        // 停止光标动画（因为真实光标会显示）
+                        stopCursorAnimation()
+                    }
                     .fixedSize(horizontal: false, vertical: true)
-                    // 使用colorScheme将TextEditor设置为暗模式
                     .colorScheme(.dark)
                     .focusable(true)
+                
+                // 编辑提示指示器 - 仅当有转录文本且处于非录音状态时显示
+                if !dictationManager.transcribedText.isEmpty && dictationManager.state != .recording {
+                    HStack {
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("可编辑")
+                                .font(.system(size: 10))
+                                .foregroundColor(Color.white.opacity(0.6))
+                                .padding(4)
+                                .background(Color.black.opacity(0.4))
+                                .cornerRadius(4)
+                                .opacity(showEditHint ? 1 : 0)
+                                .animation(.easeInOut(duration: 0.6).repeatCount(3), value: showEditHint)
+                        }
+                        .padding(4)
+                    }
+                }
+                
+                // 闪烁的光标
+                if showCursor && !dictationManager.transcribedText.isEmpty && !isFocused {
+                    HStack {
+                        Text(editableText)
+                            .font(.system(size: 14))
+                            .foregroundColor(.clear)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 6)
+                        
+                        Rectangle()
+                            .fill(Color.white.opacity(0.7))
+                            .frame(width: 1.5, height: 14)
+                            .opacity(showCursor ? 1 : 0)
+                            .animation(Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: showCursor)
+                            .offset(y: 2)
+                    }
+                    .padding(2)
+                }
             }
         }
-        .frame(height: 78) // 增加高度30%
+        .frame(height: 78)
         .background(Color.black.opacity(0.3))
         .cornerRadius(8)
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.2 : 0.1), lineWidth: 1)
+                .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
         )
         .focusable(false)
     }
@@ -345,6 +411,45 @@ struct TunaDictationView: View {
             dictationManager.progressMessage = "保存失败: \(error.localizedDescription)"
             print("保存失败: \(error.localizedDescription)")
         }
+    }
+    
+    // 在获得转录结果后显示编辑提示
+    private func showEditingHint() {
+        // 设置短暂延迟，让用户先看到结果
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            showEditHint = true
+            
+            // 3秒后隐藏提示
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                showEditHint = false
+            }
+        }
+    }
+    
+    // 启动光标动画
+    private func startCursorAnimation() {
+        // 确保先停止现有动画
+        stopCursorAnimation()
+        
+        // 只在有文本时才显示光标
+        if dictationManager.transcribedText.isEmpty {
+            return
+        }
+        
+        // 显示光标
+        showCursor = true
+        
+        // 5秒后自动隐藏光标
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            if !isFocused {
+                stopCursorAnimation()
+            }
+        }
+    }
+    
+    // 停止光标动画
+    private func stopCursorAnimation() {
+        showCursor = false
     }
 }
 
