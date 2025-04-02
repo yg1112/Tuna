@@ -257,6 +257,11 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         return outputDirectory ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
+    // 添加获取当前转录内容的方法，用于在用户编辑后比较差异
+    public func getPreviousTranscription() -> String? {
+        return self.transcribedText
+    }
+    
     // MARK: - Private Methods
     
     private func setupRecordingSession() {
