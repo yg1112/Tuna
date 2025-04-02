@@ -220,8 +220,8 @@ struct TunaDictationView: View {
     
     // 按钮行
     private var buttonRowView: some View {
-        HStack {
-            // 使用GeometryReader获取可用宽度
+        VStack(spacing: 8) {
+            // 功能按钮行 - 使用GeometryReader获取可用宽度
             GeometryReader { geometry in
                 HStack(spacing: 8) {
                     // 暂停/播放按钮
@@ -251,7 +251,7 @@ struct TunaDictationView: View {
                         width: geometry.size.width / 4 - 6
                     )
                     
-                    // 保存按钮
+                    // 导出按钮
                     controlButton(
                         icon: "arrow.down.doc.fill",
                         title: "Export",
@@ -263,6 +263,29 @@ struct TunaDictationView: View {
                 .frame(width: geometry.size.width)
             }
             .frame(height: 38)
+            
+            // 底部退出和设置按钮行
+            HStack {
+                // 退出按钮
+                controlButton(
+                    icon: "power",
+                    title: "Quit",
+                    action: { NSApplication.shared.terminate(nil) },
+                    isDisabled: false,
+                    width: 80
+                )
+                
+                Spacer()
+                
+                // 设置按钮
+                controlButton(
+                    icon: "gearshape",
+                    title: "Settings",
+                    action: { openDictationSettings() },
+                    isDisabled: false,
+                    width: 90
+                )
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -427,6 +450,16 @@ struct TunaDictationView: View {
     // 在获得转录结果后显示编辑提示
     private func showEditingHint() {
         // 由于不再需要显示编辑提示，此函数可以为空或完全移除
+    }
+    
+    // 在类中添加打开设置的方法
+    private func openDictationSettings() {
+        // 打开设置窗口 (可以调用现有的DictationSettingsView)
+        let settingsWindow = SettingsWindowController.createSettingsWindow()
+        settingsWindow.showWindow(nil)
+        settingsWindow.window?.orderFrontRegardless()
+        
+        // 如果需要，可以切换到特定的设置选项卡
     }
 }
 

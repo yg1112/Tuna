@@ -129,10 +129,10 @@ struct DeviceMenuList: View {
                             isSelected: device.name == selectedDeviceName,
                             onSelect: { onDeviceSelected(device) }
                         )
+                        }
                     }
-                }
                 .padding(.vertical, 4)
-            }
+                }
             // 使用计算的内容精确高度，但限制最大高度为屏幕高度的40%
             .frame(height: min(exactContentHeight + 8, NSScreen.main?.frame.height ?? 1000 * 0.4))
         }
@@ -800,29 +800,41 @@ struct MenuBarView: View {
             
             // 底部按钮区
             HStack {
+                // Quit按钮 - 使用与功能按钮相同的样式和大小
                 Button(action: {
                     NSApplication.shared.terminate(nil)
                 }) {
-                    Text("Quit")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(height: 36)
-                        .frame(maxWidth: .infinity)
-                        .background(Color.black.opacity(0.4))
-                        .cornerRadius(6)
+                    HStack(spacing: 6) {
+                        Image(systemName: "power")
+                            .font(.system(size: 16))
+                        Text("Quit")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundColor(.white)
+                    .frame(height: 34)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(6)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
+                Spacer()
+                
+                // Settings按钮 - 使用与功能按钮相同的样式和大小
                 Button(action: {
                     openSettings()
                 }) {
-                    Text("Settings")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(height: 36)
-                        .frame(maxWidth: .infinity)
-                        .background(Color.black.opacity(0.4))
-                        .cornerRadius(6)
+                    HStack(spacing: 6) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 16))
+                        Text("Settings")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundColor(.white)
+                    .frame(height: 34)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(6)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
