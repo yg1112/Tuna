@@ -263,51 +263,43 @@ struct TunaDictationView: View {
         let isFocused: Bool
         let blinkState: Bool
         
+        // 统一的光标颜色 - 与音量调节块进度条颜色一致
+        private let cursorColor = Color(red: 0.3, green: 0.9, blue: 0.7)
+        
         var body: some View {
             // 简化逻辑，确保只有一个光标显示
             if isFocused {
                 // 当TextEditor聚焦时不显示任何自定义光标
                 EmptyView()
             } else if !editableText.isEmpty && editableText != "This is the live transcription..." {
-                // 显示跟随文本末尾的光标
-                FollowingCursorView(text: editableText, isBlinking: blinkState)
-                    .padding(6)
-                    .id("following-cursor") // 添加ID确保视图刷新
+                // 在非空文本末尾显示光标
+                ZStack(alignment: .topLeading) {
+                    // 使用透明的Text来计算文本位置
+                    Text(editableText)
+                        .font(.system(size: 14))
+                        .foregroundColor(.clear)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .background(GeometryReader { geometry in
+                            // 在文本末尾放置闪烁光标
+                            Rectangle()
+                                .fill(cursorColor) // 使用统一的光标颜色
+                                .frame(width: 2, height: 18)
+                                .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
+                                .position(x: min(geometry.size.width, max(2, geometry.size.width)), 
+                                         y: 18)
+                        })
+                }
+                .padding(6)
+                .id("text-cursor")
             } else {
                 // 起始位置光标（用于空文本或占位符）
                 Rectangle()
-                    .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
+                    .fill(cursorColor) // 使用统一的光标颜色
                     .frame(width: 2, height: 18)
                     .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
                     .padding(.leading, 6)
                     .padding(.top, 6)
-                    .id("start-cursor") // 添加ID确保视图刷新
-            }
-        }
-    }
-    
-    // 跟随文本末尾的光标视图
-    private struct FollowingCursorView: View {
-        let text: String
-        let isBlinking: Bool
-        
-        var body: some View {
-            ZStack(alignment: .topLeading) {
-                // 使用透明的Text来计算文本位置
-                Text(text)
-                    .font(.system(size: 14))
-                    .foregroundColor(.clear)
-                    .layoutPriority(1)
-                    .background(GeometryReader { geometry in
-                        // 在文本末尾放置闪烁光标
-                        Rectangle()
-                            .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
-                            .frame(width: 2, height: 18)
-                            .opacity(isBlinking ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
-                            .position(x: min(geometry.size.width, max(2, geometry.size.width)), 
-                                     y: geometry.size.height - 12)
-                            .animation(.easeInOut(duration: 0.2), value: isBlinking)
-                    })
+                    .id("start-cursor")
             }
         }
     }
