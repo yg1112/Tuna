@@ -12,6 +12,7 @@ struct TunaDictationView: View {
     @State private var editableText: String = "This is the live transcription..."
     @State private var showEditHint: Bool = false
     @State private var isFocused: Bool = false
+    @State private var cursorPosition: Int = 0 // 追踪光标位置
     
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
@@ -102,10 +103,11 @@ struct TunaDictationView: View {
             editableText: $editableText,
             isPlaceholderVisible: $isPlaceholderVisible,
             isFocused: $isFocused,
+            cursorPosition: $cursorPosition, // 传递光标位置
             dictationManager: dictationManager,
             onTextFieldFocus: {
                 isFocused = true
-                print("Text field focused")
+                print("\u{001B}[36m[DEBUG]\u{001B}[0m Text field focused")
             },
             onTranscriptionTextChange: { newText in
                 if !newText.isEmpty {
@@ -131,9 +133,19 @@ struct TunaDictationView: View {
         @Binding var editableText: String
         @Binding var isPlaceholderVisible: Bool
         @Binding var isFocused: Bool
+        @Binding var cursorPosition: Int // 添加光标位置绑定
         let dictationManager: DictationManager
         let onTextFieldFocus: () -> Void
         let onTranscriptionTextChange: (String) -> Void
+        
+        // NSTextView代理声明，但不实现复杂功能，只用来准备代码结构
+        class TextViewCoordinator: NSObject {
+            var parent: TranscriptionTextBoxView
+            
+            init(_ parent: TranscriptionTextBoxView) {
+                self.parent = parent
+            }
+        }
         
         var body: some View {
             ZStack(alignment: .topLeading) {
@@ -152,40 +164,43 @@ struct TunaDictationView: View {
                         .allowsHitTesting(false) // 允许点击穿透到下面的TextEditor
                 }
                 
-                // 文本编辑器 - 仅使用系统原生光标
+                // 文本编辑器
                 TextEditor(text: $editableText)
                     .font(.system(size: 14))
                     .foregroundColor(.white)
-                    // 使用条件编译确保兼容性
-                    .modifier(
-                        TextEditorBackgroundModifier()
-                    )
+                    .modifier(TextEditorBackgroundModifier())
                     .background(Color.clear)
                     .frame(minHeight: 72, maxHeight: .infinity)
                     .padding([.horizontal, .top], 6)
                     .padding(.bottom, 2)
                     .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
                     .onChange(of: dictationManager.transcribedText) { newText in
-                        onTranscriptionTextChange(newText)
+                        // 当dictationManager的转录文本更新时，插入到光标位置
+                        insertTextAtCursor(newText)
                     }
-                    // 增加对editableText的监听，当用户手动编辑时同步到dictationManager
                     .onChange(of: editableText) { newEditedText in
                         if !isFocused { return } // 仅在用户焦点时同步，避免循环更新
                         
                         // 如果是占位符文本，不进行同步
                         if newEditedText == "This is the live transcription..." { return }
                         
-                        // 当用户手动编辑时，同步到dictationManager
+                        // 当用户手动编辑时，同步到dictationManager，并估计光标位置
                         if !isPlaceholderVisible {
-                            print("用户编辑了文本，同步到dictationManager")
+                            print("\u{001B}[36m[DEBUG]\u{001B}[0m 用户编辑了文本，同步到dictationManager")
                             dictationManager.transcribedText = newEditedText
+                            
+                            // 尝试使用NSTextView API获取光标位置的简单方法
+                            if let firstResponder = NSApp.keyWindow?.firstResponder as? NSTextView {
+                                if let range = firstResponder.selectedRanges.first as? NSRange {
+                                    cursorPosition = range.location
+                                    print("\u{001B}[36m[DEBUG]\u{001B}[0m 光标位置更新为: \(cursorPosition)")
+                                }
+                            }
                         }
                     }
-                    // 使用正确的手势处理，不阻挡默认右键菜单
                     .onTapGesture {
                         onTextFieldFocus()
                     }
-                    // 添加明确的菜单支持
                     .contextMenu {
                         Button("Copy") {
                             NSPasteboard.general.clearContents()
@@ -206,14 +221,64 @@ struct TunaDictationView: View {
                         }
                         
                         Button("Select All") {
-                            // 在macOS上，此选项会直接使用系统的Select All功能
-                            // 这里我们可以使焦点在TextEditor上
                             onTextFieldFocus()
                         }
                     }
-                    // 调整TextEditor的光标颜色 - 与音量调节块进度条颜色一致
-                    .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用统一的mint绿色
-                    .colorScheme(.dark) // 使用深色模式以确保文本选择高亮可见
+                    .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7))
+                    .colorScheme(.dark)
+            }
+        }
+        
+        // 在光标位置插入新文本
+        private func insertTextAtCursor(_ newText: String) {
+            // 如果当前是空文本或占位符，直接替换
+            if editableText.isEmpty || editableText == "This is the live transcription..." {
+                editableText = newText
+                isPlaceholderVisible = false
+                onTranscriptionTextChange(newText)
+                return
+            }
+            
+            // 确保转录文本确实有变化
+            if dictationManager.transcribedText.isEmpty || dictationManager.transcribedText == editableText {
+                return
+            }
+            
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 准备在光标位置(\(cursorPosition))插入新文本")
+            
+            // 检查是否可以确定新增文本
+            let currentDictationText = dictationManager.transcribedText
+            
+            // 避免比较前缀，直接判断新内容
+            if currentDictationText != editableText {
+                // 检查光标位置是否有效
+                let cursorPos = min(cursorPosition, editableText.count)
+                
+                // 开始部分和结束部分
+                let startIndex = editableText.startIndex
+                let cursorIndex = editableText.index(startIndex, offsetBy: cursorPos)
+                
+                let textBeforeCursor = String(editableText[startIndex..<cursorIndex])
+                let textAfterCursor = String(editableText[cursorIndex...])
+                
+                // 检测新的转录内容（整段新文本）
+                let newDictationText = currentDictationText
+                
+                print("\u{001B}[36m[DEBUG]\u{001B}[0m 新转录文本: \(newDictationText)")
+                
+                // 更新文本 - 在光标位置插入新文本
+                let updatedText = textBeforeCursor + newDictationText + textAfterCursor
+                
+                // 更新UI
+                editableText = updatedText
+                isPlaceholderVisible = false
+                
+                // 更新光标位置 - 移动到插入内容之后
+                cursorPosition = cursorPos + newDictationText.count
+                print("\u{001B}[36m[DEBUG]\u{001B}[0m 更新后的光标位置: \(cursorPosition)")
+                
+                // 通知变更
+                onTranscriptionTextChange(updatedText)
             }
         }
     }
