@@ -266,7 +266,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             
             DispatchQueue.main.async {
                 if !allowed {
-                    self.progressMessage = "需要麦克风访问权限"
+                    self.progressMessage = "Microphone access required"
                     self.logger.error("Microphone access denied")
                     return
                 }
@@ -482,20 +482,20 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     private func callWhisperAPI(audioURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
         // 检查API密钥
         guard !apiKey.isEmpty else {
-            completion(.failure(NSError(domain: "com.tuna.error", code: 401, userInfo: [NSLocalizedDescriptionKey: "API密钥未设置"])))
+            completion(.failure(NSError(domain: "com.tuna.error", code: 401, userInfo: [NSLocalizedDescriptionKey: "API key not set"])))
             return
         }
         
         // 检查音频文件并获取文件大小
         guard let audioData = try? Data(contentsOf: audioURL) else {
-            completion(.failure(NSError(domain: "com.tuna.error", code: 404, userInfo: [NSLocalizedDescriptionKey: "无法读取音频文件"])))
+            completion(.failure(NSError(domain: "com.tuna.error", code: 404, userInfo: [NSLocalizedDescriptionKey: "Cannot read audio file"])))
             return
         }
         
         // 记录音频文件大小，用于调试
         let fileSizeBytes = audioData.count
         let fileSizeKB = Double(fileSizeBytes) / 1024.0
-        logger.debug("音频文件大小: \(fileSizeKB) KB")
+        logger.debug("Audio file size: \(fileSizeKB) KB")
         
         // 检查文件大小 - Whisper API对文件大小有限制
         if fileSizeBytes < 1024 { // 少于1KB，可能太小
@@ -543,10 +543,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         httpBody.append("Content-Disposition: form-data; name=\"response_format\"\r\n\r\n".data(using: .utf8)!)
         httpBody.append("json\r\n".data(using: .utf8)!)
         
-        // 添加语言（自动检测，不指定特定语言）
-        httpBody.append("--\(boundary)\r\n".data(using: .utf8)!)
-        httpBody.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n".data(using: .utf8)!)
-        httpBody.append("en\r\n".data(using: .utf8)!)
+        // 不指定语言，让API自动检测
+        // 注意：如果想要支持自动检测语言，需要完全移除language参数
+        // Whisper API会根据音频内容自动检测语言
         
         // 添加温度参数（可以调整模型输出的随机性）
         httpBody.append("--\(boundary)\r\n".data(using: .utf8)!)

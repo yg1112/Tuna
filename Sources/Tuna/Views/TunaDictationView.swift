@@ -147,7 +147,7 @@ struct TunaDictationView: View {
                     }
                     .onHover { hovering in
                         // 当鼠标悬停在文本框上时显示光标
-                        if hovering && !isFocused && !dictationManager.transcribedText.isEmpty {
+                        if hovering && !isFocused {
                             startCursorAnimation()
                         } else if !hovering && !isFocused {
                             stopCursorAnimation()
@@ -163,23 +163,17 @@ struct TunaDictationView: View {
                     .colorScheme(.dark)
                     .focusable(true)
                 
-                // 闪烁的光标 - 确保总是在没有聚焦时显示，即使没有文本
+                // 闪烁的光标 - 确保总是在没有聚焦时显示
                 if showCursor && !isFocused {
                     HStack {
-                        Text(editableText)
-                            .font(.system(size: 14))
-                            .foregroundColor(.clear)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 6)
-                        
+                        // 使光标更显眼
                         Rectangle()
-                            .fill(Color.white.opacity(0.7))
-                            .frame(width: 1.5, height: 14)
+                            .fill(Color.white.opacity(0.8))
+                            .frame(width: 2, height: 16)
                             .opacity(showCursor ? 1 : 0)
                             .animation(Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: showCursor)
-                            .offset(y: 2)
+                            .padding(.leading, 6)
                     }
-                    .padding(2)
                 }
             }
         }
@@ -388,13 +382,13 @@ struct TunaDictationView: View {
             }
             
             // 更新状态消息和剪贴板
-            dictationManager.progressMessage = "已保存到: \(outputURL.lastPathComponent)"
+            dictationManager.progressMessage = "Saved to: \(outputURL.lastPathComponent)"
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(outputURL.path, forType: .string)
-            print("保存成功: \(outputURL.path)")
+            print("Saved successfully: \(outputURL.path)")
         } catch {
-            dictationManager.progressMessage = "保存失败: \(error.localizedDescription)"
-            print("保存失败: \(error.localizedDescription)")
+            dictationManager.progressMessage = "Save failed: \(error.localizedDescription)"
+            print("Save failed: \(error.localizedDescription)")
         }
     }
     
@@ -408,11 +402,11 @@ struct TunaDictationView: View {
         // 确保先停止现有动画
         stopCursorAnimation()
         
-        // 显示光标
+        // 显示光标 - 无条件显示，不依赖于文本内容
         showCursor = true
         
-        // 在应用启动时，如果没有转录文本，也会显示光标
-        // 不需要任何额外条件，一直显示闪烁光标
+        // 确保调试输出，查看动画是否被触发
+        print("Cursor animation started")
     }
     
     // 停止光标动画
