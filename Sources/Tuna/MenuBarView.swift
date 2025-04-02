@@ -840,119 +840,106 @@ struct MenuBarView: View {
     
     // 音频设备区域视图（显示设备名称和音量滑块）
     private func audioDeviceSection(isInput: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 标题行
-            Button(action: {
-                // 点击时切换设备列表显示状态
-                if isInput {
-                    showingInputDeviceList.toggle()
-                    // 关闭输出设备列表
-                    if showingInputDeviceList {
+        ZStack(alignment: .top) {
+            // 主视图内容
+            VStack(alignment: .leading, spacing: 8) {
+                // 标题行
+                Button(action: {
+                    // 点击时切换设备列表显示状态
+                    if isInput {
+                        print("\u{001B}[36m[DEBUG]\u{001B}[0m 点击输入设备按钮")
+                        showingInputDeviceList.toggle()
                         showingOutputDeviceList = false
-                    }
-                } else {
-                    showingOutputDeviceList.toggle()
-                    // 关闭输入设备列表
-                    if showingOutputDeviceList {
+                    } else {
+                        print("\u{001B}[36m[DEBUG]\u{001B}[0m 点击输出设备按钮")
+                        showingOutputDeviceList.toggle()
                         showingInputDeviceList = false
                     }
+                }) {
+                    HStack {
+                        Image(systemName: isInput ? "mic.fill" : "headphones")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                            .frame(width: 20)
+                        
+                        Text(isInput ? "AUDIO INPUT" : "AUDIO OUTPUT")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        
+                        Spacer()
+                        
+                        // 箭头图标，根据展开状态旋转
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                            .rotationEffect(.degrees(isInput ? 
+                                                   (showingInputDeviceList ? 90 : 0) : 
+                                                   (showingOutputDeviceList ? 90 : 0)))
+                            .padding(.trailing, 4)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.2))
+                    .cornerRadius(8)
                 }
-                print("\u{001B}[36m[UI]\u{001B}[0m 设备列表按钮点击: \(isInput ? "输入" : "输出"), 状态: \(isInput ? showingInputDeviceList : showingOutputDeviceList)")
-            }) {
+                .buttonStyle(PlainButtonStyle())
+                
+                // 设备名称行
                 HStack {
-                    Image(systemName: isInput ? "mic.fill" : "headphones")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                        .frame(width: 20)
-                    
-                    Text(isInput ? "AUDIO INPUT" : "AUDIO OUTPUT")
-                        .font(.system(size: 13, weight: .semibold))
+                    Text(isInput ? 
+                        (audioManager.selectedInputDevice?.name ?? "No Input Device") : 
+                        (audioManager.selectedOutputDevice?.name ?? "No Output Device"))
+                        .font(.system(size: 15))
                         .foregroundColor(.white)
                         .lineLimit(1)
-                    
                     Spacer()
-                    
-                    // 箭头图标，根据展开状态旋转
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12))
-                        .foregroundColor(.gray)
-                        .rotationEffect(.degrees(isInput ? (showingInputDeviceList ? 90 : 0) : (showingOutputDeviceList ? 90 : 0)))
-                        .animation(.spring(response: 0.2), value: isInput ? showingInputDeviceList : showingOutputDeviceList)
-                        .padding(.trailing, 4)
                 }
-                .contentShape(Rectangle()) // 确保整个区域可点击
                 .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.black.opacity(0.2))
-                .cornerRadius(8)
+                .padding(.bottom, 8)
+                
+                // 音量滑块
+                volumeSlider(isInput: isInput)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
             }
-            .buttonStyle(PlainButtonStyle())
+            .background(Color(red: 0.12, green: 0.15, blue: 0.16).opacity(0.6))
+            .cornerRadius(12)
             
-            // 设备名称行
-            HStack {
-                Text(isInput ? 
-                    (audioManager.selectedInputDevice?.name ?? "No Input Device") : 
-                    (audioManager.selectedOutputDevice?.name ?? "No Output Device"))
-                    .font(.system(size: 15))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                Spacer()
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
-            
-            // 音量滑块
-            volumeSlider(isInput: isInput)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
-            
-            // 设备列表弹出窗口 - 使用简单的overlay方式显示
-            if (isInput && showingInputDeviceList) || (!isInput && showingOutputDeviceList) {
-                deviceListPopover(isInput: isInput)
-                    .transition(.opacity)
-                    .zIndex(10) // 确保设备列表显示在最前面
+            // 条件性地在底部显示设备列表
+            if isInput ? showingInputDeviceList : showingOutputDeviceList {
+                let devices = isInput ? audioManager.inputDevices : audioManager.outputDevices
+                let selectedDevice = isInput ? audioManager.selectedInputDevice : audioManager.selectedOutputDevice
+                
+                VStack {
+                    Spacer()
+                        .frame(height: 120) // 设备信息块的高度，确保列表在设备块下方
+                    
+                    DeviceMenuList(
+                        devices: devices,
+                        selectedDeviceName: selectedDevice?.name ?? "",
+                        onDeviceSelected: { device in
+                            // 处理设备选择
+                            print("\u{001B}[36m[DEBUG]\u{001B}[0m 设备已选择: \(device.name)")
+                            audioManager.setDefaultDevice(device, forInput: isInput)
+                            
+                            // 关闭列表
+                            if isInput {
+                                showingInputDeviceList = false
+                            } else {
+                                showingOutputDeviceList = false
+                            }
+                        }
+                    )
+                    .frame(width: 300)
+                    .background(Color.black.opacity(0.9))
+                    .cornerRadius(8)
+                    .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                }
+                .transition(.opacity)
+                .zIndex(100) // 确保设备列表显示在最前面
             }
         }
-        .background(Color(red: 0.12, green: 0.15, blue: 0.16).opacity(0.6))
-        .cornerRadius(12)
-    }
-    
-    // 设备列表弹出窗口
-    private func deviceListPopover(isInput: Bool) -> some View {
-        VStack {
-            // 获取正确的设备列表
-            let devices = isInput ? audioManager.inputDevices : audioManager.outputDevices
-            let selectedDevice = isInput ? audioManager.selectedInputDevice : audioManager.selectedOutputDevice
-            
-            // 计算所需的最小宽度
-            let baseWidth: CGFloat = 280
-            
-            // 使用DeviceMenuList组件
-            DeviceMenuList(
-                devices: devices,
-                selectedDeviceName: selectedDevice?.name ?? "",
-                onDeviceSelected: { device in
-                    // 处理设备选择
-                    if isInput {
-                        audioManager.setDefaultDevice(device, forInput: true)
-                        showingInputDeviceList = false
-                    } else {
-                        audioManager.setDefaultDevice(device, forInput: false)
-                        showingOutputDeviceList = false
-                    }
-                    
-                    // 打印调试信息
-                    print("\u{001B}[36m[UI]\u{001B}[0m 设备已选择: \(device.name), 类型: \(isInput ? "输入" : "输出")")
-                }
-            )
-            .frame(width: baseWidth)
-        }
-        .padding(6)
-        .background(Color.black.opacity(0.85))
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
-        .position(x: 175, y: 0) // 将列表放置在组件底部
-        .offset(y: 155) // 调整垂直位置，使列表出现在适当的位置
     }
     
     // 音量滑块
