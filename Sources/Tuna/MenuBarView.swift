@@ -983,7 +983,8 @@ struct MenuBarView: View {
                     .font(.system(size: 13, weight: .medium))
             }
             .foregroundColor(.white)
-            .frame(width: 150, height: 34)
+            .frame(height: 34)
+            .padding(.horizontal, 12)
             .background(Color.black.opacity(0.7))
             .cornerRadius(6)
         }
