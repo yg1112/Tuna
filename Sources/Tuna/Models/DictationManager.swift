@@ -20,6 +20,8 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     private var recordingURL: URL?
     private var tempDirectory: URL?
     private var recordingParts: [URL] = []
+    // 跟踪已转录的片段
+    private var processedSegments: Set<URL> = []
     
     // 设置
     private var apiKey: String = UserDefaults.standard.string(forKey: "dictationApiKey") ?? ""
@@ -117,6 +119,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             // 清除转录文本以开始新录音
             transcribedText = ""
             recordingParts = []
+            processedSegments = [] // 重置已处理片段记录
         }
         
         // 创建新的录音文件
@@ -214,8 +217,23 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         
         audioRecorder.stop()
         state = .processing
+        
+        // 检查是否所有片段都已处理
+        let unprocessedParts = self.recordingParts.filter { !self.processedSegments.contains($0) }
+        
+        if unprocessedParts.isEmpty {
+            logger.debug("停止录音 - 所有片段已转录，直接完成")
+            progressMessage = "处理完成，所有内容已转录"
+            finalizeTranscription()
+            
+            // 清理
+            recordingParts = []
+            self.audioRecorder = nil
+            return
+        }
+        
         progressMessage = "正在处理录音..."
-        logger.debug("Recording stopped, processing started")
+        logger.debug("Recording stopped, processing started (有 \(unprocessedParts.count) 个未处理片段)")
         
         // 处理录音
         processRecordings()
@@ -270,18 +288,31 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
         
-        // 如果只有一个录音部分，直接使用它
-        if self.recordingParts.count == 1, let audioURL = self.recordingParts.first {
+        // 过滤出未处理的片段
+        let unprocessedParts = self.recordingParts.filter { !self.processedSegments.contains($0) }
+        
+        if unprocessedParts.isEmpty {
+            // 所有片段都已转录，直接完成
+            logger.debug("所有片段都已转录，跳过重复处理")
+            finalizeTranscription()
+            
+            // 清理
+            self.recordingParts = []
+            self.audioRecorder = nil
+            return
+        }
+        
+        logger.debug("处理 \(unprocessedParts.count) 个未转录片段，共 \(self.recordingParts.count) 个片段")
+        progressMessage = "正在处理新录音部分..."
+        
+        // 如果只有一个未处理的片段，直接使用它
+        if unprocessedParts.count == 1, let audioURL = unprocessedParts.first {
             transcribeAudio(audioURL)
             return
         }
         
-        // 如果有多个录音部分，依次处理每个部分
-        logger.debug("Processing \(self.recordingParts.count) recording parts sequentially")
-        progressMessage = "正在处理多个录音部分..."
-        
-        // 使用递归函数处理每个录音片段
-        transcribeSegmentsSequentially(self.recordingParts, currentIndex: 0, accumulator: "")
+        // 使用递归函数处理未转录的片段
+        transcribeSegmentsSequentially(unprocessedParts, currentIndex: 0, accumulator: self.transcribedText)
     }
     
     // 依次处理多个录音片段
@@ -301,6 +332,13 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         // 获取当前片段
         let currentSegment = segments[currentIndex]
         
+        // 如果该片段已经被处理过，直接跳到下一个
+        if self.processedSegments.contains(currentSegment) {
+            logger.debug("片段已处理过，跳过: \(currentSegment.path)")
+            transcribeSegmentsSequentially(segments, currentIndex: currentIndex + 1, accumulator: accumulator)
+            return
+        }
+        
         progressMessage = "正在转录第 \(currentIndex + 1)/\(segments.count) 部分..."
         logger.debug("Transcribing segment \(currentIndex + 1)/\(segments.count): \(currentSegment.path)")
         
@@ -317,6 +355,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                         newAccumulator += "\n"
                     }
                     newAccumulator += segmentText
+                    
+                    // 标记该片段已处理
+                    self.processedSegments.insert(currentSegment)
                     
                     // 递归处理下一个片段
                     self.transcribeSegmentsSequentially(segments, currentIndex: currentIndex + 1, accumulator: newAccumulator)
@@ -336,6 +377,17 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             state = .idle
             progressMessage = "请在设置中设置API密钥"
             logger.error("API key not set")
+            return
+        }
+        
+        // 如果已经处理过此文件，跳过重复转录
+        if processedSegments.contains(audioURL) {
+            logger.debug("文件已转录过，跳过: \(audioURL.path)")
+            finalizeTranscription()
+            
+            // 清理
+            self.recordingParts = []
+            self.audioRecorder = nil
             return
         }
         
@@ -359,6 +411,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 case .success(let transcribedText):
                     // 设置转录文本，使用API返回的实际内容
                     self.transcribedText = transcribedText
+                    
+                    // 标记该文件已处理
+                    self.processedSegments.insert(audioURL)
                     
                     // 更新状态并设置消息
                     self.finalizeTranscription()
@@ -411,6 +466,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                         self.transcribedText = ""
                         self.transcribedText = newText
                     }
+                    
+                    // 标记此片段已处理
+                    self.processedSegments.insert(audioURL)
                     
                     // 更新状态消息
                     self.progressMessage = "暂停中 - 部分内容已转录"
@@ -586,7 +644,8 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         logger.debug("API请求已发送")
     }
     
-    private func finalizeTranscription() {
+    // 设置录音中状态为处理中
+    func finalizeTranscription() {
         state = .idle
         if transcribedText.isEmpty {
             progressMessage = "转录失败，未获得文本结果"
