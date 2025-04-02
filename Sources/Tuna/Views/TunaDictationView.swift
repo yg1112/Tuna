@@ -141,8 +141,7 @@ struct TunaDictationView: View {
                             // 始终更新可编辑文本，而不是仅在首次接收时更新
                             editableText = newText
                             
-                            // 当获得新转录文本时，显示编辑提示和光标动画
-                            showEditingHint()
+                            // 当获得新转录文本时，显示光标动画
                             startCursorAnimation()
                         }
                     }
@@ -164,26 +163,8 @@ struct TunaDictationView: View {
                     .colorScheme(.dark)
                     .focusable(true)
                 
-                // 编辑提示指示器 - 仅当有转录文本且处于非录音状态时显示
-                if !dictationManager.transcribedText.isEmpty && dictationManager.state != .recording {
-                    HStack {
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("可编辑")
-                                .font(.system(size: 10))
-                                .foregroundColor(Color.white.opacity(0.6))
-                                .padding(4)
-                                .background(Color.black.opacity(0.4))
-                                .cornerRadius(4)
-                                .opacity(showEditHint ? 1 : 0)
-                                .animation(.easeInOut(duration: 0.6).repeatCount(3), value: showEditHint)
-                        }
-                        .padding(4)
-                    }
-                }
-                
-                // 闪烁的光标
-                if showCursor && !dictationManager.transcribedText.isEmpty && !isFocused {
+                // 闪烁的光标 - 确保总是在没有聚焦时显示，即使没有文本
+                if showCursor && !isFocused {
                     HStack {
                         Text(editableText)
                             .font(.system(size: 14))
@@ -213,6 +194,10 @@ struct TunaDictationView: View {
                 .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
         )
         .focusable(false)
+        .onAppear {
+            // 启动光标闪烁动画
+            startCursorAnimation()
+        }
     }
     
     // 按钮行
@@ -333,7 +318,7 @@ struct TunaDictationView: View {
         } else if !dictationManager.progressMessage.isEmpty {
             return dictationManager.progressMessage
         } else if dictationManager.transcribedText.isEmpty && dictationManager.state == .idle {
-            return "没有录音文件"
+            return "No recording files"
         }
         
         switch dictationManager.state {
@@ -415,15 +400,7 @@ struct TunaDictationView: View {
     
     // 在获得转录结果后显示编辑提示
     private func showEditingHint() {
-        // 设置短暂延迟，让用户先看到结果
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            showEditHint = true
-            
-            // 3秒后隐藏提示
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                showEditHint = false
-            }
-        }
+        // 由于不再需要显示编辑提示，此函数可以为空或完全移除
     }
     
     // 启动光标动画
@@ -431,20 +408,11 @@ struct TunaDictationView: View {
         // 确保先停止现有动画
         stopCursorAnimation()
         
-        // 只在有文本时才显示光标
-        if dictationManager.transcribedText.isEmpty {
-            return
-        }
-        
         // 显示光标
         showCursor = true
         
-        // 5秒后自动隐藏光标
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            if !isFocused {
-                stopCursorAnimation()
-            }
-        }
+        // 在应用启动时，如果没有转录文本，也会显示光标
+        // 不需要任何额外条件，一直显示闪烁光标
     }
     
     // 停止光标动画
