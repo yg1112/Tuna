@@ -11,20 +11,7 @@ struct TunaDictationView: View {
     @State private var isPlaceholderVisible = true
     @State private var editableText: String = "This is the live transcription..."
     @State private var showEditHint: Bool = false
-    @State private var blinkState: Bool = false // 控制光标闪烁状态
-    @State private var cursorTimer: Timer? = nil
-    @State private var isFocused: Bool = false {
-        didSet {
-            // 当焦点状态变化时，强制更新UI
-            if isFocused {
-                // 当获得焦点时，确保停止自定义光标
-                stopCursorAnimation()
-            } else {
-                // 当失去焦点时，恢复自定义光标
-                startCursorAnimation()
-            }
-        }
-    }
+    @State private var isFocused: Bool = false
     
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
@@ -62,13 +49,10 @@ struct TunaDictationView: View {
         .onAppear {
             // 启动音频可视化效果定时器
             startVisualizing()
-            // 直接在这里也启动光标动画，确保视图出现时就显示
-            startCursorAnimation()
         }
         .onDisappear {
             // 停止音频可视化效果定时器
             stopVisualizing()
-            stopCursorAnimation()
         }
     }
     
@@ -118,7 +102,6 @@ struct TunaDictationView: View {
             editableText: $editableText,
             isPlaceholderVisible: $isPlaceholderVisible,
             isFocused: $isFocused,
-            blinkState: blinkState,
             dictationManager: dictationManager,
             onTextFieldFocus: {
                 isFocused = true
@@ -128,9 +111,6 @@ struct TunaDictationView: View {
                 if !newText.isEmpty {
                     isPlaceholderVisible = false
                     editableText = newText
-                    if !isFocused {
-                        startCursorAnimation()
-                    }
                 }
             }
         )
@@ -144,14 +124,6 @@ struct TunaDictationView: View {
                 .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.2 : 0.1), lineWidth: 1)
                 .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
         )
-        .onAppear {
-            // 启动光标闪烁动画
-            startCursorAnimation()
-            print("Transcription text view appeared")
-        }
-        .onDisappear {
-            stopCursorAnimation()
-        }
     }
     
     // 创建独立的转录文本框视图组件
@@ -159,7 +131,6 @@ struct TunaDictationView: View {
         @Binding var editableText: String
         @Binding var isPlaceholderVisible: Bool
         @Binding var isFocused: Bool
-        let blinkState: Bool
         let dictationManager: DictationManager
         let onTextFieldFocus: () -> Void
         let onTranscriptionTextChange: (String) -> Void
@@ -181,7 +152,7 @@ struct TunaDictationView: View {
                         .allowsHitTesting(false) // 允许点击穿透到下面的TextEditor
                 }
                 
-                // 文本编辑器 - 放在最底层以便滚动条交互
+                // 文本编辑器 - 仅使用系统原生光标
                 TextEditor(text: $editableText)
                     .font(.system(size: 14))
                     .foregroundColor(.white)
@@ -240,66 +211,9 @@ struct TunaDictationView: View {
                             onTextFieldFocus()
                         }
                     }
-                    // 增强视觉效果
-                    .accentColor(Color(red: 0.0, green: 0.9, blue: 0.7).opacity(0.7)) // 更明显的mint绿色作为选择高亮色
+                    // 调整TextEditor的光标颜色 - 与音量调节块进度条颜色一致
+                    .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用统一的mint绿色
                     .colorScheme(.dark) // 使用深色模式以确保文本选择高亮可见
-                
-                // 使用条件渲染来简化光标逻辑 - 放在最顶层，但不拦截点击事件
-                CursorView(
-                    editableText: editableText,
-                    isPlaceholderVisible: isPlaceholderVisible,
-                    isFocused: isFocused,
-                    blinkState: blinkState
-                )
-                .allowsHitTesting(false) // 允许点击穿透到TextEditor
-            }
-        }
-    }
-    
-    // 提取光标视图为单独的组件
-    struct CursorView: View {
-        let editableText: String
-        let isPlaceholderVisible: Bool
-        let isFocused: Bool
-        let blinkState: Bool
-        
-        // 统一的光标颜色 - 与音量调节块进度条颜色一致
-        private let cursorColor = Color(red: 0.3, green: 0.9, blue: 0.7)
-        
-        var body: some View {
-            // 简化逻辑，确保只有一个光标显示
-            if isFocused {
-                // 当TextEditor聚焦时不显示任何自定义光标
-                EmptyView()
-            } else if !editableText.isEmpty && editableText != "This is the live transcription..." {
-                // 在非空文本末尾显示光标
-                ZStack(alignment: .topLeading) {
-                    // 使用透明的Text来计算文本位置
-                    Text(editableText)
-                        .font(.system(size: 14))
-                        .foregroundColor(.clear)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .background(GeometryReader { geometry in
-                            // 在文本末尾放置闪烁光标
-                            Rectangle()
-                                .fill(cursorColor) // 使用统一的光标颜色
-                                .frame(width: 2, height: 18)
-                                .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
-                                .position(x: min(geometry.size.width, max(2, geometry.size.width)), 
-                                         y: 18)
-                        })
-                }
-                .padding(6)
-                .id("text-cursor")
-            } else {
-                // 起始位置光标（用于空文本或占位符）
-                Rectangle()
-                    .fill(cursorColor) // 使用统一的光标颜色
-                    .frame(width: 2, height: 18)
-                    .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
-                    .padding(.leading, 6)
-                    .padding(.top, 6)
-                    .id("start-cursor")
             }
         }
     }
@@ -513,38 +427,6 @@ struct TunaDictationView: View {
     // 在获得转录结果后显示编辑提示
     private func showEditingHint() {
         // 由于不再需要显示编辑提示，此函数可以为空或完全移除
-    }
-    
-    // 启动光标动画
-    private func startCursorAnimation() {
-        // 确保先停止现有动画
-        stopCursorAnimation()
-        
-        // 创建真正的闪烁计时器，每0.6秒切换一次状态
-        cursorTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
-            // 使用MainActor确保在主线程更新UI
-            Task { @MainActor in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    self.blinkState.toggle() // 切换闪烁状态
-                }
-            }
-        }
-        
-        // 立即开始第一个闪烁周期
-        blinkState = true
-        
-        // 确保计时器被添加到RunLoop
-        RunLoop.current.add(cursorTimer!, forMode: .common)
-        
-        print("Cursor animation started with timer")
-    }
-    
-    // 停止光标动画
-    private func stopCursorAnimation() {
-        cursorTimer?.invalidate()
-        cursorTimer = nil
-        blinkState = false
-        print("Cursor animation stopped")
     }
 }
 
