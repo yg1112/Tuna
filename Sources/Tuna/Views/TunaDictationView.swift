@@ -116,7 +116,7 @@ struct TunaDictationView: View {
     private var transcriptionTextView: some View {
         TranscriptionTextBoxView(
             editableText: $editableText,
-            isPlaceholderVisible: isPlaceholderVisible,
+            isPlaceholderVisible: $isPlaceholderVisible,
             isFocused: $isFocused,
             blinkState: blinkState,
             dictationManager: dictationManager,
@@ -157,7 +157,7 @@ struct TunaDictationView: View {
     // 创建独立的转录文本框视图组件
     struct TranscriptionTextBoxView: View {
         @Binding var editableText: String
-        let isPlaceholderVisible: Bool
+        @Binding var isPlaceholderVisible: Bool
         @Binding var isFocused: Bool
         let blinkState: Bool
         let dictationManager: DictationManager
@@ -166,41 +166,79 @@ struct TunaDictationView: View {
         
         var body: some View {
             ZStack(alignment: .topLeading) {
-                // 背景和占位符
+                // 背景
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(minHeight: 72)
+                
+                // 占位符文本 - 只在需要时显示
                 if isPlaceholderVisible && editableText.isEmpty {
                     Text("This is the live transcription...")
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 6)
+                        .allowsHitTesting(false) // 允许点击穿透到下面的TextEditor
                 }
                 
-                // 文本编辑器 - 不要包含在ScrollView中，TextEditor已有滚动功能
+                // 文本编辑器 - 放在最底层以便滚动条交互
                 TextEditor(text: $editableText)
                     .font(.system(size: 14))
                     .foregroundColor(.white)
+                    // 使用条件编译确保兼容性
+                    .modifier(
+                        TextEditorBackgroundModifier()
+                    )
                     .background(Color.clear)
                     .frame(minHeight: 72, maxHeight: .infinity)
-                    .padding(4)
+                    .padding([.horizontal, .top], 6)
+                    .padding(.bottom, 2)
                     .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
                     .onChange(of: dictationManager.transcribedText) { newText in
                         onTranscriptionTextChange(newText)
                     }
+                    // 使用正确的手势处理，不阻挡默认右键菜单
                     .onTapGesture {
-                        // 当用户点击文本框时，标记为聚焦状态
                         onTextFieldFocus()
                     }
-                    // 添加选择文本高亮颜色 - 使用更明显的颜色
+                    // 添加明确的菜单支持
+                    .contextMenu {
+                        Button("Copy") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(editableText, forType: .string)
+                        }
+                        
+                        Button("Cut") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(editableText, forType: .string)
+                            editableText = ""
+                        }
+                        
+                        Button("Paste") {
+                            if let clipboardContent = NSPasteboard.general.string(forType: .string) {
+                                editableText = clipboardContent
+                                isPlaceholderVisible = false
+                            }
+                        }
+                        
+                        Button("Select All") {
+                            // 在macOS上，此选项会直接使用系统的Select All功能
+                            // 这里我们可以使焦点在TextEditor上
+                            onTextFieldFocus()
+                        }
+                    }
+                    // 增强视觉效果
                     .accentColor(Color(red: 0.0, green: 0.9, blue: 0.7).opacity(0.7)) // 更明显的mint绿色作为选择高亮色
                     .colorScheme(.dark) // 使用深色模式以确保文本选择高亮可见
                 
-                // 使用条件渲染来简化光标逻辑
+                // 使用条件渲染来简化光标逻辑 - 放在最顶层，但不拦截点击事件
                 CursorView(
                     editableText: editableText,
                     isPlaceholderVisible: isPlaceholderVisible,
                     isFocused: isFocused,
                     blinkState: blinkState
                 )
+                .allowsHitTesting(false) // 允许点击穿透到TextEditor
             }
         }
     }
@@ -544,6 +582,17 @@ struct AudioVisualizerBar: View {
         
         withAnimation {
             height = 5
+        }
+    }
+}
+
+// 添加兼容性修饰符
+struct TextEditorBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 13.0, *) {
+            content.scrollContentBackground(.hidden)
+        } else {
+            content
         }
     }
 } 
