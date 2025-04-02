@@ -122,7 +122,7 @@ struct TunaDictationView: View {
     // 文本框
     private var transcriptionTextView: some View {
         ScrollView {
-            ZStack(alignment: .topLeading) { // 确保绿色光标始终在左上角
+            ZStack(alignment: .topLeading) {
                 // 背景和占位符
                 if isPlaceholderVisible && editableText.isEmpty {
                     Text("This is the live transcription...")
@@ -153,6 +153,10 @@ struct TunaDictationView: View {
                             isPlaceholderVisible = false
                             // 始终更新可编辑文本，而不是仅在首次接收时更新
                             editableText = newText
+                            // 确保光标闪烁动画在文本更新时激活
+                            if !isFocused {
+                                startCursorAnimation()
+                            }
                         }
                     }
                     .onTapGesture {
@@ -170,15 +174,24 @@ struct TunaDictationView: View {
                     .colorScheme(.dark)
                     .focusable(true)
                 
-                // 闪烁的光标 - 仅在没有聚焦且应显示占位符时显示在开始位置
-                if !isFocused && (isPlaceholderVisible || editableText.isEmpty) {
-                    // 使用绿色光标，与应用的其他部分一致
-                    Rectangle()
-                        .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
-                        .frame(width: 2, height: 18)
-                        .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
-                        .padding(.leading, 6)
-                        .padding(.top, 6)
+                // 使用 Group + ZStack 在现有文本框上叠加一个带光标的层
+                Group {
+                    if !isFocused && !editableText.isEmpty && !isPlaceholderVisible && editableText != "This is the live transcription..." {
+                        // 显示跟随文本末尾的光标
+                        FollowingCursorView(text: editableText, isBlinking: blinkState)
+                            .padding(6)
+                    }
+                    
+                    // 原始的初始光标，仅在文本为空或显示占位符时显示
+                    if !isFocused && (isPlaceholderVisible || editableText.isEmpty) {
+                        // 使用绿色光标，与应用的其他部分一致
+                        Rectangle()
+                            .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
+                            .frame(width: 2, height: 18)
+                            .opacity(blinkState ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
+                            .padding(.leading, 6)
+                            .padding(.top, 6)
+                    }
                 }
             }
         }
@@ -200,6 +213,32 @@ struct TunaDictationView: View {
         }
         .onDisappear {
             stopCursorAnimation()
+        }
+    }
+    
+    // 跟随文本末尾的光标视图
+    private struct FollowingCursorView: View {
+        let text: String
+        let isBlinking: Bool
+        
+        var body: some View {
+            ZStack(alignment: .topLeading) {
+                // 使用透明的Text来计算文本位置
+                Text(text)
+                    .font(.system(size: 14))
+                    .foregroundColor(.clear)
+                    .layoutPriority(1)
+                    .background(GeometryReader { geometry in
+                        // 在文本末尾放置闪烁光标
+                        Rectangle()
+                            .fill(Color(red: 0.3, green: 0.9, blue: 0.7)) // 使用相同的mint绿色
+                            .frame(width: 2, height: 18)
+                            .opacity(isBlinking ? 1.0 : 0.0) // 根据闪烁状态切换不透明度
+                            .position(x: min(geometry.size.width, max(2, geometry.size.width)), 
+                                     y: geometry.size.height - 12)
+                            .animation(.easeInOut(duration: 0.2), value: isBlinking)
+                    })
+            }
         }
     }
     
