@@ -57,7 +57,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             let oldRecorder = audioRecorder
             
             // 创建新的录音文件
-            let fileName = "dictation_\(Date().timeIntervalSince1970).m4a"
+            let fileName = "dictation_\(Date().timeIntervalSince1970).wav"
             recordingURL = tempDirectory?.appendingPathComponent(fileName)
             
             guard let recordingURL = recordingURL else {
@@ -66,12 +66,15 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 return
             }
             
-            // 设置录音参数
+            // 设置录音参数 - 使用更简单的WAV格式，更容易被Whisper API处理
             let settings: [String: Any] = [
-                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 44100.0,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+                AVFormatIDKey: Int(kAudioFormatLinearPCM), // 使用无损PCM格式
+                AVSampleRateKey: 16000.0, // 16kHz采样率，Whisper模型接受这个采样率
+                AVNumberOfChannelsKey: 1, // 单声道
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
+                AVLinearPCMBitDepthKey: 16, // 16位
+                AVLinearPCMIsBigEndianKey: false,
+                AVLinearPCMIsFloatKey: false
             ]
             
             do {
@@ -107,7 +110,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         }
         
         // 创建新的录音文件
-        let fileName = "dictation_\(Date().timeIntervalSince1970).m4a"
+        let fileName = "dictation_\(Date().timeIntervalSince1970).wav"
         recordingURL = tempDirectory?.appendingPathComponent(fileName)
         
         guard let recordingURL = recordingURL else {
@@ -116,12 +119,15 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
         
-        // 设置录音参数
+        // 设置录音参数 - 使用更简单的WAV格式，更容易被Whisper API处理
         let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44100.0,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            AVFormatIDKey: Int(kAudioFormatLinearPCM), // 使用无损PCM格式
+            AVSampleRateKey: 16000.0, // 16kHz采样率，Whisper模型接受这个采样率
+            AVNumberOfChannelsKey: 1, // 单声道
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
+            AVLinearPCMBitDepthKey: 16, // 16位
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false
         ]
         
         do {
@@ -147,20 +153,46 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
         
+        // 暂停录音并确保文件被正确写入
         audioRecorder.pause()
-        state = .paused
-        progressMessage = "录音已暂停，正在转录已有内容..."
-        logger.debug("Recording paused, transcribing current segment")
         
-        // 获取当前录音文件并转录
-        if let currentRecordingURL = recordingURL, FileManager.default.fileExists(atPath: currentRecordingURL.path) {
-            // 记录当前录音URL以便继续录音
-            let currentURL = recordingURL
+        // 重要：等待一小段时间确保文件被正确写入
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
             
-            // 转录当前片段但不清理录音状态
-            transcribeCurrentSegment(currentURL!)
-        } else {
-            progressMessage = "录音已暂停"
+            self.state = .paused
+            self.progressMessage = "录音已暂停，正在处理..."
+            self.logger.debug("Recording paused, preparing to transcribe current segment")
+            
+            // 获取当前录音文件并转录
+            if let currentRecordingURL = self.recordingURL, FileManager.default.fileExists(atPath: currentRecordingURL.path) {
+                // 验证文件大小
+                do {
+                    let fileAttributes = try FileManager.default.attributesOfItem(atPath: currentRecordingURL.path)
+                    if let fileSize = fileAttributes[.size] as? Int {
+                        let fileSizeKB = Double(fileSize) / 1024.0
+                        self.logger.debug("暂停时的录音文件大小: \(fileSizeKB) KB")
+                        
+                        if fileSize < 500 { // 少于500字节可能不是有效音频
+                            self.progressMessage = "录音已暂停 (片段过短，无法转录)"
+                            self.logger.warning("录音片段过短，跳过转录")
+                            return
+                        }
+                    }
+                } catch {
+                    self.logger.error("无法获取文件属性: \(error.localizedDescription)")
+                }
+                
+                // 临时保存当前URL以便继续录音
+                let currentURL = self.recordingURL
+                
+                // 转录当前片段但不清理录音状态
+                self.logger.debug("开始转录暂停片段: \(currentURL!.path)")
+                self.transcribeCurrentSegment(currentURL!)
+            } else {
+                self.progressMessage = "录音已暂停"
+                self.logger.warning("找不到录音文件或文件为空")
+            }
         }
     }
     
@@ -387,9 +419,25 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
         
-        // 检查音频文件
+        // 检查音频文件并获取文件大小
         guard let audioData = try? Data(contentsOf: audioURL) else {
             completion(.failure(NSError(domain: "com.tuna.error", code: 404, userInfo: [NSLocalizedDescriptionKey: "无法读取音频文件"])))
+            return
+        }
+        
+        // 记录音频文件大小，用于调试
+        let fileSizeBytes = audioData.count
+        let fileSizeKB = Double(fileSizeBytes) / 1024.0
+        logger.debug("音频文件大小: \(fileSizeKB) KB")
+        
+        // 检查文件大小 - Whisper API对文件大小有限制
+        if fileSizeBytes < 1024 { // 少于1KB，可能太小
+            logger.warning("音频文件可能太小 (\(fileSizeKB) KB)")
+            // 仍然尝试发送，但记录警告
+        }
+        
+        if fileSizeBytes > 25 * 1024 * 1024 { // 大于25MB
+            completion(.failure(NSError(domain: "com.tuna.error", code: 413, userInfo: [NSLocalizedDescriptionKey: "音频文件太大: \(fileSizeKB) KB，超过API限制"])))
             return
         }
         
@@ -418,8 +466,8 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         
         // 添加文件
         httpBody.append("--\(boundary)\r\n".data(using: .utf8)!)
-        httpBody.append("Content-Disposition: form-data; name=\"file\"; filename=\"audio.m4a\"\r\n".data(using: .utf8)!)
-        httpBody.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
+        httpBody.append("Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\r\n".data(using: .utf8)!)
+        httpBody.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
         httpBody.append(audioData)
         httpBody.append("\r\n".data(using: .utf8)!)
         
@@ -433,55 +481,96 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         httpBody.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n".data(using: .utf8)!)
         httpBody.append("zh\r\n".data(using: .utf8)!)
         
+        // 添加温度参数（可以调整模型输出的随机性）
+        httpBody.append("--\(boundary)\r\n".data(using: .utf8)!)
+        httpBody.append("Content-Disposition: form-data; name=\"temperature\"\r\n\r\n".data(using: .utf8)!)
+        httpBody.append("0.0\r\n".data(using: .utf8)!) // 使用最低温度，最确定的转录
+        
         // 结束boundary
         httpBody.append("--\(boundary)--\r\n".data(using: .utf8)!)
         
         // 设置请求体
         request.httpBody = httpBody
         
+        // 记录请求详情用于调试
+        logger.debug("API请求总大小: \(httpBody.count) bytes")
+        logger.debug("音频文件URL: \(audioURL.path)")
+        
         // 发送请求
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+            
             if let error = error {
+                self.logger.error("网络错误: \(error.localizedDescription)")
                 completion(.failure(error))
                 return
             }
             
             guard let httpResponse = response as? HTTPURLResponse else {
+                self.logger.error("无效的HTTP响应")
                 completion(.failure(NSError(domain: "com.tuna.error", code: 500, userInfo: [NSLocalizedDescriptionKey: "无效的HTTP响应"])))
                 return
             }
             
+            // 记录响应状态码
+            self.logger.debug("API响应状态码: \(httpResponse.statusCode)")
+            
             // 检查状态码
             if httpResponse.statusCode != 200 {
-                let errorMessage = "API错误: 状态码 \(httpResponse.statusCode)"
-                if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                    self.logger.error("API错误响应: \(responseString)")
+                var errorMessage = "API错误: 状态码 \(httpResponse.statusCode)"
+                
+                if let data = data {
+                    // 尝试解析详细错误信息
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        self.logger.error("API错误响应: \(responseString)")
+                        errorMessage = "API错误(\(httpResponse.statusCode)): \(responseString)"
+                        
+                        // 尝试解析为JSON获取更详细的错误
+                        if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                           let errorObject = errorJson["error"] as? [String: Any],
+                           let errorMessage = errorObject["message"] as? String {
+                            self.logger.error("API错误详情: \(errorMessage)")
+                            completion(.failure(NSError(domain: "com.tuna.error", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "API错误: \(errorMessage)"])))
+                            return
+                        }
+                    }
                 }
+                
+                // 若无法解析详细错误，返回基本错误
                 completion(.failure(NSError(domain: "com.tuna.error", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])))
                 return
             }
             
             // 解析响应
             guard let data = data else {
+                self.logger.error("API没有返回数据")
                 completion(.failure(NSError(domain: "com.tuna.error", code: 500, userInfo: [NSLocalizedDescriptionKey: "没有返回数据"])))
                 return
             }
             
             do {
+                if let responseString = String(data: data, encoding: .utf8) {
+                    self.logger.debug("API原始响应: \(responseString)")
+                }
+                
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let text = json["text"] as? String {
                     self.logger.debug("API返回转录文本: \(text)")
                     completion(.success(text))
                 } else {
+                    self.logger.error("无法解析API响应为预期格式")
                     completion(.failure(NSError(domain: "com.tuna.error", code: 500, userInfo: [NSLocalizedDescriptionKey: "无法解析API响应"])))
                 }
             } catch {
+                self.logger.error("解析API响应失败: \(error.localizedDescription)")
                 completion(.failure(error))
             }
         }
         
         // 启动任务
         task.resume()
+        
+        logger.debug("API请求已发送")
     }
     
     private func finalizeTranscription() {
