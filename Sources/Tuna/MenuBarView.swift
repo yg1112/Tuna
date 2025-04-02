@@ -27,7 +27,7 @@ struct DeviceMenuItem: View {
                 // 设备图标 - 根据设备类型显示不同图标
                 deviceIcon
                     .font(.system(size: 13))
-                    .foregroundColor(isSelected ? Color(red: 0.4, green: 0.9, blue: 0.6) : .secondary)
+                    .foregroundColor(isSelected ? Color.white : .secondary)
                     .frame(width: 18)
                 
                 // 设备名称
@@ -42,7 +42,7 @@ struct DeviceMenuItem: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 12))
-                        .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                        .foregroundColor(.white)
                         .frame(width: 16)
                 }
             }
@@ -52,7 +52,9 @@ struct DeviceMenuItem: View {
         }
         .buttonStyle(PlainButtonStyle())
         .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
+        .cornerRadius(4) // 添加圆角，避免锐利边缘
         .help(device.name) // 添加tooltip提示
+        .focusable(false) // 禁用系统焦点环
     }
     
     // 根据设备名称选择合适的图标
@@ -84,7 +86,7 @@ struct DeviceMenuList: View {
     // 计算所需的最小宽度以完整显示所有设备名称
     private var minWidth: CGFloat {
         // 基础宽度（包含边距和图标空间）
-        let baseWidth: CGFloat = 220
+        let baseWidth: CGFloat = 240
         
         // 计算最长设备名称的宽度
         let maxDeviceNameWidth = devices.map { device in
@@ -122,6 +124,7 @@ struct DeviceMenuList: View {
                             isSelected: device.name == selectedDeviceName,
                             onSelect: { onDeviceSelected(device) }
                         )
+                        .focusable(false) // 禁用系统焦点环
                         
                         if device.id != devices.last?.id {
                             Divider()
@@ -134,11 +137,7 @@ struct DeviceMenuList: View {
         }
         .frame(width: minWidth) // 使用动态计算的宽度
         .background(Color.black.opacity(0.9))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
-        )
+        .cornerRadius(8) // 使用更小的圆角，类似macOS系统菜单
     }
 }
 
@@ -243,7 +242,7 @@ struct BalanceLockButton: View {
                 Image(systemName: isLocked ? "lock.fill" : "lock.open.fill")
                     .font(.system(size: 14))
                     .foregroundColor(isLocked ? 
-                                    (supportsBalanceControl ? .white : .green.opacity(0.5)) 
+                                    (supportsBalanceControl ? .white : .white.opacity(0.5)) 
                                     : .secondary)
             }
             .buttonStyle(PlainButtonStyle())
@@ -346,7 +345,7 @@ struct DeviceSelectionPopover: View {
                         if selectedDevice?.id == device.id {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 12))
-                                .foregroundColor(.green)
+                                .foregroundColor(.white) // 改为白色
                         }
                     }
                     .padding(.horizontal, 12)
@@ -389,7 +388,7 @@ struct AudioDeviceCard: View {
     
     @State private var isHovering = false
     @State private var hoverTimer: Timer? = nil
-    @State private var anchorPoint = CGPoint.zero
+    @State private var menuSize: CGSize = CGSize(width: 280, height: 300)
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -397,7 +396,7 @@ struct AudioDeviceCard: View {
             HStack {
                 Image(systemName: title.contains("Output") ? "speaker.wave.2" : "mic")
                     .font(.system(size: 18))
-                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .foregroundColor(.white)
                     .frame(width: 24)
                 
                 Text(title)
@@ -415,22 +414,34 @@ struct AudioDeviceCard: View {
                 
                 // 设备选择按钮
                 Button(action: {
-                    showDeviceMenu.toggle()
+                    print("\u{001B}[36m[UI]\u{001B}[0m Button clicked - toggle menu")
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        showDeviceMenu.toggle()
+                    }
                 }) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10))
                         .foregroundColor(.white.opacity(0.6))
                         .rotationEffect(.degrees(showDeviceMenu ? 90 : 0))
-                        .animation(.spring(), value: showDeviceMenu)
+                        .animation(.spring(response: 0.2), value: showDeviceMenu)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 6)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .background(GeometryReader { geo -> Color in
-                    DispatchQueue.main.async {
-                        let rect = geo.frame(in: .global)
-                        anchorPoint = CGPoint(x: rect.midX, y: rect.midY)
-                    }
-                    return Color.clear
-                })
+                .focusable(false)  
+                .popover(isPresented: $showDeviceMenu, arrowEdge: .trailing) {
+                    // 使用标准SwiftUI popover
+                    DeviceMenuList(
+                        devices: devices,
+                        selectedDeviceName: deviceName,
+                        onDeviceSelected: { device in
+                            print("\u{001B}[36m[UI]\u{001B}[0m Device selected: \(device.name)")
+                            onDeviceSelected(device)
+                            showDeviceMenu = false
+                        }
+                    )
+                }
+                .id("deviceMenuButton-\(title)")
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -439,57 +450,37 @@ struct AudioDeviceCard: View {
             // 设备名称 - 添加提示并处理长文本
             Text(deviceName)
                 .font(.system(size: 16))
-                .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                .foregroundColor(.white)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .help(deviceName) // 添加tooltip提示
+                .help(deviceName)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
             
             // 音量滑块
             HStack {
                 Slider(value: $volume, in: 0...1)
-                    .accentColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .accentColor(.white.opacity(0.8))
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
-        // 使用自定义位置的popover
-        .background(
-            EmptyView()
-                .frame(width: 0, height: 0)
-                .allowsHitTesting(false)
-                .popover(isPresented: $showDeviceMenu, arrowEdge: .trailing) {
-                    DeviceMenuList(
-                        devices: devices,
-                        selectedDeviceName: deviceName,
-                        onDeviceSelected: { device in
-                            onDeviceSelected(device)
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                // 选择设备后延迟关闭菜单
-                                showDeviceMenu = false
-                            }
-                        }
-                    )
-                }
-        )
-        // 混合悬停和点击交互
+        .cornerRadius(6) // 使用更小的圆角
+        // 移除多余的边缘处理
+        
+        // 保留悬停逻辑
         .onHover { hovering in
             isHovering = hovering
-            if hovering {
-                // 可选：增加悬停效果
+            if hovering && !showDeviceMenu {
                 hoverTimer?.invalidate()
                 hoverTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
-                    if isHovering && !showDeviceMenu {
-                        showDeviceMenu = true
+                    if isHovering {
+                        print("\u{001B}[36m[UI]\u{001B}[0m Hover timer triggered - show menu")
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            showDeviceMenu = true
+                        }
                     }
                 }
             } else {
@@ -510,7 +501,7 @@ struct ModeCard: View {
             HStack {
                 Image(systemName: "waveform.path.ecg")
                     .font(.system(size: 18))
-                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .foregroundColor(.white)
                     .frame(width: 24)
                 
                 Text("MODE")
@@ -533,12 +524,7 @@ struct ModeCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+        .cornerRadius(6) // 使用更小的圆角
         .sheet(isPresented: $isAddingNewMode) {
             AddModeView(isPresented: $isAddingNewMode)
         }
@@ -620,7 +606,7 @@ struct AddModeView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
-                .background(newModeName.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.4, green: 0.9, blue: 0.6))
+                .background(newModeName.isEmpty ? Color.gray.opacity(0.2) : Color.white.opacity(0.2))
                 .cornerRadius(8)
             }
             .padding()
@@ -670,6 +656,115 @@ struct VisualEffectView: NSViewRepresentable {
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 
+// 新增：NSPopover 包装器，用于精确控制弹出窗口位置
+struct CustomPopover<Content: View>: NSViewRepresentable {
+    @Binding var isPresented: Bool
+    let content: Content
+    let arrowEdge: NSRectEdge
+    var contentSize: CGSize = CGSize(width: 300, height: 300)
+    let buttonBounds: CGRect
+    
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // 移除之前的观察者以避免重复
+        NotificationCenter.default.removeObserver(context.coordinator)
+        
+        if isPresented && context.coordinator.popover == nil {
+            print("\u{001B}[36m[UI]\u{001B}[0m Creating popover with size: \(contentSize)")
+            
+            // 创建新的popover
+            let popover = NSPopover()
+            let hostingView = NSHostingView(rootView: content)
+            hostingView.frame = NSRect(origin: .zero, size: contentSize)
+            
+            popover.contentViewController = NSViewController()
+            popover.contentViewController?.view = hostingView
+            popover.contentSize = contentSize
+            popover.behavior = .transient
+            popover.animates = true
+            
+            // 调整弹出窗口的外观
+            if let appearance = NSAppearance(named: .darkAqua) {
+                popover.appearance = appearance
+            }
+            
+            // 移除边框
+            popover.contentViewController?.view.layer?.borderWidth = 0
+            
+            // 记录弹出窗口引用
+            context.coordinator.popover = popover
+            
+            // 监听弹出窗口关闭
+            NotificationCenter.default.addObserver(
+                context.coordinator,
+                selector: #selector(Coordinator.popoverDidClose),
+                name: NSPopover.didCloseNotification,
+                object: popover
+            )
+            
+            // 显示弹出窗口
+            if let containerView = nsView.window?.contentView {
+                print("\u{001B}[36m[UI]\u{001B}[0m Found container view, bounds: \(buttonBounds)")
+                
+                // 计算相对于窗口的位置
+                var adjustedRect = NSRect(
+                    x: buttonBounds.origin.x,
+                    y: buttonBounds.origin.y,
+                    width: max(buttonBounds.size.width, 4),
+                    height: max(buttonBounds.size.height, 4)
+                )
+                
+                // 调整位置，确保弹窗位于按钮右侧
+                if arrowEdge == .maxX {
+                    adjustedRect.origin.x = nsView.window!.frame.maxX - 2
+                }
+                
+                print("\u{001B}[36m[UI]\u{001B}[0m Showing popover at: \(adjustedRect)")
+                
+                // 显示弹出窗口，箭头指向按钮位置
+                popover.show(
+                    relativeTo: adjustedRect,
+                    of: containerView,
+                    preferredEdge: arrowEdge
+                )
+            } else {
+                print("\u{001B}[31m[ERROR]\u{001B}[0m No container view found")
+            }
+        } else if !isPresented && context.coordinator.popover != nil {
+            // 关闭弹出窗口
+            print("\u{001B}[36m[UI]\u{001B}[0m Closing popover")
+            context.coordinator.popover?.close()
+            context.coordinator.popover = nil
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isPresented: $isPresented)
+    }
+    
+    class Coordinator: NSObject {
+        var popover: NSPopover?
+        var isPresented: Binding<Bool>
+        
+        init(isPresented: Binding<Bool>) {
+            self.isPresented = isPresented
+        }
+        
+        @objc func popoverDidClose(_ notification: Notification) {
+            // 当弹出窗口关闭时更新状态
+            print("\u{001B}[36m[UI]\u{001B}[0m Popover did close")
+            if isPresented.wrappedValue {
+                self.isPresented.wrappedValue = false
+            }
+            popover = nil
+        }
+    }
+}
+
 @available(macOS 13.0, *)
 struct MenuBarView: View {
     @StateObject private var audioManager = AudioManager.shared
@@ -682,7 +777,7 @@ struct MenuBarView: View {
             VStack(spacing: 8) {
                 Image(systemName: "fish")
                     .font(.system(size: 36))
-                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .foregroundColor(.white)
                 
                 Text("Tuna")
                     .font(.system(size: 40, weight: .bold))
@@ -694,7 +789,7 @@ struct MenuBarView: View {
                 // 输出设备
                 AudioDeviceCard(
                     icon: "speaker.wave.2",
-                    title: "Audio Output",
+                    title: "AUDIO OUTPUT",
                     deviceName: audioManager.selectedOutputDevice?.name ?? "None",
                     volume: Binding<Float>(
                         get: { audioManager.outputVolume },
@@ -708,7 +803,6 @@ struct MenuBarView: View {
                     devices: audioManager.outputDevices,
                     onDeviceSelected: { device in
                         audioManager.setDefaultDevice(device, forInput: false)
-                        // 不需要在这里关闭菜单，由悬停逻辑处理
                     },
                     currentDevice: audioManager.selectedOutputDevice
                 )
@@ -716,7 +810,7 @@ struct MenuBarView: View {
                 // 输入设备
                 AudioDeviceCard(
                     icon: "mic",
-                    title: "Audio Input",
+                    title: "AUDIO INPUT",
                     deviceName: audioManager.selectedInputDevice?.name ?? "None",
                     volume: Binding<Float>(
                         get: { audioManager.inputVolume },
@@ -730,7 +824,6 @@ struct MenuBarView: View {
                     devices: audioManager.inputDevices,
                     onDeviceSelected: { device in
                         audioManager.setDefaultDevice(device, forInput: true)
-                        // 不需要在这里关闭菜单，由悬停逻辑处理
                     },
                     currentDevice: audioManager.selectedInputDevice
                 )
@@ -757,11 +850,7 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .background(Color.black.opacity(0.2))
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.black.opacity(0.1), lineWidth: 0.5)
-                )
+                .cornerRadius(6)
                 
                 // Settings 按钮
                 Button {
@@ -776,10 +865,10 @@ struct MenuBarView: View {
                 .buttonStyle(PlainButtonStyle())
                 .background(Color.clear)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(red: 0.4, green: 0.9, blue: 0.6), lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
                 )
-                .cornerRadius(12)
+                .cornerRadius(6)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
@@ -799,12 +888,7 @@ struct MenuBarView: View {
                 )
             }
         )
-        .cornerRadius(24)
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+        .cornerRadius(8) // 改用更小的圆角，类似macOS系统菜单
     }
 }
 
@@ -820,7 +904,7 @@ struct DictationCard: View {
             HStack {
                 Image(systemName: "text.bubble.fill")
                     .font(.system(size: 18))
-                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .foregroundColor(.white)
                     .frame(width: 24)
                 
                 Text("DICTATION")
@@ -837,7 +921,7 @@ struct DictationCard: View {
             HStack(alignment: .center) {
                 Text("Listening...")
                     .font(.system(size: 16))
-                    .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
@@ -845,7 +929,7 @@ struct DictationCard: View {
                 HStack(spacing: 4) {
                     ForEach(0..<10, id: \.self) { index in
                         RoundedRectangle(cornerRadius: 1.5)
-                            .fill(Color(red: 0.4, green: 0.9, blue: 0.6))
+                            .fill(.white)
                             .frame(width: 3, height: getBarHeight(index: index))
                     }
                 }
@@ -859,12 +943,7 @@ struct DictationCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+        .cornerRadius(6) // 使用更小的圆角
     }
     
     private func getBarHeight(index: Int) -> CGFloat {
@@ -910,7 +989,7 @@ struct DeviceListItem: View {
             HStack {
                 Image(systemName: deviceIcon)
                     .font(.system(size: 13))
-                    .foregroundColor(isSelected ? Color(red: 0.4, green: 0.9, blue: 0.6) : .secondary)
+                    .foregroundColor(isSelected ? Color.white : .secondary)
                     .frame(width: 18)
                 
                 Text(device.name)
@@ -924,7 +1003,7 @@ struct DeviceListItem: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11))
-                        .foregroundColor(Color(red: 0.4, green: 0.9, blue: 0.6))
+                        .foregroundColor(.white)
                 }
             }
             .contentShape(Rectangle())
