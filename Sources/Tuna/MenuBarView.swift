@@ -994,9 +994,9 @@ struct MenuBarView: View {
     // 底部按钮区，修改为使用统一样式，Quit在左侧，Settings在右侧
     private var bottomButtons: some View {
         HStack {
-            // 左侧Quit按钮
+            // 左侧Quit按钮 - 更换为电源图标
             smallButton(
-                icon: "xmark.circle",
+                icon: "power.circle",
                 title: "Quit",
                 action: {
                     NSApplication.shared.terminate(nil)
