@@ -973,30 +973,12 @@ struct MenuBarView: View {
         NotificationCenter.default.post(name: NSNotification.Name("SwitchToSettingsTab"), object: "dictation")
     }
     
-    // 添加一个通用的按钮样式函数
-    private func smallButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .foregroundColor(.white)
-            .frame(height: 34)
-            .padding(.horizontal, 12)
-            .background(Color.black.opacity(0.7))
-            .cornerRadius(6)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
     // 底部按钮区，修改为使用统一样式，Quit在左侧，Settings在右侧
     private var bottomButtons: some View {
         HStack {
             // 左侧Quit按钮 - 更换为电源图标
             smallButton(
-                icon: "power.circle",
+                icon: "power",
                 title: "Quit",
                 action: {
                     NSApplication.shared.terminate(nil)
@@ -1013,6 +995,23 @@ struct MenuBarView: View {
             )
         }
         .padding(.top, 8)
+    }
+    
+    // 添加一个通用的按钮样式函数
+    private func smallButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundColor(.white)
+            .frame(height: 34)
+            .padding(.horizontal, 12)
+            .cornerRadius(6)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
