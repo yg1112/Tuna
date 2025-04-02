@@ -59,7 +59,6 @@ struct TunaDictationView: View {
         .padding(.vertical, 12)
         .background(Color(red: 0.12, green: 0.15, blue: 0.16).opacity(0.6))
         .cornerRadius(12)
-        .focusable(false) // 整个视图禁用焦点效果
         .onAppear {
             // 启动音频可视化效果定时器
             startVisualizing()
@@ -79,11 +78,9 @@ struct TunaDictationView: View {
             Image(systemName: "mic")
                 .font(.system(size: 18))
                 .foregroundColor(.white)
-                .focusable(false)
             Text("DICTATION")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.white)
-                .focusable(false)
             
             Spacer()
             
@@ -91,10 +88,8 @@ struct TunaDictationView: View {
             Image(systemName: "chevron.right")
                 .font(.system(size: 14))
                 .foregroundColor(.gray)
-                .focusable(false)
         }
         .padding(.horizontal, 12)
-        .focusable(false)
     }
     
     // 状态信息
@@ -104,7 +99,6 @@ struct TunaDictationView: View {
             .foregroundColor(.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 2)
-            .focusable(false)
     }
     
     // 可视化效果
@@ -116,7 +110,6 @@ struct TunaDictationView: View {
         }
         .frame(height: 30)
         .padding(.vertical, 2)
-        .focusable(false)
     }
     
     // 文本框
@@ -151,7 +144,6 @@ struct TunaDictationView: View {
                 .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.2 : 0.1), lineWidth: 1)
                 .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
         )
-        .focusable(false)
         .onAppear {
             // 启动光标闪烁动画
             startCursorAnimation()
@@ -173,57 +165,40 @@ struct TunaDictationView: View {
         let onTranscriptionTextChange: (String) -> Void
         
         var body: some View {
-            ScrollView {
-                ZStack(alignment: .topLeading) {
-                    // 背景和占位符
-                    if isPlaceholderVisible && editableText.isEmpty {
-                        Text("This is the live transcription...")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 6)
-                            .focusable(false)
-                    }
-                    
-                    // 文本编辑器
-                    TextEditor(text: $editableText)
+            ZStack(alignment: .topLeading) {
+                // 背景和占位符
+                if isPlaceholderVisible && editableText.isEmpty {
+                    Text("This is the live transcription...")
                         .font(.system(size: 14))
-                        .foregroundColor(.white)
-                        .background(Color.clear)
-                        .frame(height: 72)
-                        .padding(2)
-                        .overlay(
-                            // 添加边框效果，在有文本时更明显
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.3 : 0.1), 
-                                        lineWidth: !dictationManager.transcribedText.isEmpty ? 1.5 : 1)
-                                .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
-                        )
-                        .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
-                        .onChange(of: dictationManager.transcribedText) { newText in
-                            onTranscriptionTextChange(newText)
-                        }
-                        .onTapGesture {
-                            // 当用户点击文本框时，标记为聚焦状态
-                            onTextFieldFocus()
-                        }
-                        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-                            // 这部分逻辑移到了主视图
-                        }
-                        .fixedSize(horizontal: false, vertical: true)
-                        .colorScheme(.dark)
-                        .focusable(true)
-                        // 添加选择文本高亮颜色
-                        .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5)) // 使用半透明的mint绿色作为选择高亮色
-                    
-                    // 使用条件渲染来简化光标逻辑
-                    CursorView(
-                        editableText: editableText,
-                        isPlaceholderVisible: isPlaceholderVisible,
-                        isFocused: isFocused,
-                        blinkState: blinkState
-                    )
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 6)
                 }
+                
+                // 文本编辑器 - 不要包含在ScrollView中，TextEditor已有滚动功能
+                TextEditor(text: $editableText)
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                    .background(Color.clear)
+                    .padding(2)
+                    .opacity(isPlaceholderVisible && editableText == "This is the live transcription..." ? 0 : 1)
+                    .onChange(of: dictationManager.transcribedText) { newText in
+                        onTranscriptionTextChange(newText)
+                    }
+                    .onTapGesture {
+                        // 当用户点击文本框时，标记为聚焦状态
+                        onTextFieldFocus()
+                    }
+                    // 添加选择文本高亮颜色
+                    .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5)) // 使用半透明的mint绿色作为选择高亮色
+                
+                // 使用条件渲染来简化光标逻辑
+                CursorView(
+                    editableText: editableText,
+                    isPlaceholderVisible: isPlaceholderVisible,
+                    isFocused: isFocused,
+                    blinkState: blinkState
+                )
             }
         }
     }
@@ -351,7 +326,6 @@ struct TunaDictationView: View {
         }
         .buttonStyle(PlainButtonStyle())
         .disabled(isDisabled)
-        .focusable(false)
     }
     
     // 复制到剪贴板
@@ -423,10 +397,8 @@ struct TunaDictationView: View {
         HStack(alignment: .center, spacing: 2) {
             ForEach(0..<15, id: \.self) { index in
                 AudioVisualizerBar(isRecording: dictationManager.state == .recording)
-                    .focusable(false)
             }
         }
-        .focusable(false)
     }
     
     // 启动/停止可视化效果
