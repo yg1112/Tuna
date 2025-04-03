@@ -467,8 +467,9 @@ struct AudioDeviceCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(18) // 增大圆角半径，匹配外层容器
+        .cornerRadius(20) // 匹配外层圆角
         .clipped() // 添加裁剪，确保边缘干净
+        // 移除多余的边缘处理
         
         // 保留悬停逻辑
         .onHover { hovering in
@@ -524,7 +525,7 @@ struct ModeCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(18) // 增大圆角半径，匹配外层容器
+        .cornerRadius(20) // 匹配外层圆角
         .clipped() // 添加裁剪，确保边缘干净
         .sheet(isPresented: $isAddingNewMode) {
             AddModeView(isPresented: $isAddingNewMode)
@@ -1067,7 +1068,7 @@ struct DictationCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(18) // 增大圆角半径，匹配外层容器
+        .cornerRadius(20) // 匹配外层圆角
         .clipped() // 添加裁剪，确保边缘干净
     }
     
