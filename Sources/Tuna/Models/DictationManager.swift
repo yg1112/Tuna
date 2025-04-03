@@ -9,6 +9,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     public static let shared = DictationManager()
     
     private let logger = Logger(subsystem: "com.tuna.app", category: "DictationManager")
+    private let tunaSettings = TunaSettings.shared
     
     // 状态和消息
     @Published public var state: DictationState = .idle
@@ -25,8 +26,6 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     
     // 设置
     private var apiKey: String = UserDefaults.standard.string(forKey: "dictationApiKey") ?? ""
-    public var outputFormat: String = UserDefaults.standard.string(forKey: "dictationFormat") ?? "txt"
-    private var outputDirectory: URL? = UserDefaults.standard.url(forKey: "dictationOutputDirectory")
     
     private init() {
         logger.debug("DictationManager initialized")
@@ -236,14 +235,12 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     }
     
     public func setOutputDirectory(_ url: URL) {
-        outputDirectory = url
-        UserDefaults.standard.set(url, forKey: "dictationOutputDirectory")
+        tunaSettings.transcriptionOutputDirectory = url
         logger.debug("Set output directory to \(url.path)")
     }
     
     public func setOutputFormat(_ format: String) {
-        outputFormat = format
-        UserDefaults.standard.set(format, forKey: "dictationFormat")
+        tunaSettings.transcriptionFormat = format
         logger.debug("Set output format to \(format)")
     }
     
@@ -254,12 +251,24 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     }
     
     public func getDocumentsDirectory() -> URL {
-        return outputDirectory ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return tunaSettings.transcriptionOutputDirectory ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
     // 添加获取当前转录内容的方法，用于在用户编辑后比较差异
     public func getPreviousTranscription() -> String? {
         return self.transcribedText
+    }
+    
+    // MARK: - 获取当前设置
+    
+    // 获取当前输出格式
+    public var outputFormat: String {
+        return tunaSettings.transcriptionFormat
+    }
+    
+    // 获取当前输出目录
+    public var outputDirectory: URL? {
+        return tunaSettings.transcriptionOutputDirectory
     }
     
     // MARK: - Private Methods

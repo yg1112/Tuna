@@ -17,9 +17,9 @@ class SettingsWindowController: NSWindowController {
     }
     
     convenience init() {
-        // Use smaller window size for simplified settings
+        // 调整窗口尺寸以适应精简后的设置选项
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 480),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -30,7 +30,7 @@ class SettingsWindowController: NSWindowController {
         // Set window behavior
         window.isReleasedWhenClosed = false
         
-        // Key change: Set window level to normal, not floating
+        // Set window level to normal, not floating
         window.level = .normal
         
         // Display settings view
@@ -53,9 +53,6 @@ extension SettingsWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         print("\u{001B}[34m[WINDOW]\u{001B}[0m Settings window closing")
         fflush(stdout)
-        
-        // Key change: Not using modal window approach
-        // NSApp.stopModal()
         
         logger.debug("Settings window closed")
     }

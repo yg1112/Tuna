@@ -128,7 +128,12 @@ class AudioManager: ObservableObject {
         // 强制使用系统API初始化音量值 (关键步骤)
         initialSystemVolumeSync()
         
-        applyDefaultDeviceSettings() // 应用默认设备设置
+        // 应用默认设备设置 - 确保在所有设备加载完成后应用设置
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.applyDefaultDeviceSettings() // 应用默认音频设备
+            print("\u{001B}[32m[初始化]\u{001B}[0m 应用默认音频设备设置完成")
+            fflush(stdout)
+        }
         
         // 设置系统级音量监听器
         setupSystemAudioVolumeListener()
@@ -309,38 +314,30 @@ class AudioManager: ObservableObject {
     }
     
     private func applyDefaultDeviceSettings() {
-        let settings = TunaSettings.shared
+        print("\u{001B}[34m[初始化]\u{001B}[0m 正在检查默认设备设置")
         
-        // 处理输出设备
-        if !settings.preferredOutputDeviceUID.isEmpty {
-            // 检查首选设备是否可用
-            if let preferredDevice = outputDevices.first(where: { $0.uid == settings.preferredOutputDeviceUID }) {
-                print("找到首选输出设备: \(preferredDevice.name)，正在设置...")
-                setDefaultDevice(preferredDevice, forInput: false)
+        // 使用已保存的默认设备设置
+        let defaultOutputUID = settings.defaultOutputDeviceUID
+        let defaultInputUID = settings.defaultInputDeviceUID
+        
+        if !defaultOutputUID.isEmpty {
+            // 尝试在输出设备中查找匹配的设备
+            if let device = outputDevices.first(where: { $0.uid == defaultOutputUID }) {
+                print("\u{001B}[32m[设备]\u{001B}[0m 应用默认输出设备: \(device.name)")
+                setDefaultOutputDevice(device)
             } else {
-                print("首选输出设备不可用，使用系统默认设备")
-                // 如果首选设备不可用，使用系统默认设备
-                updateSelectedDevices()
+                print("\u{001B}[33m[警告]\u{001B}[0m 默认输出设备未找到: \(defaultOutputUID)")
             }
-        } else {
-            print("未设置首选输出设备，使用系统默认设备")
-            updateSelectedDevices()
         }
         
-        // 处理输入设备
-        if !settings.preferredInputDeviceUID.isEmpty {
-            // 检查首选设备是否可用
-            if let preferredDevice = inputDevices.first(where: { $0.uid == settings.preferredInputDeviceUID }) {
-                print("找到首选输入设备: \(preferredDevice.name)，正在设置...")
-                setDefaultDevice(preferredDevice, forInput: true)
+        if !defaultInputUID.isEmpty {
+            // 尝试在输入设备中查找匹配的设备
+            if let device = inputDevices.first(where: { $0.uid == defaultInputUID }) {
+                print("\u{001B}[32m[设备]\u{001B}[0m 应用默认输入设备: \(device.name)")
+                setDefaultInputDevice(device)
             } else {
-                print("首选输入设备不可用，使用系统默认设备")
-                // 如果首选设备不可用，使用系统默认设备
-                updateSelectedDevices()
+                print("\u{001B}[33m[警告]\u{001B}[0m 默认输入设备未找到: \(defaultInputUID)")
             }
-        } else {
-            print("未设置首选输入设备，使用系统默认设备")
-            updateSelectedDevices()
         }
     }
     
@@ -1881,6 +1878,80 @@ class AudioManager: ObservableObject {
                     outputVolume = deviceVolume
                 }
             }
+        }
+    }
+    
+    // 设置默认输出设备
+    public func setDefaultOutputDevice(_ device: AudioDevice) {
+        // 如果已经是当前设备，则避免重复设置
+        if selectedOutputDevice?.id == device.id {
+            return
+        }
+        
+        var deviceID = device.id
+        var propertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        let status = AudioObjectSetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &propertyAddress,
+            0,
+            nil,
+            UInt32(MemoryLayout<AudioDeviceID>.size),
+            &deviceID
+        )
+        
+        if status == noErr {
+            print("[DEVICE] Successfully set default output device: \(device.name)")
+            selectedOutputDevice = device
+            // 保存为用户选择的设备
+            userSelectedOutputUID = device.uid
+            // 同时保存到设置中，避免直接使用settings.defaultOutputDeviceUID触发循环
+            if settings.defaultOutputDeviceUID != device.uid {
+                settings.defaultOutputDeviceUID = device.uid
+            }
+        } else {
+            print("[ERROR] Failed to set default output device: \(status)")
+        }
+    }
+    
+    // 设置默认输入设备
+    public func setDefaultInputDevice(_ device: AudioDevice) {
+        // 如果已经是当前设备，则避免重复设置
+        if selectedInputDevice?.id == device.id {
+            return
+        }
+        
+        var deviceID = device.id
+        var propertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        let status = AudioObjectSetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &propertyAddress,
+            0,
+            nil,
+            UInt32(MemoryLayout<AudioDeviceID>.size),
+            &deviceID
+        )
+        
+        if status == noErr {
+            print("[DEVICE] Successfully set default input device: \(device.name)")
+            selectedInputDevice = device
+            // 保存为用户选择的设备
+            userSelectedInputUID = device.uid
+            // 同时保存到设置中，避免直接使用settings.defaultInputDeviceUID触发循环
+            if settings.defaultInputDeviceUID != device.uid {
+                settings.defaultInputDeviceUID = device.uid
+            }
+        } else {
+            print("[ERROR] Failed to set default input device: \(status)")
         }
     }
 } 
