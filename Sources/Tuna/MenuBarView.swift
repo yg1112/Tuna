@@ -803,11 +803,9 @@ struct MenuBarView: View {
         }
         .padding(16)
         .background(
-            Color(red: 0.08, green: 0.12, blue: 0.12)
-                .edgesIgnoringSafeArea(.all)
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(red: 0.08, green: 0.12, blue: 0.12))
         )
-        .cornerRadius(20)
-        .clipped()
         .frame(width: 350)
     }
     
