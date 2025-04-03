@@ -467,8 +467,7 @@ struct AudioDeviceCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(20) // 匹配外层圆角
-        .clipped() // 添加裁剪，确保边缘干净
+        .cornerRadius(6) // 使用更小的圆角
         // 移除多余的边缘处理
         
         // 保留悬停逻辑
@@ -525,8 +524,7 @@ struct ModeCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(20) // 匹配外层圆角
-        .clipped() // 添加裁剪，确保边缘干净
+        .cornerRadius(6) // 使用更小的圆角
         .sheet(isPresented: $isAddingNewMode) {
             AddModeView(isPresented: $isAddingNewMode)
         }
@@ -809,6 +807,7 @@ struct MenuBarView: View {
                 .edgesIgnoringSafeArea(.all)
         )
         .cornerRadius(20)
+        .clipped()
         .frame(width: 350)
     }
     
@@ -1068,8 +1067,7 @@ struct DictationCard: View {
         }
         .frame(maxWidth: .infinity)
         .background(Color.black.opacity(0.2))
-        .cornerRadius(20) // 匹配外层圆角
-        .clipped() // 添加裁剪，确保边缘干净
+        .cornerRadius(6) // 使用更小的圆角
     }
     
     private func getBarHeight(index: Int) -> CGFloat {
