@@ -215,6 +215,11 @@ class AudioManager: ObservableObject {
         }
     }
     
+    // 别名方法，作为saveDeviceSelection的重定向
+    private func saveCurrentDeviceSelection() {
+        saveDeviceSelection()
+    }
+    
     private func getAudioDevices(scope: AudioScope) -> [AudioDevice] {
         var deviceList = [AudioDevice]()
         
@@ -766,7 +771,7 @@ class AudioManager: ObservableObject {
     private func setupSystemAudioVolumeListener() {
         print("\u{001B}[34m[初始化]\u{001B}[0m 设置系统音量监听器")
         
-        // 移除现有的监听器
+        // 先移除任何现有的监听器，确保不会重复
         removeVolumeListener()
         
         // 获取当前设备
@@ -775,12 +780,43 @@ class AudioManager: ObservableObject {
         
         // 为输入设备设置监听器
         if let device = inputDevice {
+            print("\u{001B}[34m[监听]\u{001B}[0m 设置输入设备 '\(device.name)' 的音量监听器")
             setupVolumeListenerForDevice(device, isInput: true)
+            
+            // 初始化音量 - 立即同步
+            DispatchQueue.main.async {
+                let volume = self.directSystemVolumeQuery(device: device, isInput: true)
+                if volume > 0 { // 确保有效音量值
+                    self.inputVolume = volume
+                    print("\u{001B}[32m[音量]\u{001B}[0m 输入设备 '\(device.name)' 初始音量同步: \(Int(volume * 100))%")
+                }
+            }
         }
         
         // 为输出设备设置监听器
         if let device = outputDevice {
+            print("\u{001B}[34m[监听]\u{001B}[0m 设置输出设备 '\(device.name)' 的音量监听器")
             setupVolumeListenerForDevice(device, isInput: false)
+            
+            // 初始化音量 - 立即同步
+            DispatchQueue.main.async {
+                let volume = self.directSystemVolumeQuery(device: device, isInput: false)
+                if volume > 0 { // 确保有效音量值
+                    self.outputVolume = volume
+                    print("\u{001B}[32m[音量]\u{001B}[0m 输出设备 '\(device.name)' 初始音量同步: \(Int(volume * 100))%")
+                }
+            }
+        }
+        
+        // 启动轮询定时器 - 用于处理某些设备可能不会触发音量回调的情况
+        if (inputDevice?.uid.lowercased().contains("bluetooth") == true) || 
+           (outputDevice?.uid.lowercased().contains("bluetooth") == true) {
+            print("\u{001B}[34m[监听]\u{001B}[0m 检测到蓝牙设备，启动音量轮询定时器")
+            startVolumePollingTimer()
+        } else {
+            // 停止轮询定时器
+            volumePollingTimer?.invalidate()
+            volumePollingTimer = nil
         }
     }
     
@@ -894,13 +930,25 @@ class AudioManager: ObservableObject {
         let deviceType = isInput ? "输入" : "输出"
         
         var deviceName = "未知设备"
+        let isCurrentDevice: Bool
+        
+        // 确认这是当前选中的设备
         if isInput, let device = manager.selectedInputDevice {
+            isCurrentDevice = device.id == inObjectID
             deviceName = device.name
         } else if !isInput, let device = manager.selectedOutputDevice {
+            isCurrentDevice = device.id == inObjectID
             deviceName = device.name
+        } else {
+            isCurrentDevice = false
         }
         
-        // 获取新音量值
+        // 只处理当前选中设备的变化
+        if !isCurrentDevice {
+            return noErr
+        }
+        
+        // 获取新音量值 - 使用直接查询方法获取最准确的音量
         var volume: Float = 0.0
         var size = UInt32(MemoryLayout<Float>.size)
         let status = AudioObjectGetPropertyData(
@@ -915,161 +963,160 @@ class AudioManager: ObservableObject {
         if status == noErr {
             DispatchQueue.main.async {
                 if isInput {
-                    if manager.inputVolume != volume {
+                    if abs(manager.inputVolume - volume) > 0.001 {  // 添加阈值避免微小波动
                         print("\u{001B}[32m[系统变化]\u{001B}[0m \(deviceType)设备 '\(deviceName)' 音量变化: \(Int(volume * 100))%")
                         manager.inputVolume = volume
                     }
                 } else {
-                    if manager.outputVolume != volume {
+                    if abs(manager.outputVolume - volume) > 0.001 {  // 添加阈值避免微小波动
                         print("\u{001B}[32m[系统变化]\u{001B}[0m \(deviceType)设备 '\(deviceName)' 音量变化: \(Int(volume * 100))%")
                         manager.outputVolume = volume
                     }
                 }
             }
         } else {
-            print("\u{001B}[31m[错误]\u{001B}[0m 无法获取\(deviceType)设备 '\(deviceName)' 音量: \(status)")
+            // 使用备用方法获取音量 - 直接从设备对象获取
+            DispatchQueue.main.async {
+                if isInput, let device = manager.selectedInputDevice, device.id == inObjectID {
+                    let newVolume = manager.directSystemVolumeQuery(device: device, isInput: true)
+                    if abs(manager.inputVolume - newVolume) > 0.001 {
+                        print("\u{001B}[32m[系统变化-备用]\u{001B}[0m \(deviceType)设备 '\(deviceName)' 音量变化: \(Int(newVolume * 100))%")
+                        manager.inputVolume = newVolume
+                    }
+                } else if !isInput, let device = manager.selectedOutputDevice, device.id == inObjectID {
+                    let newVolume = manager.directSystemVolumeQuery(device: device, isInput: false)
+                    if abs(manager.outputVolume - newVolume) > 0.001 {
+                        print("\u{001B}[32m[系统变化-备用]\u{001B}[0m \(deviceType)设备 '\(deviceName)' 音量变化: \(Int(newVolume * 100))%")
+                        manager.outputVolume = newVolume
+                    }
+                }
+            }
         }
         
         return noErr
     }
     
-    // 启动音量轮询定时器 - 对所有设备类型生效
+    // 音量轮询定时器 - 用于处理某些蓝牙设备可能不会触发音量回调的情况
+    // 已在类属性中定义，此处不需要重复
+    
+    // 启动音量轮询定时器
     private func startVolumePollingTimer() {
-        print("启动音量轮询定时器")
-        
-        // 停止可能正在运行的定时器
+        // 先停止现有定时器
         volumePollingTimer?.invalidate()
-        volumePollingTimer = nil
         
-        // 记录初始音量值
-        if let outputDevice = selectedOutputDevice {
-            lastBluetoothOutputVolume = outputDevice.getVolume()
-            print("初始输出设备音量: \(lastBluetoothOutputVolume)")
-        }
-        
-        if let inputDevice = selectedInputDevice {
-            lastBluetoothInputVolume = inputDevice.getVolume()
-            print("初始输入设备音量: \(lastBluetoothInputVolume)")
-        }
-        
-        // 创建新的轮询定时器，每0.5秒检查一次
-        volumePollingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        // 创建新定时器，每2秒检查一次
+        volumePollingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.checkDeviceVolumeChanges()
+            
+                DispatchQueue.main.async {
+                // 检查输出设备音量
+                if let device = self.selectedOutputDevice,
+                   device.uid.lowercased().contains("bluetooth") {
+                    let actualVolume = self.directSystemVolumeQuery(device: device, isInput: false)
+                    if abs(self.outputVolume - actualVolume) > 0.01 {
+                        print("\u{001B}[32m[轮询同步]\u{001B}[0m 输出设备 '\(device.name)' 音量: \(Int(actualVolume * 100))%")
+                        self.outputVolume = actualVolume
         }
-        
-        isPollingForVolumeChanges = true
     }
     
-    // 停止音量轮询
+                // 检查输入设备音量
+                if let device = self.selectedInputDevice,
+                   device.uid.lowercased().contains("bluetooth") {
+                    let actualVolume = self.directSystemVolumeQuery(device: device, isInput: true)
+                    if abs(self.inputVolume - actualVolume) > 0.01 {
+                        print("\u{001B}[32m[轮询同步]\u{001B}[0m 输入设备 '\(device.name)' 音量: \(Int(actualVolume * 100))%")
+                        self.inputVolume = actualVolume
+                    }
+                }
+            }
+        }
+        }
+        
+    // 停止音量轮询定时器
     private func stopVolumePollingTimer() {
-        print("停止音量轮询定时器")
         volumePollingTimer?.invalidate()
         volumePollingTimer = nil
-        isPollingForVolumeChanges = false
+        print("\u{001B}[34m[信息]\u{001B}[0m 停止音量轮询定时器")
     }
     
-    // 检查所有设备音量变化
-    private func checkDeviceVolumeChanges() {
-        // 检查输出设备
-        if let outputDevice = selectedOutputDevice {
-            let currentVolume = outputDevice.getVolume()
-            
-            // 如果音量有显著变化 (避免更新循环)
-            if abs(currentVolume - lastBluetoothOutputVolume) > 0.001 && abs(currentVolume - outputVolume) > 0.001 {
-                print("检测到输出设备 \(outputDevice.name) 音量变化: \(lastBluetoothOutputVolume) -> \(currentVolume)")
-                DispatchQueue.main.async {
-                    self.outputVolume = currentVolume
-                }
-                lastBluetoothOutputVolume = currentVolume
+    // 修改setDefaultDevice方法，确保在设备切换时立即同步音量
+    func setDefaultDevice(scope: AudioObjectPropertyScope, deviceID: AudioDeviceID) {
+        // 确定是输入还是输出设备
+        let isInput = scope == kAudioDevicePropertyScopeInput
+        
+        // 获取当前设备对象
+        var deviceToSet: AudioDevice?
+        let devices = isInput ? inputDevices : outputDevices
+        
+        // 在设备列表中查找指定ID的设备
+        for device in devices {
+            if device.id == deviceID {
+                deviceToSet = device
+                break
             }
         }
         
-        // 检查输入设备
-        if let inputDevice = selectedInputDevice {
-            let currentVolume = inputDevice.getVolume()
+        // 如果找不到设备，则退出
+        guard let deviceObj = deviceToSet else {
+            print("\u{001B}[31m[错误]\u{001B}[0m 无法找到\(isInput ? "输入" : "输出")设备ID: \(deviceID)")
+            return
+        }
+        
+        print("\u{001B}[34m[设置]\u{001B}[0m 将\(isInput ? "输入" : "输出")设备设置为: \(deviceObj.name)")
+        
+        // 设置默认设备
+        var defaultDevice = deviceID
+        var theAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        if !isInput {
+            theAddress.mSelector = kAudioHardwarePropertyDefaultOutputDevice
+        }
+        
+        let status = AudioObjectSetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &theAddress,
+            0,
+            nil,
+            UInt32(MemoryLayout<AudioDeviceID>.size),
+            &defaultDevice
+        )
+        
+        if status == noErr {
+            print("\u{001B}[32m[成功]\u{001B}[0m 成功设置\(isInput ? "输入" : "输出")设备: \(deviceObj.name)")
             
-            // 如果音量有显著变化
-            if abs(currentVolume - lastBluetoothInputVolume) > 0.001 && abs(currentVolume - inputVolume) > 0.001 {
-                print("检测到输入设备 \(inputDevice.name) 音量变化: \(lastBluetoothInputVolume) -> \(currentVolume)")
-                DispatchQueue.main.async {
-                    self.inputVolume = currentVolume
-                }
-                lastBluetoothInputVolume = currentVolume
+            // 更新当前选中的设备
+            if isInput {
+                selectedInputDevice = deviceObj
+            } else {
+                selectedOutputDevice = deviceObj
             }
-        }
-    }
-    
-    // 强制同步所有设备音量 - 最终同步尝试
-    private func forceSyncAllDevicesVolume() {
-        Swift.print("执行最终音量同步尝试")
-        
-        // 对于蓝牙设备，使用专用的同步方法
-        let isBluetoothOutput = selectedOutputDevice?.uid.lowercased().contains("bluetooth") ?? false
-        let isBluetoothInput = selectedInputDevice?.uid.lowercased().contains("bluetooth") ?? false
-        
-        // 对蓝牙设备使用直接查询方法
-        if isBluetoothOutput || isBluetoothInput {
-            forceBluetoothVolumeSync(highPriority: true)
-        }
-        
-        // 对于非蓝牙设备，使用常规更新方法
-        if !isBluetoothOutput && selectedOutputDevice != nil {
-            Swift.print("最终同步: 更新普通输出设备音量")
-            if let device = selectedOutputDevice {
-                let volume = directSystemVolumeQuery(device: device, isInput: false)
-                DispatchQueue.main.async {
-                    self.outputVolume = volume
-                }
-            }
-        }
-        
-        if !isBluetoothInput && selectedInputDevice != nil {
-            Swift.print("最终同步: 更新普通输入设备音量")
-            if let device = selectedInputDevice {
-                let volume = directSystemVolumeQuery(device: device, isInput: true)
-                DispatchQueue.main.async {
-                    self.inputVolume = volume
-                }
-            }
-        }
-        
-        // 记录音量值以便后续对比
-        Swift.print("最终同步完成 - 输出音量: \(outputVolume), 输入音量: \(inputVolume)")
-    }
-    
-    // 强制更新设备音量 - 确保会更新TUNA中的音量值
-    private func forceUpdateDeviceVolumes() {
-        Swift.print("强制更新设备音量状态")
-        
-        if let outputDevice = selectedOutputDevice {
-            Swift.print("获取输出设备 \(outputDevice.name) 的当前音量")
             
-            // 使用直接查询获取更准确的音量值
-            let newVolume = directSystemVolumeQuery(device: outputDevice, isInput: false)
+            // 移除旧设备的音量监听器
+            removeVolumeListener()
             
-            // 无条件更新音量值
-            Swift.print("输出设备音量已更新: \(outputVolume) -> \(newVolume)")
-            lastBluetoothOutputVolume = newVolume
+            // 为新设备设置音量监听器
+            setupSystemAudioVolumeListener()
+            
+            // 立即同步设备音量 - 确保UI显示正确的音量值
+            let newVolume = directSystemVolumeQuery(device: deviceObj, isInput: isInput)
             
             DispatchQueue.main.async {
-                self.outputVolume = newVolume
-            }
-        }
-        
-        if let inputDevice = selectedInputDevice {
-            Swift.print("获取输入设备 \(inputDevice.name) 的当前音量")
-            
-            // 使用直接查询获取更准确的音量值
-            let newVolume = directSystemVolumeQuery(device: inputDevice, isInput: true)
-            
-            // 无条件更新音量值
-            Swift.print("输入设备音量已更新: \(inputVolume) -> \(newVolume)")
-            lastBluetoothInputVolume = newVolume
-            
-            DispatchQueue.main.async {
+                if isInput {
                 self.inputVolume = newVolume
+                } else {
+                    self.outputVolume = newVolume
+                }
+                print("\u{001B}[32m[音量]\u{001B}[0m \(isInput ? "输入" : "输出")设备 '\(deviceObj.name)' 音量同步: \(Int(newVolume * 100))%")
             }
+            
+            // 更新存储的默认设备
+            saveCurrentDeviceSelection()
+        } else {
+            print("\u{001B}[31m[错误]\u{001B}[0m 无法设置\(isInput ? "输入" : "输出")设备: \(status)")
         }
     }
     
@@ -1527,120 +1574,153 @@ class AudioManager: ObservableObject {
     
     // 新的初始系统音量同步方法 - 专注于准确获取初始音量
     private func initialSystemVolumeSync() {
-        print("\u{001B}[34m[初始化]\u{001B}[0m 初始化系统音量同步")
+        print("\u{001B}[34m[初始化]\u{001B}[0m 系统音量同步")
+        
+        // 强制更新默认设备列表，确保设备信息是最新的
+        updateDefaultDevices()
         
         // 同步输出设备音量
-        if let outputDevice = selectedOutputDevice {
-            let volume = outputDevice.getVolume()
-            print("\u{001B}[32m[音量同步]\u{001B}[0m 输出设备 '\(outputDevice.name)' 初始音量: \(Int(volume * 100))%")
-            outputVolume = volume
-        }
-        
-        // 同步输入设备音量
-        if let inputDevice = selectedInputDevice {
-            let volume = inputDevice.getVolume()
-            print("\u{001B}[32m[音量同步]\u{001B}[0m 输入设备 '\(inputDevice.name)' 初始音量: \(Int(volume * 100))%")
-            inputVolume = volume
-        }
-    }
-    
-    // 直接查询系统音量，确保输入输出分离
-    private func directSystemVolumeQuery(device: AudioDevice, isInput: Bool) -> Float {
-        let deviceID = device.id
-        let scope = isInput ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput
-        var deviceVolume: Float = 0.0
-        var propertySize = UInt32(MemoryLayout<Float32>.size)
-        
-        Swift.print("直接查询设备 \(device.name) 的\(isInput ? "输入" : "输出")音量")
-        
-        // 首先检查是否为蓝牙设备
-        let isBluetoothDevice = device.uid.lowercased().contains("bluetooth")
-        
-        // 对于蓝牙设备，尝试使用硬件服务属性获取音量
-        if isBluetoothDevice {
-            var hardwareServiceAddress = AudioObjectPropertyAddress(
-                mSelector: kAudioHardwareServiceDeviceProperty_VirtualMasterVolume,
-                mScope: scope,
-                mElement: kAudioObjectPropertyElementMain
-            )
+        if let device = selectedOutputDevice {
+            // 使用直接系统查询获取最准确的音量
+            let volume = directSystemVolumeQuery(device: device, isInput: false)
             
-            if AudioObjectHasProperty(deviceID, &hardwareServiceAddress) {
-                var volume: Float32 = 0.0
-                // 使用AudioObjectGetPropertyData替代已弃用的AudioHardwareServiceGetPropertyData
-                let status = AudioObjectGetPropertyData(
-                    deviceID,
-                    &hardwareServiceAddress,
-                    0,
-                    nil,
-                    &propertySize,
-                    &volume
-                )
-                
-                if status == noErr {
-                    deviceVolume = volume
-                    Swift.print("使用硬件服务API获取蓝牙设备\(isInput ? "输入" : "输出")音量: \(deviceVolume)")
-                    return deviceVolume
-                }
+            // 确保在主线程更新UI相关属性
+            DispatchQueue.main.async {
+                self.outputVolume = volume
+                print("\u{001B}[32m[音量]\u{001B}[0m 输出设备 '\(device.name)' 初始音量: \(Int(volume * 100))%")
             }
         }
         
-        // 尝试使用虚拟主音量
-        var virtualVolumeAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyVirtualMasterVolume,
+        // 同步输入设备音量
+        if let device = selectedInputDevice {
+            // 使用直接系统查询获取最准确的音量
+            let volume = directSystemVolumeQuery(device: device, isInput: true)
+            
+            // 确保在主线程更新UI相关属性
+            DispatchQueue.main.async {
+                self.inputVolume = volume
+                print("\u{001B}[32m[音量]\u{001B}[0m 输入设备 '\(device.name)' 初始音量: \(Int(volume * 100))%")
+            }
+        }
+        
+        // 延迟执行第二次同步，确保UI完全加载后音量显示正确
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+    
+            // 重新设置音量监听器，确保能监听到系统音量变化
+            self.setupSystemAudioVolumeListener()
+            
+            // 对特定设备类型再次确认音量值
+            if let outputDevice = self.selectedOutputDevice {
+                let outputVolume = self.directSystemVolumeQuery(device: outputDevice, isInput: false)
+                if abs(self.outputVolume - outputVolume) > 0.01 {
+                    print("\u{001B}[32m[音量]\u{001B}[0m 输出设备 '\(outputDevice.name)' 延迟同步: \(Int(outputVolume * 100))%")
+                    self.outputVolume = outputVolume
+                }
+            }
+            
+            if let inputDevice = self.selectedInputDevice {
+                let inputVolume = self.directSystemVolumeQuery(device: inputDevice, isInput: true)
+                if abs(self.inputVolume - inputVolume) > 0.01 {
+                    print("\u{001B}[32m[音量]\u{001B}[0m 输入设备 '\(inputDevice.name)' 延迟同步: \(Int(inputVolume * 100))%")
+                    self.inputVolume = inputVolume
+                }
+            }
+        }
+    }
+    
+    // 直接查询系统音量 - 避免依赖设备对象内部的缓存音量
+    func directSystemVolumeQuery(device: AudioDevice, isInput: Bool) -> Float {
+        let deviceID = device.id
+        let scope = isInput ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput
+        let deviceType = isInput ? "输入" : "输出"
+        var volume: Float = 0.0
+        
+        // 检查是否蓝牙设备，蓝牙设备可能需要特殊处理
+        let _ = device.uid.lowercased().contains("bluetooth")
+        
+        // 准备音量属性地址
+        var volumeAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyVolumeScalar,
             mScope: scope,
             mElement: kAudioObjectPropertyElementMain
         )
         
-        if AudioObjectHasProperty(deviceID, &virtualVolumeAddress) {
-            var volume: Float32 = 0.0
+        // 对于蓝牙设备，我们可能需要尝试不同的属性选择器
+        let volumeSelectors: [AudioObjectPropertySelector] = [
+            kAudioDevicePropertyVolumeScalar,
+            kAudioHardwareServiceDeviceProperty_VirtualMainVolume,
+            kAudioDevicePropertyVolumeDecibels
+        ]
+        
+        // 对每个可能的音量属性选择器尝试获取音量
+        var success = false
+        
+        for selector in volumeSelectors {
+            volumeAddress.mSelector = selector
+            
+            // 检查设备是否支持此属性
+            if !AudioObjectHasProperty(deviceID, &volumeAddress) {
+                continue
+            }
+            
+            // 尝试获取音量值
+            var propertySize = UInt32(MemoryLayout<Float>.size)
             let status = AudioObjectGetPropertyData(
                 deviceID,
-                &virtualVolumeAddress,
+                &volumeAddress,
                 0,
                 nil,
                 &propertySize,
                 &volume
             )
             
-            if status == noErr {
-                deviceVolume = volume
-                Swift.print("使用虚拟主音量属性获取设备\(isInput ? "输入" : "输出")音量: \(deviceVolume)")
-                return deviceVolume
+            if status == noErr && volume >= 0.0 && volume <= 1.0 {
+                success = true
+                
+                // 如果使用特殊选择器成功，记录日志
+                if selector != kAudioDevicePropertyVolumeScalar {
+                    let selectorName = selector == kAudioHardwareServiceDeviceProperty_VirtualMainVolume ? 
+                        "VirtualMainVolume" : "VolumeDecibels"
+                    print("\u{001B}[34m[特殊处理]\u{001B}[0m \(deviceType)设备 '\(device.name)' 使用 \(selectorName) 获取音量: \(Int(volume * 100))%")
+                }
+                
+                break
             }
         }
         
-        // 尝试使用标准音量属性
-        for channel in [UInt32(kAudioObjectPropertyElementMain), 0, 1] {
-            var standardAddress = AudioObjectPropertyAddress(
-                mSelector: kAudioDevicePropertyVolumeScalar,
-                mScope: scope,
-                mElement: channel
-            )
+        // 如果所有方法都失败，尝试获取设备的通道音量
+        if !success {
+            // 尝试获取通道音量作为备选
+            volumeAddress.mSelector = kAudioDevicePropertyVolumeScalar
+            volumeAddress.mElement = 1  // 第一个通道
             
-            if AudioObjectHasProperty(deviceID, &standardAddress) {
-                var volume: Float32 = 0.0
+            if AudioObjectHasProperty(deviceID, &volumeAddress) {
+                var propertySize = UInt32(MemoryLayout<Float>.size)
                 let status = AudioObjectGetPropertyData(
                     deviceID,
-                    &standardAddress,
+                    &volumeAddress,
                     0,
                     nil,
                     &propertySize,
                     &volume
                 )
                 
-                if status == noErr {
-                    deviceVolume = volume
-                    Swift.print("使用标准音量属性(通道\(channel))获取设备\(isInput ? "输入" : "输出")音量: \(deviceVolume)")
-                    return deviceVolume
+                if status == noErr && volume >= 0.0 && volume <= 1.0 {
+                    success = true
+                    print("\u{001B}[34m[通道音量]\u{001B}[0m \(deviceType)设备 '\(device.name)' 使用通道音量: \(Int(volume * 100))%")
                 }
             }
         }
         
-        // 如果上述方法都失败，使用设备的getVolume方法
-        deviceVolume = device.getVolume()
-        Swift.print("使用设备默认方法获取\(isInput ? "输入" : "输出")音量: \(deviceVolume)")
+        // 如果仍然失败，回退到设备对象的内部音量
+        if !success {
+            // 确保我们有一个默认音量值
+            volume = isInput ? inputVolume : outputVolume
+            print("\u{001B}[33m[警告]\u{001B}[0m 无法获取 \(deviceType)设备 '\(device.name)' 系统音量，使用当前值: \(Int(volume * 100))%")
+        }
         
-        return deviceVolume
+        return volume
     }
     
     // 添加锁定/解锁平衡的方法
@@ -1771,88 +1851,87 @@ class AudioManager: ObservableObject {
     
     // 更新默认设备
     func updateDefaultDevices() {
-        print("\u{001B}[34m[更新]\u{001B}[0m 更新默认音频设备")
+        print("\u{001B}[34m[DEVICE]\u{001B}[0m 更新当前默认设备")
         
-        // 获取默认输出设备
+        // 获取默认输出设备ID
+        var defaultOutputID: AudioDeviceID = 0
+        var defaultInputID: AudioDeviceID = 0
+        var propertySize = UInt32(MemoryLayout<AudioDeviceID>.size)
+        
         var outputAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
         
-        var outputDeviceID: AudioDeviceID = 0
-        var propertySize = UInt32(MemoryLayout<AudioDeviceID>.size)
-        
-        let outputStatus = AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject),
-            &outputAddress,
-            0,
-            nil,
-            &propertySize,
-            &outputDeviceID
-        )
-        
-        if outputStatus == noErr && outputDeviceID != 0 {
-            if let device = AudioDevice(deviceID: outputDeviceID) {
-                let previousDevice = selectedOutputDevice
-                
-                // 只在设备变化时更新
-                if previousDevice?.id != device.id {
-                    print("\u{001B}[32m[设备变化]\u{001B}[0m 默认输出设备更改为: \(device.name)")
-                    
-                    // 如果原来的设备有音量监听器，先移除
-                    if let oldDevice = previousDevice {
-                        removeVolumeListenerForDevice(oldDevice, isInput: false)
-                    }
-                    
-                    // 更新设备并获取音量
-                    selectedOutputDevice = device
-                    outputVolume = device.getVolume()
-                    
-                    // 为新设备设置音量监听器
-                    setupVolumeListenerForDevice(device, isInput: false)
-                }
-            }
-        }
-        
-        // 获取默认输入设备
         var inputAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultInputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
         
-        var inputDeviceID: AudioDeviceID = 0
-        propertySize = UInt32(MemoryLayout<AudioDeviceID>.size)
+        // 获取默认输出设备ID
+        let outStatus = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &outputAddress,
+            0,
+            nil,
+            &propertySize,
+            &defaultOutputID
+        )
         
-        let inputStatus = AudioObjectGetPropertyData(
+        // 获取默认输入设备ID
+        let inStatus = AudioObjectGetPropertyData(
             AudioObjectID(kAudioObjectSystemObject),
             &inputAddress,
             0,
             nil,
             &propertySize,
-            &inputDeviceID
+            &defaultInputID
         )
         
-        if inputStatus == noErr && inputDeviceID != 0 {
-            if let device = AudioDevice(deviceID: inputDeviceID) {
-                let previousDevice = selectedInputDevice
+        // 防止移除当前设备的音量监听器
+        if let currentOutputDevice = selectedOutputDevice {
+            removeVolumeListenerForDevice(currentOutputDevice, isInput: false)
+        }
+        
+        if let currentInputDevice = selectedInputDevice {
+            removeVolumeListenerForDevice(currentInputDevice, isInput: true)
+        }
+        
+        // 获取设备详细信息
+        if outStatus == noErr && defaultOutputID != 0 {
+            if let outputDevice = AudioDevice(deviceID: defaultOutputID) {
+                // 立即获取音量 - 使用最可靠的方法
+                let volume = directSystemVolumeQuery(device: outputDevice, isInput: false)
                 
-                // 只在设备变化时更新
-                if previousDevice?.id != device.id {
-                    print("\u{001B}[32m[设备变化]\u{001B}[0m 默认输入设备更改为: \(device.name)")
+                DispatchQueue.main.async {
+                    // 更新设备
+                    self.selectedOutputDevice = outputDevice
+                    // 立即同步音量
+                    self.outputVolume = volume
+                    print("\u{001B}[32m[DEVICE]\u{001B}[0m 输出设备已更新: \(outputDevice.name), 音量: \(Int(volume * 100))%")
                     
-                    // 如果原来的设备有音量监听器，先移除
-                    if let oldDevice = previousDevice {
-                        removeVolumeListenerForDevice(oldDevice, isInput: true)
-                    }
+                    // 设置音量监听器
+                    self.setupVolumeListenerForDevice(outputDevice, isInput: false)
+                }
+            }
+        }
+        
+        if inStatus == noErr && defaultInputID != 0 {
+            if let inputDevice = AudioDevice(deviceID: defaultInputID) {
+                // 立即获取音量 - 使用最可靠的方法
+                let volume = directSystemVolumeQuery(device: inputDevice, isInput: true)
+                
+                DispatchQueue.main.async {
+                    // 更新设备
+                    self.selectedInputDevice = inputDevice
+                    // 立即同步音量
+                    self.inputVolume = volume
+                    print("\u{001B}[32m[DEVICE]\u{001B}[0m 输入设备已更新: \(inputDevice.name), 音量: \(Int(volume * 100))%")
                     
-                    // 更新设备并获取音量
-                    selectedInputDevice = device
-                    inputVolume = device.getVolume()
-                    
-                    // 为新设备设置音量监听器
-                    setupVolumeListenerForDevice(device, isInput: true)
+                    // 设置音量监听器
+                    self.setupVolumeListenerForDevice(inputDevice, isInput: true)
                 }
             }
         }
