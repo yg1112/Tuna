@@ -7,14 +7,20 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "Tuna", targets: ["Tuna"])
+        .executable(name: "Tuna", targets: ["Tuna"]),
+        .library(name: "Views", targets: ["Views"])
     ],
     dependencies: [],
     targets: [
         .executableTarget(
             name: "Tuna",
-            dependencies: [],
+            dependencies: ["Views"],
             path: "Sources/Tuna"
+        ),
+        .target(
+            name: "Views",
+            dependencies: [],
+            path: "Sources/Views"
         )
     ]
 ) 

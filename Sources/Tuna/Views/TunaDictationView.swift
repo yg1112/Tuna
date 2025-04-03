@@ -491,6 +491,11 @@ struct TunaDictationView: View {
         case .processing:
             // 处理中不执行任何操作
             break
+        case .error:
+            // 错误状态尝试重置
+            print("\u{001B}[31m[ERROR]\u{001B}[0m 录音处于错误状态，尝试重置")
+            dictationManager.state = .idle
+            break
         }
     }
     
@@ -503,6 +508,8 @@ struct TunaDictationView: View {
             return "pause.fill"
         case .processing:
             return "hourglass"
+        case .error:
+            return "exclamationmark.triangle"
         }
     }
     
@@ -525,6 +532,8 @@ struct TunaDictationView: View {
             return "Paused"
         case .processing:
             return "Processing..."
+        case .error:
+            return "Error occurred"
         }
     }
     

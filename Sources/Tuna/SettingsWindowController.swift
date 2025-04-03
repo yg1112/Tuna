@@ -11,6 +11,11 @@ class SettingsWindowController: NSWindowController {
         fflush(stdout)
     }
     
+    // 添加静态创建方法
+    static func createSettingsWindow() -> SettingsWindowController {
+        return SettingsWindowController()
+    }
+    
     convenience init() {
         // Use smaller window size for simplified settings
         let window = NSWindow(
