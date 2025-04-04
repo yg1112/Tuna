@@ -118,10 +118,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             popover.appearance = appearance
         }
         
-        // 创建自定义视图控制器，完全控制背景
+        // 预先创建内容视图，提高首次显示速度
         let contentView = MenuBarView()
-        let hostingController = CustomHostingController(rootView: contentView)
-        popover.contentViewController = hostingController
+        popover.contentViewController = NSHostingController(rootView: contentView)
         
         print("\u{001B}[36m[UI]\u{001B}[0m Status bar icon configured")
         fflush(stdout)
@@ -197,11 +196,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     // 移除箭头和阴影
                     self.popover.setValue(true, forKeyPath: "shouldHideAnchor")
                     
-                    // 应用视觉效果时保持简单，CustomHostingController已经处理大部分样式
+                    // 应用视觉效果设置
                     if let contentView = self.popover.contentViewController?.view {
-                        // 强制更新视图
-                        contentView.needsDisplay = true
-                        contentView.needsLayout = true
+                        // 基本样式设置
+                        contentView.wantsLayer = true
+                        contentView.layer?.masksToBounds = true
+                        contentView.layer?.cornerRadius = 8
+                        
+                        // 处理视觉效果视图
+                        contentView.superview?.subviews.forEach { subview in
+                            if let effectView = subview as? NSVisualEffectView {
+                                effectView.material = .hudWindow
+                                effectView.state = .active
+                                effectView.wantsLayer = true
+                                effectView.layer?.cornerRadius = 8
+                                effectView.layer?.masksToBounds = true
+                            }
+                        }
                     }
                 }
                 
@@ -244,50 +255,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Close menu
         if let menu = sender.menu {
             menu.cancelTracking()
-        }
-    }
-    
-    // 自定义HostingController
-    class CustomHostingController<Content>: NSHostingController<Content> where Content: View {
-        override func loadView() {
-            super.loadView()
-            
-            // 设置视图背景为纯黑色，移除所有默认背景
-            view.wantsLayer = true
-            view.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.9).cgColor
-            view.layer?.cornerRadius = 10
-            view.layer?.masksToBounds = true
-        }
-        
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            
-            // 确保任何子视图也应用了圆角
-            DispatchQueue.main.async {
-                // 应用到所有子视图
-                self.applyCornerRadiusToSubviews(self.view, radius: 10)
-            }
-        }
-        
-        private func applyCornerRadiusToSubviews(_ view: NSView, radius: CGFloat) {
-            // 设置当前视图
-            view.wantsLayer = true
-            view.layer?.cornerRadius = radius
-            view.layer?.masksToBounds = true
-            
-            // 递归处理所有子视图
-            for subview in view.subviews {
-                applyCornerRadiusToSubviews(subview, radius: radius)
-                
-                // 特殊处理视觉效果视图
-                if let effectView = subview as? NSVisualEffectView {
-                    effectView.material = .hudWindow
-                    effectView.state = .active
-                    effectView.wantsLayer = true
-                    effectView.layer?.cornerRadius = radius
-                    effectView.layer?.masksToBounds = true
-                }
-            }
         }
     }
 } 

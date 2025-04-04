@@ -803,9 +803,10 @@ struct MenuBarView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.08, green: 0.12, blue: 0.12))
+            Color(red: 0.08, green: 0.12, blue: 0.12)
+                .edgesIgnoringSafeArea(.all)
         )
+        .cornerRadius(20)
         .frame(width: 350)
     }
     
@@ -975,10 +976,9 @@ struct MenuBarView: View {
     // 底部按钮区，修改为使用统一样式，Quit在左侧，Settings在右侧
     private var bottomButtons: some View {
         HStack {
-            // 左侧Quit按钮 - 更换为电源图标
-            smallButton(
+            // 左侧Quit按钮 - 只显示图标
+            iconButton(
                 icon: "power",
-                title: "Quit",
                 action: {
                     NSApplication.shared.terminate(nil)
                 }
@@ -986,17 +986,29 @@ struct MenuBarView: View {
             
             Spacer() // 添加空间将两个按钮推到两侧
             
-            // 右侧Settings按钮
-            smallButton(
+            // 右侧Settings按钮 - 只显示图标
+            iconButton(
                 icon: "gear",
-                title: "Settings",
                 action: openSettings
             )
         }
         .padding(.top, 8)
     }
     
-    // 添加一个通用的按钮样式函数
+    // 添加一个只有图标的按钮样式函数
+    private func iconButton(icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+                .frame(width: 34, height: 34)
+                .cornerRadius(6)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .help(icon == "power" ? "Quit" : "Settings") // 添加悬停提示
+    }
+    
+    // 保留带文字的按钮样式函数，可能在其他地方被使用
     private func smallButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {

@@ -932,7 +932,8 @@ class AudioManager: ObservableObject {
                         manager.inputVolume = volume
                     }
                 } else {
-                    if abs(manager.outputVolume - volume) > 0.001 {  // 添加阈值避免微小波动
+                    // 使用阈值检查避免微小波动导致的循环更新
+                    if abs(manager.outputVolume - volume) > 0.001 {
                         print("\u{001B}[32m[系统变化]\u{001B}[0m \(deviceType)设备 '\(deviceName)' 音量变化: \(Int(volume * 100))%")
                         manager.outputVolume = volume
                     }
@@ -1539,20 +1540,110 @@ class AudioManager: ObservableObject {
     
     // 新的初始系统音量同步方法 - 专注于准确获取初始音量
     private func initialSystemVolumeSync() {
-        print("\u{001B}[34m[初始化]\u{001B}[0m 初始化系统音量同步")
+        print("\u{001B}[34m[初始化]\u{001B}[0m 系统音量同步")
+        
+        // 强制更新默认设备列表，确保设备信息是最新的
+        updateDefaultDevices()
         
         // 同步输出设备音量
-        if let outputDevice = selectedOutputDevice {
-            let volume = outputDevice.getVolume()
-            print("\u{001B}[32m[音量同步]\u{001B}[0m 输出设备 '\(outputDevice.name)' 初始音量: \(Int(volume * 100))%")
-            outputVolume = volume
+        if let device = selectedOutputDevice {
+            // 检查是否是蓝牙设备
+            let isBluetooth = device.uid.lowercased().contains("bluetooth")
+            
+            // 使用直接系统查询获取最准确的音量
+            let volume = directSystemVolumeQuery(device: device, isInput: false)
+            
+            // 确保在主线程更新UI相关属性
+            DispatchQueue.main.async {
+                self.outputVolume = volume
+                print("\u{001B}[32m[音量]\u{001B}[0m 输出设备 '\(device.name)' \(isBluetooth ? "[蓝牙]" : "") 初始音量: \(Int(volume * 100))%")
+            }
+            
+            // 特别针对蓝牙设备，额外的处理
+            if isBluetooth {
+                // 记录为轮询比较基准值
+                lastBluetoothOutputVolume = volume
+                
+                // 短延迟后再次强制同步蓝牙设备
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                    guard let self = self else { return }
+                    guard let currentDevice = self.selectedOutputDevice, currentDevice.id == device.id else { return }
+                    
+                    // 再次获取系统音量，以确保准确性
+                    let updatedVolume = self.directSystemVolumeQuery(device: currentDevice, isInput: false)
+                    if abs(updatedVolume - self.outputVolume) > 0.01 {
+                        print("\u{001B}[32m[蓝牙同步]\u{001B}[0m 修正蓝牙输出设备 '\(currentDevice.name)' 初始音量: \(Int(self.outputVolume * 100))% -> \(Int(updatedVolume * 100))%")
+                        self.outputVolume = updatedVolume
+                        self.lastBluetoothOutputVolume = updatedVolume
+                    }
+                }
+            }
         }
         
         // 同步输入设备音量
-        if let inputDevice = selectedInputDevice {
-            let volume = inputDevice.getVolume()
-            print("\u{001B}[32m[音量同步]\u{001B}[0m 输入设备 '\(inputDevice.name)' 初始音量: \(Int(volume * 100))%")
-            inputVolume = volume
+        if let device = selectedInputDevice {
+            // 检查是否是蓝牙设备
+            let isBluetooth = device.uid.lowercased().contains("bluetooth")
+            
+            // 使用直接系统查询获取最准确的音量
+            let volume = directSystemVolumeQuery(device: device, isInput: true)
+            
+            // 确保在主线程更新UI相关属性
+            DispatchQueue.main.async {
+                self.inputVolume = volume
+                print("\u{001B}[32m[音量]\u{001B}[0m 输入设备 '\(device.name)' \(isBluetooth ? "[蓝牙]" : "") 初始音量: \(Int(volume * 100))%")
+            }
+            
+            // 特别针对蓝牙设备，额外的处理
+            if isBluetooth {
+                // 记录为轮询比较基准值
+                lastBluetoothInputVolume = volume
+                
+                // 短延迟后再次强制同步蓝牙设备
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                    guard let self = self else { return }
+                    guard let currentDevice = self.selectedInputDevice, currentDevice.id == device.id else { return }
+                    
+                    // 再次获取系统音量，以确保准确性
+                    let updatedVolume = self.directSystemVolumeQuery(device: currentDevice, isInput: true)
+                    if abs(updatedVolume - self.inputVolume) > 0.01 {
+                        print("\u{001B}[32m[蓝牙同步]\u{001B}[0m 修正蓝牙输入设备 '\(currentDevice.name)' 初始音量: \(Int(self.inputVolume * 100))% -> \(Int(updatedVolume * 100))%")
+                        self.inputVolume = updatedVolume
+                        self.lastBluetoothInputVolume = updatedVolume
+                    }
+                }
+            }
+        }
+        
+        // 延迟执行多次同步尝试，以处理蓝牙设备的特殊情况
+        // 第一次延迟0.5秒
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            
+            // 特别处理蓝牙设备
+            self.forceBluetoothVolumeSync(highPriority: true)
+            
+            // 第二次延迟1秒
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self = self else { return }
+                
+                // 再次强制同步蓝牙设备
+                self.forceBluetoothVolumeSync(highPriority: true)
+                
+                // 第三次延迟2秒
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    guard let self = self else { return }
+                    
+                    // 最后一次强制同步，确保蓝牙设备音量完全同步
+                    self.forceBluetoothVolumeSync(highPriority: true)
+                    
+                    // 启动音量轮询（如果有蓝牙设备）
+                    if (self.selectedOutputDevice?.uid.lowercased().contains("bluetooth") == true) || 
+                       (self.selectedInputDevice?.uid.lowercased().contains("bluetooth") == true) {
+                        self.startVolumePollingTimer()
+                    }
+                }
+            }
         }
     }
     
