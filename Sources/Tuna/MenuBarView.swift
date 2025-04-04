@@ -138,11 +138,13 @@ struct DeviceMenuList: View {
         }
         .frame(width: minWidth) // 使用动态计算的宽度
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.black.opacity(0.85))
+            ZStack {
+                VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                Color.white.opacity(0.05)
+            }
         )
         .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 3) // 添加阴影增强视觉层次
+        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 3) // 添加阴影增强视觉层次
         .fixedSize(horizontal: true, vertical: false) // 强制使用计算的宽度
     }
 }
@@ -466,7 +468,12 @@ struct AudioDeviceCard: View {
             .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.2))
+        .background(
+            ZStack {
+                VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                Color.white.opacity(0.05)
+            }
+        )
         .cornerRadius(6) // 使用更小的圆角
         // 移除多余的边缘处理
         
@@ -523,7 +530,12 @@ struct ModeCard: View {
             .padding(.vertical, 16)
         }
         .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.2))
+        .background(
+            ZStack {
+                VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                Color.white.opacity(0.05)
+            }
+        )
         .cornerRadius(6) // 使用更小的圆角
         .sheet(isPresented: $isAddingNewMode) {
             AddModeView(isPresented: $isAddingNewMode)
@@ -638,16 +650,23 @@ struct AudioVisualizerView: View {
     }
 }
 
+// 添加NSVisualEffectView封装器，用于实现毛玻璃效果
 struct VisualEffectView: NSViewRepresentable {
+    var material: NSVisualEffectView.Material
+    var blendingMode: NSVisualEffectView.BlendingMode
+    
     func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.blendingMode = .behindWindow
-        view.state = .active
-        view.material = .hudWindow
-        return view
+        let visualEffectView = NSVisualEffectView()
+        visualEffectView.material = material
+        visualEffectView.blendingMode = blendingMode
+        visualEffectView.state = .active
+        return visualEffectView
     }
     
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+    func updateNSView(_ visualEffectView: NSVisualEffectView, context: Context) {
+        visualEffectView.material = material
+        visualEffectView.blendingMode = blendingMode
+    }
 }
 
 // 新增：NSPopover 包装器，用于精确控制弹出窗口位置
@@ -779,7 +798,7 @@ struct MenuBarView: View {
                 
                 Text("Tuna")
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .alignmentGuide(.leading) { d in d[.leading] }
                 
                 Spacer()
@@ -803,8 +822,22 @@ struct MenuBarView: View {
         }
         .padding(16)
         .background(
-            Color(red: 0.08, green: 0.12, blue: 0.12)
-                .edgesIgnoringSafeArea(.all)
+            ZStack {
+                // 使用毛玻璃效果作为背景，改用更浅的material
+                VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                
+                // 添加浅色渐变叠加层
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 0.95, green: 0.95, blue: 0.97).opacity(0.3),
+                        Color(red: 0.9, green: 0.9, blue: 0.92).opacity(0.2)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .opacity(0.1)
+            }
+            .edgesIgnoringSafeArea(.all)
         )
         .cornerRadius(10)
         .frame(width: 350)
@@ -831,12 +864,12 @@ struct MenuBarView: View {
                     HStack {
                         Image(systemName: isInput ? "mic.fill" : "headphones")
                             .font(.system(size: 16))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .frame(width: 20)
                         
                         Text(isInput ? "AUDIO INPUT" : "AUDIO OUTPUT")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .lineLimit(1)
                         
                         Spacer()
@@ -844,7 +877,7 @@ struct MenuBarView: View {
                         // 箭头图标，根据展开状态旋转
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                             .rotationEffect(.degrees(isInput ? 
                                                    (showingInputDeviceList ? 90 : 0) : 
                                                    (showingOutputDeviceList ? 90 : 0)))
@@ -853,7 +886,12 @@ struct MenuBarView: View {
                     .contentShape(Rectangle())
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color.black.opacity(0.2))
+                    .background(
+                        ZStack {
+                            VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                            Color.white.opacity(0.05)
+                        }
+                    )
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -864,7 +902,7 @@ struct MenuBarView: View {
                         (audioManager.selectedInputDevice?.name ?? "No Input Device") : 
                         (audioManager.selectedOutputDevice?.name ?? "No Output Device"))
                         .font(.system(size: 15))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .lineLimit(1)
                     Spacer()
                 }
@@ -876,7 +914,23 @@ struct MenuBarView: View {
                     .padding(.horizontal, 12)
                     .padding(.bottom, 12)
             }
-            .background(Color(red: 0.12, green: 0.15, blue: 0.16).opacity(0.6))
+            .background(
+                ZStack {
+                    // 半透明背景效果
+                    VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                    
+                    // 细微的亮色渐变效果
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.95, green: 0.95, blue: 0.97).opacity(0.2),
+                            Color(red: 0.9, green: 0.9, blue: 0.92).opacity(0.1)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .opacity(0.1)
+                }
+            )
             .cornerRadius(12)
             
             // 条件性地在底部显示设备列表
@@ -905,9 +959,14 @@ struct MenuBarView: View {
                         }
                     )
                     .frame(width: 300)
-                    .background(Color.black.opacity(0.9))
+                    .background(
+                        ZStack {
+                            VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                            Color.black.opacity(0.1)
+                        }
+                    )
                     .cornerRadius(8)
-                    .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
                 }
                 .transition(.opacity)
                 .zIndex(100) // 确保设备列表显示在最前面
@@ -1076,7 +1135,12 @@ struct DictationCard: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.2))
+        .background(
+            ZStack {
+                VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                Color.white.opacity(0.05)
+            }
+        )
         .cornerRadius(6) // 使用更小的圆角
     }
     
