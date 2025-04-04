@@ -92,7 +92,7 @@ struct DeviceMenuList: View {
     
     // 计算所需的最小宽度以完整显示所有设备名称
     private var minWidth: CGFloat {
-        // 基础宽度（包含边距和图标空间）
+        // 基础宽度（包含边距和图标空间）- 增加基础宽度
         let baseWidth: CGFloat = 320
         
         // 计算最长设备名称的宽度
@@ -102,8 +102,8 @@ struct DeviceMenuList: View {
             return device.name.size(withAttributes: attributes).width
         }.max() ?? 0
         
-        // 考虑图标、checkmark和边距的额外宽度
-        let extraWidth: CGFloat = 70
+        // 考虑图标、checkmark和边距的额外宽度 - 增加额外宽度
+        let extraWidth: CGFloat = 90
         
         // 返回至少为baseWidth，但如果有更长的设备名称则可能更大
         return max(baseWidth, maxDeviceNameWidth + extraWidth)
@@ -960,12 +960,11 @@ struct MenuBarView: View {
                             }
                         }
                     )
-                    .frame(width: 380)  // 从300增加到380，与蓝色框大致匹配
+                    .frame(width: 320) // 增加宽度以匹配minWidth
                     .background(
                         ZStack {
                             VisualEffectView(material: .popover, blendingMode: .behindWindow)
                             Color.black.opacity(0.1)
-                        }
                         }
                     )
                     .cornerRadius(8)
