@@ -58,7 +58,6 @@ struct DeviceMenuItem: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
-        .focusable(false)
         .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
         .cornerRadius(4)
         .help(device.name) // 添加tooltip提示
@@ -93,7 +92,7 @@ struct DeviceMenuList: View {
     // 计算所需的最小宽度以完整显示所有设备名称
     private var minWidth: CGFloat {
         // 基础宽度（包含边距和图标空间）- 增加基础宽度
-        let baseWidth: CGFloat = 320
+        let baseWidth: CGFloat = 350
         
         // 计算最长设备名称的宽度
         let maxDeviceNameWidth = devices.map { device in
@@ -102,8 +101,8 @@ struct DeviceMenuList: View {
             return device.name.size(withAttributes: attributes).width
         }.max() ?? 0
         
-        // 考虑图标、checkmark和边距的额外宽度 - 增加额外宽度
-        let extraWidth: CGFloat = 90
+        // 考虑图标、checkmark和边距的额外宽度
+        let extraWidth: CGFloat = 80
         
         // 返回至少为baseWidth，但如果有更长的设备名称则可能更大
         return max(baseWidth, maxDeviceNameWidth + extraWidth)
@@ -896,7 +895,6 @@ struct MenuBarView: View {
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .focusable(false)
                 
                 // 设备名称行
                 HStack {
@@ -960,7 +958,7 @@ struct MenuBarView: View {
                             }
                         }
                     )
-                    .frame(width: 320) // 增加宽度以匹配minWidth
+                    .frame(width: 350) // 增加宽度以匹配minWidth
                     .background(
                         ZStack {
                             VisualEffectView(material: .popover, blendingMode: .behindWindow)
@@ -1066,7 +1064,6 @@ struct MenuBarView: View {
                 .cornerRadius(6)
         }
         .buttonStyle(PlainButtonStyle())
-        .focusable(false)
         .help(icon == "power" ? "Quit" : "Settings") // 添加悬停提示
     }
     
@@ -1212,7 +1209,6 @@ struct DeviceListItem: View {
             .padding(.vertical, 4)
         }
         .buttonStyle(DeviceButtonStyle())
-        .focusable(false)
         .help(device.name)
     }
 }
