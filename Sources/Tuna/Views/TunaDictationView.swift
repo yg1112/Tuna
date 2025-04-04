@@ -419,56 +419,59 @@ struct TunaDictationView: View {
         HStack {
             // 使用GeometryReader获取可用宽度
             GeometryReader { geometry in
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
+                HStack(spacing: 12) { // 增加按钮之间的间距
+                    Spacer(minLength: 8)
                     
-                    // 暂停/播放按钮
+                    // 暂停/播放按钮 - 根据当前状态显示不同提示
                     controlButton(
                         icon: playPauseIconName,
-                        title: dictationManager.state == .recording ? "Pause" : "Start",
+                        title: dictationManager.state == .recording ? "Pause Recording" : "Start Recording",
                         action: handlePlayPauseAction,
                         isDisabled: dictationManager.state == .processing,
-                        width: (geometry.size.width - 24) / 4
+                        width: (geometry.size.width - 80) / 5
                     )
                     
-                    Spacer(minLength: 0)
-                    
-                    // 停止按钮
+                    // 停止按钮 - 只在录音/暂停状态下激活
                     controlButton(
                         icon: "stop.fill",
-                        title: "Stop",
+                        title: "Stop Recording",
                         action: { dictationManager.stopRecording() },
                         isDisabled: dictationManager.state == .idle || dictationManager.state == .processing,
-                        width: (geometry.size.width - 24) / 4
+                        width: (geometry.size.width - 80) / 5
                     )
                     
-                    Spacer(minLength: 0)
+                    // 清除按钮 - 放宽禁用条件，当占位符显示时才禁用
+                    controlButton(
+                        icon: "xmark",
+                        title: "Clear Text",
+                        action: clearText,
+                        isDisabled: isPlaceholderVisible && editableText == "This is the live transcription...",
+                        width: (geometry.size.width - 80) / 5
+                    )
                     
-                    // 复制按钮
+                    // 复制按钮 - 放宽禁用条件，当占位符显示时才禁用
                     controlButton(
                         icon: "doc.on.doc",
-                        title: "Copy",
+                        title: "Copy to Clipboard",
                         action: copyToClipboard,
-                        isDisabled: dictationManager.transcribedText.isEmpty,
-                        width: (geometry.size.width - 24) / 4
+                        isDisabled: isPlaceholderVisible && editableText == "This is the live transcription...",
+                        width: (geometry.size.width - 80) / 5
                     )
                     
-                    Spacer(minLength: 0)
-                    
-                    // 保存按钮
+                    // 保存按钮 - 放宽禁用条件，当占位符显示时才禁用
                     controlButton(
                         icon: "arrow.down.doc.fill",
-                        title: "Export",
+                        title: "Export to File",
                         action: saveTranscription,
-                        isDisabled: dictationManager.transcribedText.isEmpty,
-                        width: (geometry.size.width - 24) / 4
+                        isDisabled: isPlaceholderVisible && editableText == "This is the live transcription...",
+                        width: (geometry.size.width - 80) / 5
                     )
                     
-                    Spacer(minLength: 0)
+                    Spacer(minLength: 8)
                 }
                 .frame(width: geometry.size.width)
             }
-            .frame(height: 38)
+            .frame(height: 34)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -477,36 +480,37 @@ struct TunaDictationView: View {
     // 按钮组件
     private func controlButton(icon: String, title: String, action: @escaping () -> Void, isDisabled: Bool, width: CGFloat) -> some View {
         Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .foregroundColor(.primary)
-            .frame(width: width, height: 34)
-            .background(
-                ZStack {
-                    VisualEffectView(material: .popover, blendingMode: .behindWindow)
-                    Color.white.opacity(0.1)
-                }
-            )
-            .cornerRadius(6)
-            .opacity(isDisabled ? 0.5 : 1.0)
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+                .frame(width: width, height: 34)
+                .background(
+                    ZStack {
+                        VisualEffectView(material: .popover, blendingMode: .behindWindow)
+                        Color.white.opacity(0.1)
+                    }
+                )
+                .cornerRadius(6)
+                .opacity(isDisabled ? 0.6 : 1.0) // 增加不透明度，让禁用状态下的按钮更加可见
         }
         .buttonStyle(PlainButtonStyle())
         .disabled(isDisabled)
+        .help(title) // 显示悬停提示文本
     }
     
     // 复制到剪贴板
     private func copyToClipboard() {
-        if isPlaceholderVisible && dictationManager.transcribedText.isEmpty {
+        // 不复制占位符文本
+        if isPlaceholderVisible && editableText == "This is the live transcription..." {
             return
         }
         
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(editableText, forType: .string)
+        
+        // 添加复制成功提示
+        dictationManager.progressMessage = "Text copied to clipboard"
     }
     
     // 播放/暂停按钮动作
@@ -603,7 +607,10 @@ struct TunaDictationView: View {
     
     // 保存转录文本到用户设置的路径
     private func saveTranscription() {
-        guard !dictationManager.transcribedText.isEmpty else { return }
+        // 不保存占位符文本
+        if isPlaceholderVisible && editableText == "This is the live transcription..." {
+            return
+        }
         
         // 使用editableText而不是dictationManager.transcribedText，以便用户的编辑也会被保存
         let text = editableText
@@ -649,6 +656,15 @@ struct TunaDictationView: View {
     // 在获得转录结果后显示编辑提示
     private func showEditingHint() {
         // 由于不再需要显示编辑提示，此函数可以为空或完全移除
+    }
+    
+    // 清除文本
+    private func clearText() {
+        editableText = ""
+        dictationManager.transcribedText = ""
+        isPlaceholderVisible = true
+        editableText = "This is the live transcription..."
+        dictationManager.progressMessage = "Text cleared"
     }
 }
 
