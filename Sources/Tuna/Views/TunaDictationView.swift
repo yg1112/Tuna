@@ -85,7 +85,7 @@ struct TunaDictationView: View {
     // 标题部分
     private var titleView: some View {
         HStack {
-            Image(systemName: "mic")
+            Image(systemName: "bubble.and.pencil")
                 .font(.system(size: 18))
                 .foregroundColor(.primary)
             Text("DICTATION")
@@ -94,10 +94,7 @@ struct TunaDictationView: View {
             
             Spacer()
             
-            // 添加右侧箭头
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14))
-                .foregroundColor(.secondary)
+            // 移除右侧箭头
         }
         .padding(.horizontal, 12)
     }
