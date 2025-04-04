@@ -460,7 +460,7 @@ struct TunaDictationView: View {
                     
                     // 保存按钮 - 放宽禁用条件，当占位符显示时才禁用
                     controlButton(
-                        icon: "arrow.down.doc.fill",
+                        icon: "square.and.arrow.down",
                         title: "Export to File",
                         action: saveTranscription,
                         isDisabled: isPlaceholderVisible && editableText == "This is the live transcription...",
@@ -481,9 +481,10 @@ struct TunaDictationView: View {
     private func controlButton(icon: String, title: String, action: @escaping () -> Void, isDisabled: Bool, width: CGFloat) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.system(size: icon == "square.and.arrow.down" ? 17 : 16))
                 .foregroundColor(.white)
                 .frame(width: width, height: 34)
+                .offset(y: icon == "square.and.arrow.down" ? -1 : 0) // 调整垂直位置
                 .background(
                     ZStack {
                         VisualEffectView(material: .popover, blendingMode: .behindWindow)
