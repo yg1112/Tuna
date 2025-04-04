@@ -42,6 +42,8 @@ struct DeviceMenuItem: View {
                     .font(.system(size: 13))
                     .foregroundColor(.white)
                     .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 240, alignment: .leading)
                 
                 Spacer()
                 
@@ -89,24 +91,8 @@ struct DeviceMenuList: View {
     let selectedDeviceName: String
     let onDeviceSelected: (AudioDevice) -> Void
     
-    // 计算所需的最小宽度以完整显示所有设备名称
-    private var minWidth: CGFloat {
-        // 基础宽度（包含边距和图标空间）- 增加基础宽度
-        let baseWidth: CGFloat = 350
-        
-        // 计算最长设备名称的宽度
-        let maxDeviceNameWidth = devices.map { device in
-            let font = NSFont.systemFont(ofSize: 13)
-            let attributes = [NSAttributedString.Key.font: font]
-            return device.name.size(withAttributes: attributes).width
-        }.max() ?? 0
-        
-        // 考虑图标、checkmark和边距的额外宽度
-        let extraWidth: CGFloat = 80
-        
-        // 返回至少为baseWidth，但如果有更长的设备名称则可能更大
-        return max(baseWidth, maxDeviceNameWidth + extraWidth)
-    }
+    // 固定菜单宽度
+    private let fixedWidth: CGFloat = 311
     
     // 计算列表内容的精确高度
     private var exactContentHeight: CGFloat {
@@ -136,7 +122,7 @@ struct DeviceMenuList: View {
             // 使用计算的内容精确高度，但限制最大高度为屏幕高度的40%
             .frame(height: min(exactContentHeight + 8, NSScreen.main?.frame.height ?? 1000 * 0.4))
         }
-        .frame(width: minWidth) // 使用动态计算的宽度
+        .frame(width: fixedWidth) // 使用固定宽度
         .background(
             ZStack {
                 VisualEffectView(material: .popover, blendingMode: .behindWindow)
@@ -145,7 +131,7 @@ struct DeviceMenuList: View {
         )
         .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 3) // 添加阴影增强视觉层次
-        .fixedSize(horizontal: true, vertical: false) // 强制使用计算的宽度
+        .fixedSize(horizontal: true, vertical: false) // 强制使用固定宽度
     }
 }
 
@@ -840,7 +826,7 @@ struct MenuBarView: View {
             .edgesIgnoringSafeArea(.all)
         )
         .cornerRadius(10)
-        .frame(width: 350)
+        .frame(width: 311)
     }
     
     // 音频设备区域视图（显示设备名称和音量滑块）
@@ -886,6 +872,7 @@ struct MenuBarView: View {
                     .contentShape(Rectangle())
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    .frame(width: 311) // 固定按钮宽度
                     .background(
                         ZStack {
                             VisualEffectView(material: .popover, blendingMode: .behindWindow)
@@ -904,16 +891,21 @@ struct MenuBarView: View {
                         .font(.system(size: 15))
                         .foregroundColor(.primary)
                         .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: 311, alignment: .leading) // 固定文本宽度
                     Spacer()
                 }
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
+                .frame(width: 311) // 固定设备名称容器宽度
                 
                 // 音量滑块
                 volumeSlider(isInput: isInput)
                     .padding(.horizontal, 12)
                     .padding(.bottom, 12)
+                    .frame(width: 311) // 固定滑块容器宽度
             }
+            .frame(width: 311) // 固定整个内容区宽度
             .background(
                 ZStack {
                     // 半透明背景效果
@@ -958,7 +950,7 @@ struct MenuBarView: View {
                             }
                         }
                     )
-                    .frame(width: 350) // 增加宽度以匹配minWidth
+                    .frame(width: 311) // 使设备列表宽度与主卡片一致
                     .background(
                         ZStack {
                             VisualEffectView(material: .popover, blendingMode: .behindWindow)
@@ -972,6 +964,7 @@ struct MenuBarView: View {
                 .zIndex(100) // 确保设备列表显示在最前面
             }
         }
+        .frame(width: 311) // 固定整个ZStack宽度
     }
     
     // 音量滑块
