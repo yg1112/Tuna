@@ -43,198 +43,196 @@ struct TunaSettingsView: View {
     private let formats = ["txt", "srt", "vtt", "json"]
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Launch at Login Setting with Toggle
+        VStack(spacing: 24) {
+            // Launch at Login Setting with Toggle
+            HStack {
+                Text("Launch at Login")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                // 使用Button替代Toggle，实现类似效果
+                Button(action: {
+                    if !isProcessingLoginSetting {
+                        toggleLoginItem()
+                    }
+                }) {
+                    ZStack {
+                        Capsule()
+                            .fill(settings.launchAtLogin ? Color.green : Color.gray.opacity(0.3))
+                            .frame(width: 50, height: 28)
+                        
+                        Circle()
+                            .fill(Color.white)
+                            .shadow(radius: 1)
+                            .frame(width: 24, height: 24)
+                            .offset(x: settings.launchAtLogin ? 12 : -12)
+                    }
+                }
+                .disabled(isProcessingLoginSetting)
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 15)
+            .background(Color.black.opacity(0.3))
+            .cornerRadius(12)
+            
+            // Transcription Settings
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Transcription Settings")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                
+                // File Format Selection
                 HStack {
-                    Text("Launch at Login")
-                        .font(.system(size: 16, weight: .medium))
+                    Text("File Format:")
+                        .font(.system(size: 14))
                         .foregroundColor(.white)
                     
                     Spacer()
                     
-                    // 使用Button替代Toggle，实现类似效果
-                    Button(action: {
-                        if !isProcessingLoginSetting {
-                            toggleLoginItem()
-                        }
-                    }) {
-                        ZStack {
-                            Capsule()
-                                .fill(settings.launchAtLogin ? Color.green : Color.gray.opacity(0.3))
-                                .frame(width: 50, height: 28)
-                            
-                            Circle()
-                                .fill(Color.white)
-                                .shadow(radius: 1)
-                                .frame(width: 24, height: 24)
-                                .offset(x: settings.launchAtLogin ? 12 : -12)
+                    Picker("", selection: $selectedTranscriptionFormat) {
+                        ForEach(formats, id: \.self) { format in
+                            Text(format.uppercased()).tag(format)
                         }
                     }
-                    .disabled(isProcessingLoginSetting)
-                    .buttonStyle(PlainButtonStyle())
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(width: 180)
+                    .onChange(of: selectedTranscriptionFormat) { newValue in
+                        // 只有当不在初始化过程中且值实际发生变化时才更新
+                        if !isInitializing && newValue != settings.transcriptionFormat {
+                            settings.transcriptionFormat = newValue
+                        }
+                    }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(12)
                 
-                // Transcription Settings
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Transcription Settings")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white)
-                    
-                    // File Format Selection
+                // Output Directory Selection
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("File Format:")
+                        Text("Save Location:")
                             .font(.system(size: 14))
                             .foregroundColor(.white)
                         
                         Spacer()
                         
-                        Picker("", selection: $selectedTranscriptionFormat) {
-                            ForEach(formats, id: \.self) { format in
-                                Text(format.uppercased()).tag(format)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .frame(width: 180)
-                        .onChange(of: selectedTranscriptionFormat) { newValue in
-                            // 只有当不在初始化过程中且值实际发生变化时才更新
-                            if !isInitializing && newValue != settings.transcriptionFormat {
-                                settings.transcriptionFormat = newValue
-                            }
-                        }
-                    }
-                    
-                    // Output Directory Selection
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("Save Location:")
-                                .font(.system(size: 14))
+                        Button(action: {
+                            selectOutputDirectory()
+                        }) {
+                            Text("Change")
                                 .foregroundColor(.white)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                selectOutputDirectory()
-                            }) {
-                                Text("Change")
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 4)
-                                    .background(Color(red: 0.0, green: 0.48, blue: 1.0))
-                                    .cornerRadius(5)
-                                    .font(.system(size: 13, weight: .regular))
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 4)
+                                .background(Color(red: 0.0, green: 0.48, blue: 1.0))
+                                .cornerRadius(5)
+                                .font(.system(size: 13, weight: .regular))
                         }
-                        
-                        Text(settings.transcriptionOutputDirectory?.path ?? "Not Set")
-                            .font(.system(size: 13))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        .buttonStyle(PlainButtonStyle())
                     }
+                    
+                    Text(settings.transcriptionOutputDirectory?.path ?? "Not Set")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(12)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 15)
+            .background(Color.black.opacity(0.3))
+            .cornerRadius(12)
+            
+            // Default Audio Devices
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Default Audio Devices")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
                 
-                // Default Audio Devices
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Default Audio Devices")
-                        .font(.system(size: 16, weight: .medium))
+                // Default Output Device
+                HStack {
+                    Text("Output Device:")
+                        .font(.system(size: 14))
                         .foregroundColor(.white)
                     
-                    // Default Output Device
-                    HStack {
-                        Text("Output Device:")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                        
-                        Picker("", selection: $selectedOutputDeviceUID) {
-                            Text("Not Set").tag("")
-                            ForEach(audioManager.outputDevices, id: \.uid) { device in
-                                Text(device.name).tag(device.uid)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 200)
-                        .onChange(of: selectedOutputDeviceUID) { newValue in
-                            // 只有当不在初始化过程中且值实际发生变化时才更新
-                            if !isInitializing && newValue != settings.defaultOutputDeviceUID {
-                                settings.defaultOutputDeviceUID = newValue
-                                
-                                // Apply setting immediately if device selected
-                                if !newValue.isEmpty, let device = audioManager.outputDevices.first(where: { $0.uid == newValue }) {
-                                    audioManager.setDefaultOutputDevice(device)
-                                }
-                            }
-                        }
-                    }
+                    Spacer()
                     
-                    // Default Input Device
-                    HStack {
-                        Text("Input Device:")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                        
-                        Picker("", selection: $selectedInputDeviceUID) {
-                            Text("Not Set").tag("")
-                            ForEach(audioManager.inputDevices, id: \.uid) { device in
-                                Text(device.name).tag(device.uid)
-                            }
+                    Picker("", selection: $selectedOutputDeviceUID) {
+                        Text("Not Set").tag("")
+                        ForEach(audioManager.outputDevices, id: \.uid) { device in
+                            Text(device.name).tag(device.uid)
                         }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 200)
-                        .onChange(of: selectedInputDeviceUID) { newValue in
-                            // 只有当不在初始化过程中且值实际发生变化时才更新
-                            if !isInitializing && newValue != settings.defaultInputDeviceUID {
-                                settings.defaultInputDeviceUID = newValue
-                                
-                                // Apply setting immediately if device selected
-                                if !newValue.isEmpty, let device = audioManager.inputDevices.first(where: { $0.uid == newValue }) {
-                                    audioManager.setDefaultInputDevice(device)
-                                }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 200)
+                    .onChange(of: selectedOutputDeviceUID) { newValue in
+                        // 只有当不在初始化过程中且值实际发生变化时才更新
+                        if !isInitializing && newValue != settings.defaultOutputDeviceUID {
+                            settings.defaultOutputDeviceUID = newValue
+                            
+                            // Apply setting immediately if device selected
+                            if !newValue.isEmpty, let device = audioManager.outputDevices.first(where: { $0.uid == newValue }) {
+                                audioManager.setDefaultOutputDevice(device)
                             }
                         }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
-                .background(Color.black.opacity(0.3))
-                .cornerRadius(12)
                 
-                Spacer()
-            }
-            .padding(.top, 20)
-            .frame(width: 400, height: 450)
-            .padding(20)
-            .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-            .onAppear {
-                print("[VIEW] Settings view appeared")
-                fflush(stdout)
-                
-                // 防止初始化触发循环更新
-                isInitializing = true
-                
-                // Initialize picker values to match settings
-                selectedTranscriptionFormat = settings.transcriptionFormat
-                selectedOutputDeviceUID = settings.defaultOutputDeviceUID
-                selectedInputDeviceUID = settings.defaultInputDeviceUID
-                
-                // 初始化完成后延迟将标志设为false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isInitializing = false
+                // Default Input Device
+                HStack {
+                    Text("Input Device:")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Picker("", selection: $selectedInputDeviceUID) {
+                        Text("Not Set").tag("")
+                        ForEach(audioManager.inputDevices, id: \.uid) { device in
+                            Text(device.name).tag(device.uid)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 200)
+                    .onChange(of: selectedInputDeviceUID) { newValue in
+                        // 只有当不在初始化过程中且值实际发生变化时才更新
+                        if !isInitializing && newValue != settings.defaultInputDeviceUID {
+                            settings.defaultInputDeviceUID = newValue
+                            
+                            // Apply setting immediately if device selected
+                            if !newValue.isEmpty, let device = audioManager.inputDevices.first(where: { $0.uid == newValue }) {
+                                audioManager.setDefaultInputDevice(device)
+                            }
+                        }
+                    }
                 }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 15)
+            .background(Color.black.opacity(0.3))
+            .cornerRadius(12)
+            
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 30)
+        .padding(.horizontal, 15)
+        .padding(.bottom, 20)
+        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+        .onAppear {
+            print("[VIEW] Settings view appeared")
+            fflush(stdout)
+            
+            // 防止初始化触发循环更新
+            isInitializing = true
+            
+            // Initialize picker values to match settings
+            selectedTranscriptionFormat = settings.transcriptionFormat
+            selectedOutputDeviceUID = settings.defaultOutputDeviceUID
+            selectedInputDeviceUID = settings.defaultInputDeviceUID
+            
+            // 初始化完成后延迟将标志设为false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isInitializing = false
             }
         }
     }

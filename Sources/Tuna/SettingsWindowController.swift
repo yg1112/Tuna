@@ -19,7 +19,7 @@ class SettingsWindowController: NSWindowController {
     convenience init() {
         // 调整窗口尺寸以适应精简后的设置选项
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 480),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 420),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
