@@ -181,6 +181,7 @@ struct TunaDictationView: View {
                     .font(.system(size: 14))
                     .foregroundColor(.white)
                     .modifier(TextEditorBackgroundModifier())
+                    .modifier(HideScrollbarModifier()) // 添加滚动条隐藏修饰符
                     .background(Color.clear)
                     .frame(minHeight: 72, maxHeight: .infinity)
                     .padding([.horizontal, .top], 6)
@@ -666,6 +667,45 @@ struct TextEditorBackgroundModifier: ViewModifier {
             content.scrollContentBackground(.hidden)
         } else {
             content
+        }
+    }
+}
+
+// 添加隐藏滚动条的修饰符
+struct HideScrollbarModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                // 使用DispatchQueue.main.async确保UI已完全加载
+                DispatchQueue.main.async {
+                    // 查找所有NSScrollView并修改滚动条
+                    for subview in NSApp.keyWindow?.contentView?.subviews ?? [] {
+                        modifyScrollViews(in: subview)
+                    }
+                }
+            }
+    }
+    
+    // 递归查找并修改所有NSScrollView
+    private func modifyScrollViews(in view: NSView) {
+        // 修改当前视图如果是NSScrollView
+        if let scrollView = view as? NSScrollView {
+            // 只显示自动滚动条 (当内容超出时)
+            scrollView.hasVerticalScroller = true
+            scrollView.autohidesScrollers = true
+            
+            // 降低滚动条不透明度
+            scrollView.verticalScroller?.alphaValue = 0.5
+            
+            // 使滚动条更窄
+            if let scroller = scrollView.verticalScroller {
+                scroller.knobStyle = .light
+            }
+        }
+        
+        // 递归检查子视图
+        for subview in view.subviews {
+            modifyScrollViews(in: subview)
         }
     }
 } 
