@@ -14,6 +14,22 @@ extension String {
     }
 }
 
+// 添加渐变色常量
+extension Color {
+    static let darkBlueGradient = LinearGradient(
+        gradient: Gradient(colors: [
+            Color(red: 0.05, green: 0.1, blue: 0.2),
+            Color(red: 0.1, green: 0.15, blue: 0.25)
+        ]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    
+    static let accentTeal = Color(red: 0.2, green: 0.9, blue: 0.8)
+    static let deepBlue = Color(red: 0.05, green: 0.1, blue: 0.2)
+    static let highlightBlue = Color(red: 0.0, green: 0.5, blue: 1.0)
+}
+
 struct TunaDictationView: View {
     @ObservedObject private var dictationManager = DictationManager.shared
     @State private var isVisualizing = false
@@ -54,8 +70,35 @@ struct TunaDictationView: View {
             buttonRowView
         }
         .padding(.vertical, 12)
-        .background(Color(red: 0.12, green: 0.15, blue: 0.16).opacity(0.6))
-        .cornerRadius(12)
+        .background(
+            ZStack {
+                // 底层渐变背景
+                Color.darkBlueGradient
+                
+                // 毛玻璃效果层
+                if #available(macOS 12.0, *) {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.7)
+                } else {
+                    Rectangle()
+                        .fill(Color.black.opacity(0.4))
+                        .blur(radius: 10)
+                }
+                
+                // 微妙的网格纹理增强科技感
+                Image(systemName: "grid")
+                    .resizable(resizingMode: .tile)
+                    .foregroundColor(.white)
+                    .opacity(0.03)
+            }
+        )
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.accentTeal.opacity(0.3), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
         .onAppear {
             // 启动音频可视化效果定时器
             startVisualizing()
@@ -69,18 +112,31 @@ struct TunaDictationView: View {
     // 标题部分
     private var titleView: some View {
         HStack {
-            Image(systemName: "mic")
-                .font(.system(size: 18))
-                .foregroundColor(.white)
-            Text("DICTATION")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white)
+            HStack(spacing: 6) {
+                Image(systemName: "mic")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(Color.accentTeal)
+                Text("DICTATION")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .kerning(0.5)
+                    .foregroundColor(.white)
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.3))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.accentTeal.opacity(0.2), lineWidth: 1)
+                    )
+            )
             
             Spacer()
             
             // 添加右侧箭头
             Image(systemName: "chevron.right")
-                .font(.system(size: 14))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.gray)
         }
         .padding(.horizontal, 12)
@@ -89,10 +145,25 @@ struct TunaDictationView: View {
     // 状态信息
     private var statusView: some View {
         Text(statusText)
-            .font(.system(size: 14))
-            .foregroundColor(.white)
+            .font(.system(size: 14, weight: .medium, design: .rounded))
+            .foregroundColor(statusColor)
             .padding(.horizontal, 12)
             .padding(.vertical, 2)
+            .animation(.easeInOut(duration: 0.2), value: statusText)
+    }
+    
+    // 根据状态返回不同颜色
+    private var statusColor: Color {
+        switch dictationManager.state {
+        case .recording:
+            return Color.accentTeal
+        case .processing:
+            return Color.orange
+        case .error:
+            return Color.red
+        default:
+            return Color.white.opacity(0.8)
+        }
     }
     
     // 可视化效果
@@ -126,15 +197,18 @@ struct TunaDictationView: View {
             }
         )
         .frame(height: 78)
-        .background(Color.black.opacity(0.3))
-        .cornerRadius(8)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.black.opacity(0.2))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 1)
+        )
+        .cornerRadius(12)
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.2 : 0.1), lineWidth: 1)
-                .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
-        )
     }
     
     // 创建独立的转录文本框视图组件
@@ -169,7 +243,7 @@ struct TunaDictationView: View {
                 // 占位符文本 - 只在需要时显示
                 if isPlaceholderVisible && editableText.isEmpty {
                     Text("This is the live transcription...")
-                        .font(.system(size: 14))
+                        .font(.system(size: 14, design: .rounded))
                         .foregroundColor(.gray)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 6)
@@ -178,7 +252,7 @@ struct TunaDictationView: View {
                 
                 // 文本编辑器
                 TextEditor(text: $editableText)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, design: .rounded))
                     .foregroundColor(.white)
                     .modifier(TextEditorBackgroundModifier())
                     .modifier(HideScrollbarModifier()) // 添加滚动条隐藏修饰符
@@ -239,7 +313,7 @@ struct TunaDictationView: View {
                             onTextFieldFocus()
                         }
                     }
-                    .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7))
+                    .accentColor(Color.accentTeal)
                     .colorScheme(.dark)
             }
             .onAppear {
@@ -390,14 +464,15 @@ struct TunaDictationView: View {
         HStack {
             // 使用GeometryReader获取可用宽度
             GeometryReader { geometry in
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     // 暂停/播放按钮
                     controlButton(
                         icon: playPauseIconName,
                         title: dictationManager.state == .recording ? "Pause" : "Start",
                         action: handlePlayPauseAction,
                         isDisabled: dictationManager.state == .processing,
-                        width: geometry.size.width / 4 - 6
+                        isActive: dictationManager.state == .recording,
+                        width: geometry.size.width / 4 - 8
                     )
                     
                     // 停止按钮
@@ -406,7 +481,8 @@ struct TunaDictationView: View {
                         title: "Stop",
                         action: { dictationManager.stopRecording() },
                         isDisabled: dictationManager.state == .idle || dictationManager.state == .processing,
-                        width: geometry.size.width / 4 - 6
+                        isActive: false,
+                        width: geometry.size.width / 4 - 8
                     )
                     
                     // 复制按钮
@@ -415,7 +491,8 @@ struct TunaDictationView: View {
                         title: "Copy",
                         action: copyToClipboard,
                         isDisabled: dictationManager.transcribedText.isEmpty,
-                        width: geometry.size.width / 4 - 6
+                        isActive: false,
+                        width: geometry.size.width / 4 - 8
                     )
                     
                     // 保存按钮
@@ -424,7 +501,8 @@ struct TunaDictationView: View {
                         title: "Export",
                         action: saveTranscription,
                         isDisabled: dictationManager.transcribedText.isEmpty,
-                        width: geometry.size.width / 4 - 6
+                        isActive: false,
+                        width: geometry.size.width / 4 - 8
                     )
                 }
                 .frame(width: geometry.size.width)
@@ -436,21 +514,41 @@ struct TunaDictationView: View {
     }
     
     // 按钮组件
-    private func controlButton(icon: String, title: String, action: @escaping () -> Void, isDisabled: Bool, width: CGFloat) -> some View {
+    private func controlButton(icon: String, title: String, action: @escaping () -> Void, isDisabled: Bool, isActive: Bool, width: CGFloat) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(isActive ? Color.black : .white)
+                
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(isActive ? Color.black : .white)
             }
-            .foregroundColor(.white)
+            .padding(.vertical, 6)
             .frame(width: width, height: 34)
-            .background(Color.black.opacity(0.7))
-            .cornerRadius(6)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(
+                        isActive ? 
+                            Color.accentTeal : 
+                            Color.black.opacity(0.3)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                isActive ? 
+                                    Color.accentTeal : 
+                                    Color.white.opacity(0.1),
+                                lineWidth: 1
+                            )
+                    )
+            )
+            .shadow(color: isActive ? Color.accentTeal.opacity(0.5) : Color.clear, radius: 5, x: 0, y: 0)
         }
         .buttonStyle(PlainButtonStyle())
         .disabled(isDisabled)
+        .opacity(isDisabled ? 0.4 : 1.0)
     }
     
     // 复制到剪贴板
@@ -540,7 +638,7 @@ struct TunaDictationView: View {
     
     // 音频可视化效果
     private var audioVisualizerView: some View {
-        HStack(alignment: .center, spacing: 2) {
+        HStack(alignment: .center, spacing: 3) {
             ForEach(0..<15, id: \.self) { index in
                 AudioVisualizerBar(isRecording: dictationManager.state == .recording)
             }
@@ -616,9 +714,19 @@ struct AudioVisualizerBar: View {
     @State private var timer: Timer?
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 1)
-            .fill(Color(red: 0.3, green: 0.9, blue: 0.7))
-            .frame(width: 2, height: height)
+        RoundedRectangle(cornerRadius: 1.5)
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.accentTeal,
+                        Color.accentTeal.opacity(0.7)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: 3, height: height)
+            .shadow(color: Color.accentTeal.opacity(0.7), radius: 2, x: 0, y: 0)
             .onAppear {
                 startAnimation()
             }
