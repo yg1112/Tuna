@@ -58,6 +58,7 @@ struct DeviceMenuItem: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .focusable(false)
         .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
         .cornerRadius(4)
         .help(device.name) // 添加tooltip提示
@@ -895,6 +896,7 @@ struct MenuBarView: View {
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
+                .focusable(false)
                 
                 // 设备名称行
                 HStack {
@@ -1064,6 +1066,7 @@ struct MenuBarView: View {
                 .cornerRadius(6)
         }
         .buttonStyle(PlainButtonStyle())
+        .focusable(false)
         .help(icon == "power" ? "Quit" : "Settings") // 添加悬停提示
     }
     
@@ -1209,6 +1212,7 @@ struct DeviceListItem: View {
             .padding(.vertical, 4)
         }
         .buttonStyle(DeviceButtonStyle())
+        .focusable(false)
         .help(device.name)
     }
 }
