@@ -806,7 +806,7 @@ struct MenuBarView: View {
             Color(red: 0.08, green: 0.12, blue: 0.12)
                 .edgesIgnoringSafeArea(.all)
         )
-        .cornerRadius(20)
+        .cornerRadius(10)
         .frame(width: 350)
     }
     
