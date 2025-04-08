@@ -2057,4 +2057,9 @@ class AudioManager: ObservableObject {
             print("[ERROR] Failed to set default input device: \(status)")
         }
     }
+
+    // [Cursor AI] Let new UI call forceApplySmartDeviceSwapping
+    public func forceApplySmartDeviceSwapping() {
+        print("\u{001B}[33m[Stub]\u{001B}[0m forceApplySmartDeviceSwapping is not implemented in main-based logic.")
+    }
 } 
