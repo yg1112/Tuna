@@ -236,7 +236,7 @@ struct GreenToggleStyle: ToggleStyle {
             
             ZStack {
                 Capsule()
-                    .fill(configuration.isOn ? Color.green : Color.gray.opacity(0.3))
+                    .fill(configuration.isOn ? Color(nsColor: .controlAccentColor) : Color.gray.opacity(0.3))
                     .frame(width: 50, height: 29)
                 
                 Circle()
@@ -260,7 +260,7 @@ struct GreenButtonStyle: ButtonStyle {
         configuration.label
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Color.green)
+            .background(Color(nsColor: .controlAccentColor))
             .foregroundColor(.white)
             .cornerRadius(6)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)

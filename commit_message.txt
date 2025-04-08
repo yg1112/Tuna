@@ -1,0 +1,1 @@
+[Cursor] feat: bring in updated TunaSettings UI from feature/clean-ui-v2
