@@ -119,7 +119,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // 预先创建内容视图，提高首次显示速度
-        let contentView = MenuBarView()
+        let contentView = MenuBarView(audioManager: AudioManager.shared, settings: TunaSettings.shared)
         popover.contentViewController = NSHostingController(rootView: contentView)
         
         print("\u{001B}[36m[UI]\u{001B}[0m Status bar icon configured")
