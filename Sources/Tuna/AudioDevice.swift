@@ -26,39 +26,39 @@ enum AudioScope {
     case output
 }
 
-struct AudioDevice: Identifiable, Hashable, Codable {
-    let id: AudioDeviceID
-    let name: String
-    let uid: String
-    let hasInput: Bool
-    let hasOutput: Bool
-    var isDefault: Bool = false  // 标记设备是否在当前可用列表中
-    var supportsBalanceControl: Bool = false  // 是否支持平衡控制
-    var balanceLocked: Bool = false  // 是否锁定左右声道平衡
+public struct AudioDevice: Identifiable, Hashable, Codable {
+    public let id: AudioDeviceID
+    public let name: String
+    public let uid: String
+    public let hasInput: Bool
+    public let hasOutput: Bool
+    public var isDefault: Bool = false  // 标记设备是否在当前可用列表中
+    public var supportsBalanceControl: Bool = false  // 是否支持平衡控制
+    public var balanceLocked: Bool = false  // 是否锁定左右声道平衡
     
-    var volume: Float {
+    public var volume: Float {
         get {
             getVolume()
         }
     }
     
-    var balance: Float {
+    public var balance: Float {
         get {
             getBalance()
         }
     }
     
     // Hashable implementation
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(uid)
     }
     
-    static func == (lhs: AudioDevice, rhs: AudioDevice) -> Bool {
+    public static func == (lhs: AudioDevice, rhs: AudioDevice) -> Bool {
         return lhs.uid == rhs.uid
     }
     
     // Codable implementation
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case id
         case name
         case uid
@@ -68,7 +68,7 @@ struct AudioDevice: Identifiable, Hashable, Codable {
         case balanceLocked
     }
     
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(AudioDeviceID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
@@ -79,7 +79,7 @@ struct AudioDevice: Identifiable, Hashable, Codable {
         balanceLocked = try container.decodeIfPresent(Bool.self, forKey: .balanceLocked) ?? false
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
@@ -90,7 +90,7 @@ struct AudioDevice: Identifiable, Hashable, Codable {
         try container.encode(balanceLocked, forKey: .balanceLocked)
     }
     
-    init?(deviceID: AudioDeviceID) {
+    public init?(deviceID: AudioDeviceID) {
         self.id = deviceID
         
         // 获取设备名称
@@ -302,7 +302,7 @@ struct AudioDevice: Identifiable, Hashable, Codable {
     }
     
     // 修改getVolume方法，检测蓝牙设备并调用专用方法
-    func getVolume() -> Float {
+    public func getVolume() -> Float {
         // 检查是否为蓝牙设备
         let isBluetoothDevice = uid.lowercased().contains("bluetooth")
         if isBluetoothDevice {
@@ -359,7 +359,7 @@ struct AudioDevice: Identifiable, Hashable, Codable {
     }
     
     // 获取左右声道平衡，返回-1到1之间的值，-1为左声道，0为居中，1为右声道
-    func getBalance() -> Float {
+    public func getBalance() -> Float {
         let scope = hasInput ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput
         var balance: Float32 = 0.0 // 默认居中
         var size = UInt32(MemoryLayout<Float32>.size)
