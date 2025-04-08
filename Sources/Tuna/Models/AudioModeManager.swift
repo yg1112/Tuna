@@ -275,4 +275,16 @@ class AudioModeManager: ObservableObject {
         addMode(newMode)
         return newMode
     }
+}
+
+// --------------------------------------------------
+// [Cursor AI] Add missing DeviceSelectionInfo for the new UI
+public struct DeviceSelectionInfo {
+    public let device: AudioDevice
+    public let isInput: Bool
+
+    public init(device: AudioDevice, isInput: Bool) {
+        self.device = device
+        self.isInput = isInput
+    }
 } 
