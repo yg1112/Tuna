@@ -113,6 +113,10 @@ class TunaSettings: ObservableObject {
         }
     }
     
+    // --------------------------------------------------
+    // [Cursor AI] Add a new property for the new UI usage
+    @Published var showMicrophoneLevelMeter: Bool = false
+    
     private init() {
         // Initialize with actual launch agent status
         self.launchAtLogin = LaunchAtLogin.isEnabled
