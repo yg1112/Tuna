@@ -915,8 +915,8 @@ struct SmartSwapsStatusIndicator: View {
             
             // 状态文本
             Text(isSmartSwapsEnabled ? "Smart Swaps is active" : "Smart Swaps is not active")
-                                    .font(.system(size: 12))
-                .foregroundColor(isSmartSwapsEnabled ? .green : .gray)
+                .font(.system(size: 12))
+                .foregroundColor(isSmartSwapsEnabled ? .white : .white.opacity(0.6))
             
             Spacer()
                     }
