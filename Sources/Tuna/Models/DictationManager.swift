@@ -484,6 +484,15 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                     self.progressMessage = "Paused - partial content transcribed"
                     self.logger.debug("Current segment transcribed successfully")
                     
+                    // 检查是否启用了自动复制功能，如果是则复制当前转录文本到剪贴板
+                    if self.tunaSettings.autoCopyTranscriptionToClipboard && !self.transcribedText.isEmpty {
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.setString(self.transcribedText, forType: .string)
+                        self.logger.debug("Auto-copied segment transcription to clipboard")
+                        self.progressMessage = "Paused - content transcribed and copied"
+                    }
+                    
                 case .failure(let error):
                     self.progressMessage = "Partial transcription failed: \(error.localizedDescription)"
                     self.logger.error("Segment transcription failed: \(error.localizedDescription)")
@@ -660,6 +669,15 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             progressMessage = "Transcription failed, no text result"
         } else {
             progressMessage = "Transcription completed - click Save to save"
+            
+            // 检查是否启用了自动复制功能，如果是则复制到剪贴板
+            if TunaSettings.shared.autoCopyTranscriptionToClipboard && !transcribedText.isEmpty {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(transcribedText, forType: .string)
+                logger.debug("Auto-copied transcription to clipboard")
+                progressMessage = "Transcription completed and copied to clipboard"
+            }
         }
     }
 } 
