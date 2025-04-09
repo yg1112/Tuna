@@ -15,7 +15,10 @@ let package = Package(
         .executableTarget(
             name: "Tuna",
             dependencies: ["Views"],
-            path: "Sources/Tuna"
+            path: "Sources/Tuna",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .target(
             name: "Views",

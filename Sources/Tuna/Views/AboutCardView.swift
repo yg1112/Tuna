@@ -161,15 +161,41 @@ struct AboutCardView: View {
     
     // 尝试加载图片
     private func loadImage() {
-        // 尝试加载AboutImage.png
-        let imagePath = "/Users/yukungao/github/tuna_v1/AboutImage.png"
-        if let image = NSImage(contentsOfFile: imagePath) {
-            self.catImage = image
-            print("从本地路径加载图片成功")
-        } else {
-            print("无法加载图片，路径：\(imagePath)")
+        // 方法1：尝试从应用程序的资源目录加载AboutImage.png
+        if let bundlePath = Bundle.main.path(forResource: "AboutImage", ofType: "png") {
+            self.catImage = NSImage(contentsOfFile: bundlePath)
+            print("从应用资源包加载图片成功：方法1")
+            return
         }
         
+        // 方法2：尝试使用模块资源加载
+        #if canImport(SwiftUI)
+        if let image = NSImage(named: "AboutImage") {
+            self.catImage = image
+            print("从命名资源加载图片成功：方法2")
+            return
+        }
+        #endif
+        
+        // 方法3：尝试从项目目录中指定的相对路径加载
+        let bundleURL = Bundle.main.bundleURL
+        let resourceURL = bundleURL.appendingPathComponent("Contents/Resources/AboutImage.png")
+        if let image = NSImage(contentsOf: resourceURL) {
+            self.catImage = image
+            print("从项目资源目录加载图片成功：方法3 - \(resourceURL.path)")
+            return
+        }
+        
+        // 方法4：直接从Sources目录尝试加载
+        let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let sourcesResourceURL = currentDirectoryURL.appendingPathComponent("Sources/Tuna/Resources/AboutImage.png")
+        if let image = NSImage(contentsOf: sourcesResourceURL) {
+            self.catImage = image
+            print("从Sources目录加载图片成功：方法4 - \(sourcesResourceURL.path)")
+            return
+        }
+        
+        print("无法加载图片，已尝试所有可能的路径")
         loadingAttempted = true
     }
 }
