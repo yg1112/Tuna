@@ -17,18 +17,23 @@ struct MenuBarView: View {
     
     var body: some View {
         TunaMenuBarView(
-                    audioManager: audioManager,
-                    settings: settings,
-                    isOutputHovered: outputButtonHovered,
-                    isInputHovered: inputButtonHovered,
-                    cardWidth: cardWidth
-                )
+            audioManager: audioManager,
+            settings: settings,
+            isOutputHovered: outputButtonHovered,
+            isInputHovered: inputButtonHovered,
+            cardWidth: cardWidth
+        )
         .onAppear {
-            print("\u{001B}[32m[UI]\u{001B}[0m MenuBarView appeared")
-            
             // 确保Smart Swaps在UI加载后被应用
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                statusAppeared = true
+                let smartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
+                if smartSwapsEnabled {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("smartSwapsStatusChanged"),
+                        object: nil, 
+                        userInfo: ["enabled": true]
+                    )
+                }
             }
         }
     }
@@ -956,9 +961,14 @@ struct SmartSwapsStatusIndicator: View {
                 .foregroundColor(isSmartSwapsEnabled ? .white : .white.opacity(0.6))
             
             Spacer()
-                    }
-            .padding(.vertical, 4)
+        }
+        .padding(.vertical, 4)
         .padding(.horizontal, 8)
+        // 添加点击操作，允许用户通过点击状态指示器来开启/关闭Smart Swaps
+        .contentShape(Rectangle())
+        .onTapGesture {
+            toggleSmartSwaps()
+        }
         .onAppear {
             // 立即读取当前状态
             isSmartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
@@ -981,6 +991,29 @@ struct SmartSwapsStatusIndicator: View {
                 name: SmartSwapsStatusIndicator.smartSwapsStatusChangedNotification,
                 object: nil
             )
+        }
+    }
+    
+    // 切换Smart Swaps状态的方法
+    private func toggleSmartSwaps() {
+        // 切换状态
+        isSmartSwapsEnabled.toggle()
+        
+        // 保存到UserDefaults
+        UserDefaults.standard.set(isSmartSwapsEnabled, forKey: "enableSmartDeviceSwapping")
+        
+        // 发送通知更新其他UI组件
+        NotificationCenter.default.post(
+            name: SmartSwapsStatusIndicator.smartSwapsStatusChangedNotification,
+            object: nil,
+            userInfo: ["enabled": isSmartSwapsEnabled]
+        )
+        
+        // 应用设置
+        if isSmartSwapsEnabled {
+            DispatchQueue.main.async {
+                AudioManager.shared.forceApplySmartDeviceSwapping()
+            }
         }
     }
 }

@@ -132,6 +132,14 @@ class AudioManager: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.applyDefaultDeviceSettings() // 应用默认音频设备
             print("\u{001B}[32m[初始化]\u{001B}[0m 应用默认音频设备设置完成")
+            
+            // 检查是否启用了Smart Swaps，如果是则应用首选设备设置
+            let smartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
+            if smartSwapsEnabled {
+                print("\u{001B}[32m[初始化]\u{001B}[0m Smart Swaps已启用，正在应用首选设备设置")
+                self.forceApplySmartDeviceSwapping()
+            }
+            
             fflush(stdout)
         }
         
@@ -157,6 +165,15 @@ class AudioManager: ObservableObject {
                 let manager = Unmanaged<AudioManager>.fromOpaque(clientData!).takeUnretainedValue()
                 DispatchQueue.main.async {
                     manager.updateDevices()
+                    
+                    // 检查是否启用了Smart Swaps并应用设置
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        let smartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
+                        if smartSwapsEnabled {
+                            print("\u{001B}[32m[设备监听]\u{001B}[0m 检测到设备变化，应用Smart Swaps设置")
+                            manager.forceApplySmartDeviceSwapping()
+                        }
+                    }
                 }
                 return noErr
             },
@@ -2100,6 +2117,37 @@ class AudioManager: ObservableObject {
 
     // [Cursor AI] Let new UI call forceApplySmartDeviceSwapping
     public func forceApplySmartDeviceSwapping() {
-        print("\u{001B}[33m[Stub]\u{001B}[0m forceApplySmartDeviceSwapping is not implemented in main-based logic.")
+        // 检查 Smart Swaps 是否启用
+        let smartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
+        if !smartSwapsEnabled {
+            print("\u{001B}[33m[Smart Swaps]\u{001B}[0m 智能切换功能未启用，跳过设备应用")
+            return
+        }
+        
+        print("\u{001B}[32m[Smart Swaps]\u{001B}[0m 正在应用智能设备切换设置...")
+        
+        // 获取用户首选的输出设备UID
+        let preferredOutputUID = UserDefaults.standard.string(forKey: "backupOutputDeviceUID") ?? ""
+        if !preferredOutputUID.isEmpty {
+            // 查找匹配的输出设备
+            if let outputDevice = outputDevices.first(where: { $0.uid == preferredOutputUID }) {
+                print("\u{001B}[32m[Smart Swaps]\u{001B}[0m 应用首选输出设备: \(outputDevice.name)")
+                setDefaultOutputDevice(outputDevice)
+            } else {
+                print("\u{001B}[33m[Smart Swaps]\u{001B}[0m 首选输出设备未找到或不可用: \(preferredOutputUID)")
+            }
+        }
+        
+        // 获取用户首选的输入设备UID
+        let preferredInputUID = UserDefaults.standard.string(forKey: "backupInputDeviceUID") ?? ""
+        if !preferredInputUID.isEmpty {
+            // 查找匹配的输入设备
+            if let inputDevice = inputDevices.first(where: { $0.uid == preferredInputUID }) {
+                print("\u{001B}[32m[Smart Swaps]\u{001B}[0m 应用首选输入设备: \(inputDevice.name)")
+                setDefaultInputDevice(inputDevice)
+            } else {
+                print("\u{001B}[33m[Smart Swaps]\u{001B}[0m 首选输入设备未找到或不可用: \(preferredInputUID)")
+            }
+        }
     }
 } 
