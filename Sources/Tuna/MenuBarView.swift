@@ -506,7 +506,7 @@ struct OutputDeviceCard: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
     @State private var showingDeviceMenu = false
-    @State private var volume: Double = 0
+    @State private var volume: Double = 0 // 保留用于初始化
     
     var body: some View {
         ColorfulCardView(
@@ -516,28 +516,51 @@ struct OutputDeviceCard: View {
         ) {
             VStack(spacing: 6) { // 减小间距
                 // 设备选择按钮
-                        Button(action: {
-                            withAnimation {
-                                showingDeviceMenu.toggle()
-                            }
-                        }) {
-                            HStack {
-                                Text(audioManager.selectedOutputDevice?.name ?? "无输出设备")
-                                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
-                                    .lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                
-                                Image(systemName: "chevron.down")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            .padding(8)
-                            .background(Color.black.opacity(0.2))
-                            .cornerRadius(8)
+                Button(action: {
+                    withAnimation {
+                        showingDeviceMenu.toggle()
+                    }
+                }) {
+                    HStack {
+                        Text(audioManager.selectedOutputDevice?.name ?? "无输出设备")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(8)
+                    .background(Color.black.opacity(0.2))
+                    .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .focusable(false)
+                
+                // 平衡锁定按钮
+                if let device = audioManager.selectedOutputDevice, device.supportsBalanceControl {
+                    Button(action: {
+                        audioManager.isOutputBalanceLocked.toggle()
+                    }) {
+                        HStack {
+                            Text(audioManager.isOutputBalanceLocked ? "平衡已锁定" : "锁定平衡")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.7))
+                            
+                            Image(systemName: audioManager.isOutputBalanceLocked ? "lock.fill" : "lock.open")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.7))
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .focusable(false)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.black.opacity(0.1))
+                        .cornerRadius(6)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .focusable(false)
+                }
                 
                 // 设备列表 - 放在最后，以确保滑块始终可见
                 if showingDeviceMenu {
@@ -551,28 +574,35 @@ struct OutputDeviceCard: View {
                 
                 // 音量滑块 - 始终显示，不受条件控制
                 HStack {
-                    Slider(value: $volume, in: -50...50)
-                        .accentColor(NewUI3Colors.output)
-                        .onChange(of: volume) { newValue in
-                                    if let device = audioManager.selectedOutputDevice {
-                                audioManager.setVolumeForDevice(
-                                    device: device,
-                                    volume: Float((newValue + 50) / 100),
-                                    isInput: false
-                                )
+                    Slider(
+                        value: Binding(
+                            get: { 
+                                // 使用Double(audioManager.outputVolume * 100 - 50)转换到我们的滑块范围
+                                Double(audioManager.outputVolume * 100 - 50)
+                            },
+                            set: { newValue in
+                                if let device = audioManager.selectedOutputDevice {
+                                    audioManager.setVolumeForDevice(
+                                        device: device,
+                                        volume: Float((newValue + 50) / 100),
+                                        isInput: false
+                                    )
+                                    print("🟣 [UI] 输出滑块绑定更新，当前值 = \(audioManager.outputVolume)")
+                                }
                             }
-                        }
+                        ), 
+                        in: -50...50
+                    )
+                    .accentColor(NewUI3Colors.output)
                 }
                 .padding(.vertical, 3) // 减小内边距
             }
             .padding(8) // 减小内边距
         }
         .onAppear {
-            // 初始化音量值
-            if let device = audioManager.selectedOutputDevice {
-                let currentVolume = device.volume
-                volume = Double(currentVolume * 100 - 50)
-            }
+            // 初始化时不再需要设置volume状态变量
+            // 我们直接使用audioManager.outputVolume的绑定
+            print("🟣 [UI] 输出设备卡片出现，当前音量 = \(audioManager.outputVolume)")
         }
     }
 }
@@ -624,9 +654,9 @@ struct InputDeviceCard: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
     @State private var showingDeviceMenu = false
+    @State private var volume: Double = 0 // 保留用于初始化
     @State private var micLevel: Float = 0.0
-    @State private var micLevelTimer: Timer? = nil
-    @State private var volume: Double = 0
+    @State private var micLevelTimer: Timer? // 改为@State属性
     
     var body: some View {
         ColorfulCardView(
@@ -636,28 +666,28 @@ struct InputDeviceCard: View {
         ) {
             VStack(spacing: 6) { // 减小间距
                 // 设备选择按钮
-                        Button(action: {
-                            withAnimation {
-                                showingDeviceMenu.toggle()
-                            }
-                        }) {
-                            HStack {
-                                Text(audioManager.selectedInputDevice?.name ?? "无输入设备")
-                                    .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                                    .lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                                Image(systemName: "chevron.down")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.7))
-                            }
-                            .padding(8)
-                            .background(Color.black.opacity(0.2))
-                            .cornerRadius(8)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .focusable(false)
+                Button(action: {
+                    withAnimation {
+                        showingDeviceMenu.toggle()
+                    }
+                }) {
+                    HStack {
+                        Text(audioManager.selectedInputDevice?.name ?? "无输入设备")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(8)
+                    .background(Color.black.opacity(0.2))
+                    .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .focusable(false)
                 
                 // 麦克风电平指示器
                 if settings.showMicrophoneLevelMeter {
@@ -677,17 +707,26 @@ struct InputDeviceCard: View {
                 
                 // 音量滑块 - 始终显示，不受条件控制
                 HStack {
-                    Slider(value: $volume, in: -50...50)
-                        .accentColor(NewUI3Colors.input)
-                        .onChange(of: volume) { newValue in
-                                    if let device = audioManager.selectedInputDevice {
-                                audioManager.setVolumeForDevice(
-                                    device: device,
-                                    volume: Float((newValue + 50) / 100),
-                                    isInput: true
-                                )
+                    Slider(
+                        value: Binding(
+                            get: { 
+                                // 使用Double(audioManager.inputVolume * 100 - 50)转换到我们的滑块范围
+                                Double(audioManager.inputVolume * 100 - 50)
+                            },
+                            set: { newValue in
+                                if let device = audioManager.selectedInputDevice {
+                                    audioManager.setVolumeForDevice(
+                                        device: device,
+                                        volume: Float((newValue + 50) / 100),
+                                        isInput: true
+                                    )
+                                    print("🟣 [UI] 输入滑块绑定更新，当前值 = \(audioManager.inputVolume)")
+                                }
                             }
-                        }
+                        ), 
+                        in: -50...50
+                    )
+                    .accentColor(NewUI3Colors.input)
                 }
                 .padding(.vertical, 3) // 减小内边距
             }
@@ -695,11 +734,9 @@ struct InputDeviceCard: View {
         }
         .onAppear {
             startMicLevelTimer()
-            // 初始化音量值
-            if let device = audioManager.selectedInputDevice {
-                let currentVolume = device.volume
-                volume = Double(currentVolume * 100 - 50)
-            }
+            // 初始化时不再需要设置volume状态变量
+            // 我们直接使用audioManager.inputVolume的绑定
+            print("🟣 [UI] 输入设备卡片出现，当前音量 = \(audioManager.inputVolume)")
         }
         .onDisappear {
             stopMicLevelTimer()

@@ -925,22 +925,28 @@ class AudioManager: ObservableObject {
         )
         
         if status == noErr {
+            print("🟡 [VolumeWatch] 系统\(deviceType)音量变了！新值：\(volume)")
+            
             DispatchQueue.main.async {
-                if isInput {
-                    if abs(manager.inputVolume - volume) > 0.001 {  // 添加阈值避免微小波动
-                        print("\u{001B}[32m[系统变化]\u{001B}[0m \(deviceType)设备 '\(deviceName)' 音量变化: \(Int(volume * 100))%")
+                let oldVolume = isInput ? manager.inputVolume : manager.outputVolume
+                
+                // 检查音量变化是否显著
+                if abs(oldVolume - volume) > 0.001 {
+                    if isInput {
+                        print("🟢 [AudioManager] 更新 inputVolume = \(volume) (原值: \(oldVolume))")
                         manager.inputVolume = volume
-                    }
-                } else {
-                    // 使用阈值检查避免微小波动导致的循环更新
-                    if abs(manager.outputVolume - volume) > 0.001 {
-                        print("\u{001B}[32m[系统变化]\u{001B}[0m \(deviceType)设备 '\(deviceName)' 音量变化: \(Int(volume * 100))%")
+                    } else {
+                        print("🟢 [AudioManager] 更新 outputVolume = \(volume) (原值: \(oldVolume))")
                         manager.outputVolume = volume
                     }
+                    
+                    print("🔵 [Facade] 发布 @Published \(deviceType)Volume = \(volume)")
+                } else {
+                    print("⚪️ [SKIP] 音量变化微小，不更新UI: \(oldVolume) -> \(volume)")
                 }
             }
         } else {
-            print("\u{001B}[31m[错误]\u{001B}[0m 无法获取\(deviceType)设备 '\(deviceName)' 音量: \(status)")
+            print("\u{001B}[31m[错误]\u{001B}[0m 获取\(deviceType)设备 '\(deviceName)' 音量失败：\(status)")
         }
         
         return noErr
@@ -1540,7 +1546,7 @@ class AudioManager: ObservableObject {
     
     // 新的初始系统音量同步方法 - 专注于准确获取初始音量
     private func initialSystemVolumeSync() {
-        print("\u{001B}[34m[初始化]\u{001B}[0m 系统音量同步")
+        print("\u{001B}[34m[初始化]\u{001B}[0m 同步系统音量到应用")
         
         // 强制更新默认设备列表，确保设备信息是最新的
         updateDefaultDevices()
@@ -1642,6 +1648,40 @@ class AudioManager: ObservableObject {
                        (self.selectedInputDevice?.uid.lowercased().contains("bluetooth") == true) {
                         self.startVolumePollingTimer()
                     }
+                }
+            }
+        }
+        
+        // 添加音量轮询兜底机制
+        setupVolumePollingFallback()
+    }
+    
+    // 添加新的音量轮询兜底机制
+    private func setupVolumePollingFallback() {
+        print("\u{001B}[34m[初始化]\u{001B}[0m 设置音量轮询兜底机制")
+        
+        // 停止可能已存在的定时器
+        volumePollingTimer?.invalidate()
+        
+        // 创建新的定时器，每1秒检查一次系统音量
+        volumePollingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            
+            // 检查输出设备
+            if let device = self.selectedOutputDevice {
+                let sysVol = device.getVolume()
+                if abs(sysVol - self.outputVolume) > 0.01 {
+                    print("🔁 [Poll] 检测到系统输出音量变化: \(self.outputVolume) -> \(sysVol)")
+                    self.outputVolume = sysVol
+                }
+            }
+            
+            // 检查输入设备
+            if let device = self.selectedInputDevice {
+                let sysVol = device.getVolume()
+                if abs(sysVol - self.inputVolume) > 0.01 {
+                    print("🔁 [Poll] 检测到系统输入音量变化: \(self.inputVolume) -> \(sysVol)")
+                    self.inputVolume = sysVol
                 }
             }
         }
