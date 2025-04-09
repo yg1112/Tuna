@@ -57,6 +57,7 @@ extension NSImage {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var popover: NSPopover!
+    var detachedWindow: NSWindow? // 添加属性来存储独立窗口引用
     private var settingsWindowController: SettingsWindowController?
     private let logger = Logger(subsystem: "com.tuna.app", category: "AppDelegate")
     
@@ -85,6 +86,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSNotification.Name("togglePinned"),
             object: nil
         )
+        
+        // 检查是否需要在启动时恢复固定状态
+        if UserDefaults.standard.bool(forKey: "popoverPinned") {
+            // 触发 pin 状态恢复（延迟执行，确保界面已加载）
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("togglePinned"),
+                    object: nil,
+                    userInfo: ["isPinned": true]
+                )
+                print("\u{001B}[36m[UI]\u{001B}[0m Auto-restored pinned state on startup")
+                fflush(stdout)
+            }
+        }
         
         logger.info("Application initialization completed")
         print("\u{001B}[32m[APP]\u{001B}[0m Initialization complete")
@@ -154,6 +169,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func togglePopover() {
         if let button = statusItem.button {
+            // 如果有独立窗口在显示中，则关闭它
+            if let detachedWindow = self.detachedWindow, detachedWindow.isVisible {
+                // 如果点击图标时存在独立窗口，则关闭它并将状态设置为未固定
+                detachedWindow.close()
+                self.detachedWindow = nil
+                
+                // 更新 pin 状态
+                UserDefaults.standard.set(false, forKey: "popoverPinned")
+                
+                // 发送通知以更新 UI 状态
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("togglePinned"),
+                    object: nil,
+                    userInfo: ["isPinned": false]
+                )
+                
+                print("\u{001B}[36m[UI]\u{001B}[0m Closed detached window from status icon click")
+                return
+            }
+            
+            // 正常 popover 逻辑
             if popover.isShown {
                 closePopover()
             } else {
@@ -267,8 +303,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func handlePinToggle(_ notification: Notification) {
-        guard let isPinned = notification.userInfo?["isPinned"] as? Bool,
-              let popoverWindow = popover.contentViewController?.view.window else {
+        guard let isPinned = notification.userInfo?["isPinned"] as? Bool else {
             return
         }
         
@@ -276,22 +311,101 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         fflush(stdout)
         
         if isPinned {
-            // 设置为浮动窗口，保持在最前
-            eventMonitor?.stop() // 停止监听点击事件
-            popover.behavior = .applicationDefined // 防止自动关闭
-            popoverWindow.level = .floating // 设置窗口级别为浮动
+            // 如果 popover 是显示状态，转换为独立窗口
+            if popover.isShown {
+                // 首先获取 popover 的内容视图和位置
+                guard let popoverView = popover.contentViewController?.view,
+                      let popoverWindow = popoverView.window else {
+                    return
+                }
+                
+                // 获取 popover 当前位置和大小
+                let popoverFrame = popoverWindow.frame
+                
+                // 创建一个新的独立窗口
+                let detachedWindow = NSWindow(
+                    contentRect: popoverFrame,
+                    styleMask: [.borderless, .fullSizeContentView],
+                    backing: .buffered,
+                    defer: false
+                )
+                
+                // 配置窗口属性
+                detachedWindow.isOpaque = false
+                detachedWindow.hasShadow = true
+                detachedWindow.backgroundColor = .clear
+                detachedWindow.level = .floating // 设置窗口级别为浮动
+                detachedWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                
+                // 将现有的 popover 内容复制到新窗口
+                // 注意：这里我们需要在原 popover 关闭前保存其内容视图的副本
+                let contentView = MenuBarView(audioManager: AudioManager.shared, settings: TunaSettings.shared)
+                let hostingView = NSHostingController(rootView: contentView)
+                detachedWindow.contentViewController = hostingView
+                
+                // 关闭 popover 并显示新窗口
+                popover.close()
+                
+                // 保存窗口引用以便后续使用
+                UserDefaults.standard.set(true, forKey: "isUsingDetachedWindow")
+                UserDefaults.standard.synchronize()
+                
+                // 显示独立窗口
+                detachedWindow.setFrame(popoverFrame, display: true)
+                detachedWindow.makeKeyAndOrderFront(nil)
+                
+                // 存储窗口的引用
+                if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+                    appDelegate.detachedWindow = detachedWindow
+                }
+                
+                print("\u{001B}[36m[UI]\u{001B}[0m Converted popover to detached window")
+            }
             
-            // 确保窗口可见
-            popoverWindow.orderFrontRegardless()
-            print("\u{001B}[36m[UI]\u{001B}[0m Window pinned and set to floating level")
+            // 停止监听事件
+            eventMonitor?.stop()
         } else {
             // 恢复标准行为
-            popover.behavior = .transient // 恢复默认行为
-            popoverWindow.level = .normal // 恢复标准窗口级别
+            if let appDelegate = NSApplication.shared.delegate as? AppDelegate,
+               let detachedWindow = appDelegate.detachedWindow {
+                // 关闭独立窗口
+                detachedWindow.close()
+                appDelegate.detachedWindow = nil
+                
+                // 重新显示 popover
+                if let button = statusItem.button {
+                    if let buttonWindow = button.window {
+                        let buttonRect = button.bounds
+                        let windowPoint = button.convert(NSPoint(x: buttonRect.midX, y: 0), to: nil)
+                        let screenPoint = buttonWindow.convertPoint(toScreen: windowPoint)
+                        
+                        // 创建新的定位点，确保菜单紧贴任务栏
+                        let adjustedRect = NSRect(
+                            x: screenPoint.x - (buttonRect.width / 2),
+                            y: screenPoint.y - 2,
+                            width: buttonRect.width,
+                            height: 0
+                        )
+                        
+                        // 使用NSView中的convertRect来转换坐标系
+                        let convertedRect = button.window?.contentView?.convert(adjustedRect, from: nil) ?? buttonRect
+                        
+                        // 使用精确位置显示popover
+                        popover.show(relativeTo: convertedRect, of: button.window!.contentView!, preferredEdge: .minY)
+                    } else {
+                        // 退回到标准方法
+                        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                    }
+                }
+                
+                UserDefaults.standard.set(false, forKey: "isUsingDetachedWindow")
+                UserDefaults.standard.synchronize()
+                
+                print("\u{001B}[36m[UI]\u{001B}[0m Closed detached window and restored popover")
+            }
             
             // 重新启动点击监听
             eventMonitor?.startGlobal()
-            print("\u{001B}[36m[UI]\u{001B}[0m Window unpinned and restored to normal level")
         }
         fflush(stdout)
     }
