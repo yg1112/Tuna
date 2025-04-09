@@ -129,7 +129,7 @@ struct TunaMenuBarView: View {
                     }) {
                         Image(systemName: isPinned ? "pin.fill" : "pin")
                             .font(.system(size: 12))
-                            .foregroundColor(isPinned ? NewUI3Colors.output : .white.opacity(0.7))
+                            .foregroundColor(isPinned ? .white : .white.opacity(0.7))
                             .frame(width: 20, height: 20)
         .background(
                 Circle()
@@ -374,10 +374,12 @@ struct DictationView: View {
                     .overlay(
                     RoundedRectangle(cornerRadius: 8)
                             .stroke(
-                            Color.white.opacity(breathingAnimation ? 0.7 : 0.3),
-                            lineWidth: breathingAnimation ? 2.0 : 0.5
+                            isRecording && !isPaused ? 
+                                Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
+                                Color.white.opacity(breathingAnimation ? 0.7 : 0.3), // 非录音时保持呼吸动画
+                            lineWidth: isRecording && !isPaused ? 2.0 : (breathingAnimation ? 2.0 : 0.5)
                         )
-                        .scaleEffect(breathingAnimation ? 1.025 : 1.0)
+                        .scaleEffect(isRecording && !isPaused ? 1.0 : (breathingAnimation ? 1.025 : 1.0)) // 录音时不需要缩放效果
                 )
                 
                 // 清除按钮
@@ -396,6 +398,8 @@ struct DictationView: View {
                 .opacity(dictationManager.transcribedText.isEmpty ? 0 : 1)
             }
             .animation(
+                // 非录音状态时才应用呼吸动画
+                isRecording && !isPaused ? nil : 
                 Animation.easeInOut(duration: 1.5)
                     .repeatForever(autoreverses: true),
                 value: breathingAnimation
@@ -462,7 +466,8 @@ struct DictationView: View {
             }
         }
         .onAppear {
-            breathingAnimation = isRecording && !isPaused
+            // 无条件启动呼吸动画
+            breathingAnimation = true
         }
     }
 }

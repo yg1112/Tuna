@@ -22,6 +22,7 @@ struct TunaDictationView: View {
     @State private var showEditHint: Bool = false
     @State private var isFocused: Bool = false
     @State private var cursorPosition: Int = 0 // 追踪光标位置
+    @State private var isBreathingAnimation = false
     
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
@@ -75,6 +76,8 @@ struct TunaDictationView: View {
         .onAppear {
             // 启动音频可视化效果定时器
             startVisualizing()
+            // 启动呼吸动画
+            isBreathingAnimation = true
         }
         .onDisappear {
             // 停止音频可视化效果定时器
@@ -161,8 +164,18 @@ struct TunaDictationView: View {
         .padding(.vertical, 4)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.white.opacity(!dictationManager.transcribedText.isEmpty ? 0.15 : 0.05), lineWidth: 1)
-                .animation(.easeInOut(duration: 0.3), value: dictationManager.transcribedText.isEmpty)
+                .stroke(
+                    dictationManager.state == .recording ? 
+                        Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
+                        Color.white.opacity(isBreathingAnimation ? 0.2 : 0.05), // 非录音时使用呼吸动画
+                    lineWidth: dictationManager.state == .recording ? 1.5 : (isBreathingAnimation ? 1.2 : 0.8)
+                )
+                .scaleEffect(dictationManager.state == .recording ? 1.0 : (isBreathingAnimation ? 1.01 : 1.0))
+        )
+        .animation(
+            dictationManager.state == .recording ? nil : 
+            Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true),
+            value: isBreathingAnimation
         )
     }
     
