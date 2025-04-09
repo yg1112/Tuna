@@ -3,7 +3,7 @@ import AVFoundation
 import SwiftUI
 import Combine
 import os.log
-import Views
+// import Views -- 已移至 Tuna 模块
 
 public class DictationManager: ObservableObject, DictationManagerProtocol {
     public static let shared = DictationManager()

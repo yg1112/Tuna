@@ -129,6 +129,14 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
   - [ ] 快捷键支持
   - [ ] 开机自启动
 
+## Project Cleanup (2024-04-09)
+- [X] 整理项目目录结构
+  - [X] 删除备份文件 (AudioManager.swift.bak, MenuBarView.swift.new)
+  - [X] 合并 Views 模块到 Tuna 模块
+  - [X] 删除不再使用的 Dial 目录
+  - [X] 更新代码引用关系
+- [X] 建立备份目录保存旧文件
+
 ## Current Task
 实现设备切换功能：
 1. 在 AudioManager 中添加切换默认设备的方法
@@ -149,3 +157,4 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - Core Audio API 需要正确处理权限
 - 使用 @Published 属性包装器实现 UI 自动更新
 - 设备监听器需要正确管理内存
+- 项目模块化管理，避免重复代码和文件冗余

@@ -1,6 +1,6 @@
 import SwiftUI
 import AppKit
-import Views
+// import Views -- 已移至 Tuna 模块
 
 // DictationManager已在自身文件中实现了DictationManagerProtocol，这里不需要重复声明
 

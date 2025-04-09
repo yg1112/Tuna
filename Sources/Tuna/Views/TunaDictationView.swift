@@ -1,9 +1,9 @@
 import SwiftUI
-import Views
+// import Views -- 已移至 Tuna 模块
 
-// 导入DictationState
-@_exported import struct Views.DictationView
-@_exported import enum Views.DictationState
+// 直接使用 DictationState，不再通过模块导入
+// @_exported import struct Tuna.DictationView
+// @_exported import enum Tuna.DictationState
 
 // 扩展String添加条件前缀功能 - 文件级别扩展
 extension String {
