@@ -78,6 +78,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
         
+        // 添加 togglePinned 通知的观察者，处理窗口固定/取消固定状态
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePinToggle(_:)),
+            name: NSNotification.Name("togglePinned"),
+            object: nil
+        )
+        
         logger.info("Application initialization completed")
         print("\u{001B}[32m[APP]\u{001B}[0m Initialization complete")
         fflush(stdout)
@@ -256,5 +264,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let menu = sender.menu {
             menu.cancelTracking()
         }
+    }
+    
+    @objc func handlePinToggle(_ notification: Notification) {
+        guard let isPinned = notification.userInfo?["isPinned"] as? Bool,
+              let popoverWindow = popover.contentViewController?.view.window else {
+            return
+        }
+        
+        print("\u{001B}[36m[UI]\u{001B}[0m Pin state changed to: \(isPinned)")
+        fflush(stdout)
+        
+        if isPinned {
+            // 设置为浮动窗口，保持在最前
+            eventMonitor?.stop() // 停止监听点击事件
+            popover.behavior = .applicationDefined // 防止自动关闭
+            popoverWindow.level = .floating // 设置窗口级别为浮动
+            
+            // 确保窗口可见
+            popoverWindow.orderFrontRegardless()
+            print("\u{001B}[36m[UI]\u{001B}[0m Window pinned and set to floating level")
+        } else {
+            // 恢复标准行为
+            popover.behavior = .transient // 恢复默认行为
+            popoverWindow.level = .normal // 恢复标准窗口级别
+            
+            // 重新启动点击监听
+            eventMonitor?.startGlobal()
+            print("\u{001B}[36m[UI]\u{001B}[0m Window unpinned and restored to normal level")
+        }
+        fflush(stdout)
     }
 } 
