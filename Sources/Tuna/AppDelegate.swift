@@ -55,16 +55,24 @@ extension NSImage {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    // 添加shared静态属性
+    static var shared: AppDelegate? {
+        return NSApp.delegate as? AppDelegate
+    }
+    
     var statusItem: NSStatusItem!
     var popover: NSPopover!
     private var settingsWindowController: SettingsWindowController?
-    private let logger = Logger(subsystem: "com.tuna.app", category: "AppDelegate")
+    private let logger = Logger(subsystem: "ai.tuna", category: "AppDelegate")
     
     // 添加事件监视器
     private var eventMonitor: EventMonitor?
     
     // 添加快捷键管理器
     private var keyboardShortcutManager: KeyboardShortcutManager!
+    
+    // 使用带域的UserDefaults
+    private let defaults = UserDefaults(suiteName: "ai.tuna.app")!
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("\u{001B}[34m[APP]\u{001B}[0m Application finished launching")
@@ -73,6 +81,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupEventMonitor()
         
+        // 检查并更新旧的快捷键设置
+        if let currentShortcut = defaults.string(forKey: "dictationShortcutKeyCombo"), currentShortcut == "opt+t" {
+            defaults.set("cmd+u", forKey: "dictationShortcutKeyCombo")
+            logger.info("Updated legacy shortcut from opt+t to cmd+u")
+        }
+        
         // 初始化键盘快捷键管理器
         keyboardShortcutManager = KeyboardShortcutManager.shared
         
@@ -80,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(showSettingsWindow(_:)),
-            name: NSNotification.Name("showSettings"),
+            name: Notification.Name.showSettings,
             object: nil
         )
         
@@ -88,12 +102,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handlePinToggle(_:)),
-            name: NSNotification.Name("togglePinned"),
+            name: Notification.Name.togglePinned,
             object: nil
         )
         
         // 检查上次使用时是否为固定状态，如果是，则在第一次点击图标时自动固定
-        let wasPinned = UserDefaults.standard.bool(forKey: "popoverPinned")
+        let wasPinned = defaults.bool(forKey: "popoverPinned")
         if wasPinned {
             print("\u{001B}[36m[UI]\u{001B}[0m Will restore pin state on first click")
             // 但不立即执行固定操作，避免在启动时的问题
@@ -141,6 +155,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 预先创建内容视图，提高首次显示速度
         let contentView = MenuBarView(audioManager: AudioManager.shared, settings: TunaSettings.shared)
+        .environmentObject(DictationManager.shared)
         popover.contentViewController = NSHostingController(rootView: contentView)
         
         print("\u{001B}[36m[UI]\u{001B}[0m Status bar icon configured")
@@ -198,7 +213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     popover.show(relativeTo: convertedRect, of: button.window!.contentView!, preferredEdge: .minY)
                     
                     // 直接修改popover窗口的位置
-                    DispatchQueue.main.async {
+                    DispatchQueue.main.async { [self] in
                         if let popoverWindow = self.popover.contentViewController?.view.window {
                             // 获取当前位置
                             var frame = popoverWindow.frame
@@ -208,11 +223,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                             popoverWindow.setFrame(frame, display: true)
                             
                             // 检查是否需要应用固定状态
-                            let shouldPin = UserDefaults.standard.bool(forKey: "popoverPinned")
+                            let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                             if shouldPin {
                                 // 直接应用固定状态
                                 NotificationCenter.default.post(
-                                    name: NSNotification.Name("togglePinned"),
+                                    name: Notification.Name.togglePinned,
                                     object: nil,
                                     userInfo: ["isPinned": true]
                                 )
@@ -225,11 +240,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
                     
                     // 检查是否需要应用固定状态
-                    DispatchQueue.main.async {
-                        let shouldPin = UserDefaults.standard.bool(forKey: "popoverPinned")
+                    DispatchQueue.main.async { [self] in
+                        let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                         if shouldPin {
                             NotificationCenter.default.post(
-                                name: NSNotification.Name("togglePinned"),
+                                name: Notification.Name.togglePinned,
                                 object: nil,
                                 userInfo: ["isPinned": true]
                             )
@@ -263,7 +278,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 
                 // 如果不是固定状态，才重启事件监视器
-                if !UserDefaults.standard.bool(forKey: "popoverPinned") {
+                if !defaults.bool(forKey: "popoverPinned") {
                     eventMonitor?.startGlobal()
                 }
             }
@@ -346,8 +361,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // 保存状态到 UserDefaults
-        UserDefaults.standard.set(isPinned, forKey: "popoverPinned")
-        UserDefaults.standard.synchronize()
+        defaults.set(isPinned, forKey: "popoverPinned")
+        defaults.synchronize()
         
         fflush(stdout)
     }

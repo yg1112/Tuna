@@ -16,9 +16,17 @@ struct KeyCombo {
 class KeyboardShortcutManager {
     static let shared = KeyboardShortcutManager()
     
-    private let logger = Logger(subsystem: "com.tuna.app", category: "KeyboardShortcutManager")
+    private let logger = Logger(subsystem: "ai.tuna", category: "Shortcut")
     private let settings = TunaSettings.shared
     private let dictationManager = DictationManager.shared
+    
+    // 添加修饰键映射
+    private let modifierMap:[String:NSEvent.ModifierFlags] = [
+        "cmd":.command,"command":.command,"⌘":.command,
+        "opt":.option,"option":.option,"alt":.option,"⌥":.option,
+        "ctrl":.control,"control":.control,"⌃":.control,
+        "shift":.shift,"⇧":.shift
+    ]
     
     private var dictationEventHandler: EventHandlerRef?
     private var currentDictationKeyCombo: KeyCombo?
@@ -30,7 +38,7 @@ class KeyboardShortcutManager {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleDictationShortcutSettingsChanged),
-            name: NSNotification.Name("dictationShortcutSettingsChanged"),
+            name: Notification.Name.dictationShortcutSettingsChanged,
             object: nil
         )
         
@@ -53,14 +61,15 @@ class KeyboardShortcutManager {
         // 解析快捷键组合
         if let keyCombo = parseKeyCombo(settings.dictationShortcutKeyCombo) {
             registerDictationShortcut(keyCombo)
+            logger.notice("registered \(self.settings.dictationShortcutKeyCombo, privacy: .public)")
         } else {
-            logger.error("Failed to parse key combo: \(self.settings.dictationShortcutKeyCombo)")
+            logger.error("Failed to parse key combo: \(self.settings.dictationShortcutKeyCombo, privacy: .public)")
         }
     }
     
     // MARK: - Private Methods
     
-    private func parseKeyCombo(_ comboString: String) -> KeyCombo? {
+    func parseKeyCombo(_ comboString: String) -> KeyCombo? {
         // 将字符串格式的快捷键(如 "option+t")转换为KeyCombo对象
         let components = comboString.lowercased().components(separatedBy: "+")
         guard components.count >= 1 else { return nil }
@@ -75,12 +84,12 @@ class KeyboardShortcutManager {
                 modifiers |= UInt32(1 << 8) // cmdKey
             case "shift", "⇧":
                 modifiers |= UInt32(1 << 9) // shiftKey
-            case "alt", "option", "⌥":
+            case "alt", "option", "opt", "⌥":
                 modifiers |= UInt32(1 << 11) // optionKey
             case "ctrl", "control", "⌃":
                 modifiers |= UInt32(1 << 12) // controlKey
             default:
-                logger.warning("Unknown modifier: \(component)")
+                logger.warning("Unknown modifier: \(component, privacy: .public)")
             }
         }
         
@@ -138,7 +147,7 @@ class KeyboardShortcutManager {
             case ".", ">": keyCode = 47
             case "`", "~": keyCode = 50
             default:
-                logger.warning("Unsupported key: \(char)")
+                logger.warning("Unsupported key: \(char, privacy: .public)")
                 return nil
             }
         } else {
@@ -177,7 +186,7 @@ class KeyboardShortcutManager {
             case "f12":
                 keyCode = 111
             default:
-                logger.warning("Unsupported key: \(lastComponent)")
+                logger.warning("Unsupported key: \(lastComponent, privacy: .public)")
                 return nil
             }
         }
@@ -187,6 +196,12 @@ class KeyboardShortcutManager {
     
     private func registerDictationShortcut(_ keyCombo: KeyCombo) {
         logger.debug("Registering dictation shortcut: keyCode=\(keyCombo.keyCode), modifiers=\(keyCombo.modifiers)")
+        
+        // 权限自检
+        guard AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue():true] as CFDictionary) else {
+            logger.error("⚠️ Accessibility permission not granted")
+            return
+        }
         
         // 创建事件处理器
         var eventHotKeyRef: EventHotKeyRef? = nil
@@ -227,7 +242,7 @@ class KeyboardShortcutManager {
         }
         
         // 注册热键
-        var hotkeyID = EventHotKeyID(signature: OSType(0x54554E41), // 'TUNA'
+        let hotkeyID = EventHotKeyID(signature: OSType(0x54554E41), // 'TUNA'
                                      id: UInt32(1)) // Dictation快捷键的ID
         
         let registerStatus = RegisterEventHotKey(
@@ -266,13 +281,11 @@ class KeyboardShortcutManager {
             return
         }
         
-        logger.debug("Dictation shortcut pressed, activating app and starting transcription")
-        
-        // 激活应用
+        logger.notice("triggered dictation")
         NSApp.activate(ignoringOtherApps: true)
         
         // 显示主窗口/弹出窗口
-        if let appDelegate = NSApp.delegate as? AppDelegate {
+        if let appDelegate = AppDelegate.shared {
             // 检查popover是否已打开
             if !appDelegate.popover.isShown {
                 // 如果未打开，则触发状态栏图标点击显示popover
@@ -281,15 +294,15 @@ class KeyboardShortcutManager {
             
             // 切换到Dictation选项卡
             NotificationCenter.default.post(
-                name: NSNotification.Name("switchToTab"),
+                name: Notification.Name.switchToTab,
                 object: nil,
                 userInfo: ["tab": "dictation"]
             )
             
-            // 延迟一小段时间后开始录音，确保UI已完全加载
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                // 开始语音转写
+            // 添加短延迟，确保UI准备好
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 DictationManager.shared.startRecording()
+                self.logger.notice("startRecording")
             }
         }
     }
