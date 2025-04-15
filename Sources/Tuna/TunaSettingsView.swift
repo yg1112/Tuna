@@ -513,6 +513,88 @@ struct TunaSettingsView: View {
                 }
                 .glassCard()
                 
+                // 添加Dictation快捷键设置
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Dictation Shortcut")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text("Configure a global shortcut to quickly start dictation from anywhere")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.bottom, 8)
+                    
+                    // 启用/禁用快捷键开关
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Enable Global Shortcut")
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                            
+                            Text("When enabled, press the shortcut to start dictation instantly")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            settings.enableDictationShortcut.toggle()
+                        }) {
+                            ZStack {
+                                Capsule()
+                                    .fill(settings.enableDictationShortcut ? Color(nsColor: .controlAccentColor) : Color.gray.opacity(0.3))
+                                    .frame(width: 40, height: 15)
+                                    .focusable(false)
+                                
+                                Circle()
+                                    .fill(Color.white)
+                                    .shadow(radius: 1)
+                                    .frame(width: 13, height: 13)
+                                    .offset(x: settings.enableDictationShortcut ? 13 : -13)
+                                    .animation(.spring(response: 0.2), value: settings.enableDictationShortcut)
+                                    .focusable(false)
+                            }
+                            .focusable(false)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .focusable(false)
+                    }
+                    .padding(.bottom, 8)
+                    
+                    // 快捷键设置
+                    if settings.enableDictationShortcut {
+                        Text("Shortcut Key Combination")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                            .padding(.top, 8)
+                        
+                        HStack {
+                            TextField("e.g. option+t", text: $settings.dictationShortcutKeyCombo)
+                                .font(.system(size: 14))
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(maxWidth: .infinity)
+                            
+                            Button("Apply") {
+                                // 通过发送通知触发快捷键更新
+                                NotificationCenter.default.post(
+                                    name: NSNotification.Name("dictationShortcutSettingsChanged"),
+                                    object: nil
+                                )
+                            }
+                            .font(.system(size: 13))
+                            .buttonStyle(GreenButtonStyle())
+                        }
+                        
+                        Text("Format examples: option+t, cmd+shift+d, ctrl+space")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 4)
+                    }
+                }
+                .glassCard()
+                
                 Spacer()
             }
             .padding(.top, 24)

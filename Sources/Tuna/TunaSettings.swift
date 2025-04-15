@@ -259,6 +259,46 @@ class TunaSettings: ObservableObject {
         }
     }
     
+    // Dictation全局快捷键开关
+    @Published var enableDictationShortcut: Bool {
+        didSet {
+            if oldValue != enableDictationShortcut && !isUpdating {
+                isUpdating = true
+                UserDefaults.standard.set(enableDictationShortcut, forKey: "enableDictationShortcut")
+                logger.debug("Saved dictation shortcut enabled: \(self.enableDictationShortcut)")
+                print("[SETTINGS] Dictation shortcut: \(self.enableDictationShortcut ? "enabled" : "disabled")")
+                fflush(stdout)
+                isUpdating = false
+                
+                // 发送通知告知设置已变更
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("dictationShortcutSettingsChanged"),
+                    object: nil
+                )
+            }
+        }
+    }
+    
+    // Dictation快捷键组合
+    @Published var dictationShortcutKeyCombo: String {
+        didSet {
+            if oldValue != dictationShortcutKeyCombo && !isUpdating {
+                isUpdating = true
+                UserDefaults.standard.set(dictationShortcutKeyCombo, forKey: "dictationShortcutKeyCombo")
+                logger.debug("Saved dictation shortcut key combo: \(self.dictationShortcutKeyCombo)")
+                print("[SETTINGS] Dictation shortcut key combo: \(self.dictationShortcutKeyCombo)")
+                fflush(stdout)
+                isUpdating = false
+                
+                // 发送通知告知设置已变更
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("dictationShortcutSettingsChanged"),
+                    object: nil
+                )
+            }
+        }
+    }
+    
     // 添加语音转录文件保存路径配置
     @Published var transcriptionOutputDirectory: URL? {
         didSet {
@@ -377,6 +417,10 @@ class TunaSettings: ObservableObject {
         self.transcriptionFormat = UserDefaults.standard.string(forKey: "dictationFormat") ?? "txt"
         self.transcriptionOutputDirectory = UserDefaults.standard.url(forKey: "dictationOutputDirectory")
         self.autoCopyTranscriptionToClipboard = UserDefaults.standard.bool(forKey: "autoCopyTranscriptionToClipboard")
+        
+        // 初始化Dictation快捷键设置
+        self.enableDictationShortcut = UserDefaults.standard.bool(forKey: "enableDictationShortcut")
+        self.dictationShortcutKeyCombo = UserDefaults.standard.string(forKey: "dictationShortcutKeyCombo") ?? "option+t"
         
         // 初始化默认音频设备设置
         self.defaultOutputDeviceUID = UserDefaults.standard.string(forKey: "defaultOutputDeviceUID") ?? ""

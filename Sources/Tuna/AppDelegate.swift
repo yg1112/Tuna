@@ -63,12 +63,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 添加事件监视器
     private var eventMonitor: EventMonitor?
     
+    // 添加快捷键管理器
+    private var keyboardShortcutManager: KeyboardShortcutManager!
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("\u{001B}[34m[APP]\u{001B}[0m Application finished launching")
         fflush(stdout)
         
         setupStatusItem()
         setupEventMonitor()
+        
+        // 初始化键盘快捷键管理器
+        keyboardShortcutManager = KeyboardShortcutManager.shared
         
         // Register notification observer for settings window
         NotificationCenter.default.addObserver(
@@ -159,7 +165,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         fflush(stdout)
     }
     
-    @objc private func togglePopover() {
+    @objc func togglePopover() {
         if let button = statusItem.button {
             // 正常 popover 逻辑
             if popover.isShown {

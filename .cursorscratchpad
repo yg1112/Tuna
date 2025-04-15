@@ -1,0 +1,65 @@
+# Tuna项目开发状态追踪
+
+## Module: QuickDictation
+- Status: ✅ Ready for Commit
+- Prompt: 添加Dictation全局快捷键功能，使用户能通过快捷键快速开启语音转写
+- Branch: quickdictation0414
+
+### 任务清单
+- [x] 创建KeyboardShortcutManager类，用于管理全局快捷键
+- [x] 在TunaSettings中添加Dictation快捷键设置项
+- [x] 在WhispenTabView中添加快捷键设置UI
+- [x] 实现全局快捷键注册和监听功能
+- [x] 实现快捷键触发时切换至Dictation Tab并开始录音的功能
+- [ ] 手动测试验证
+- [x] 构建验证
+
+### 功能实现细节
+1. 添加了TunaSettings中的两个新设置项：
+   - enableDictationShortcut: Bool - 控制是否启用快捷键功能
+   - dictationShortcutKeyCombo: String - 存储快捷键组合（如 "option+t"）
+
+2. 创建了新的KeyboardShortcutManager类：
+   - 使用Carbon API实现全局快捷键注册和监听
+   - 监听设置变化，动态更新快捷键
+   - 快捷键触发时自动打开应用并开始转写
+
+3. 在TunaSettingsView的Whispen标签页中添加了快捷键设置UI：
+   - 开关控制快捷键功能启用/禁用
+   - 文本框输入快捷键组合
+   - 应用按钮将更改应用到系统
+
+4. 在AppDelegate中初始化KeyboardShortcutManager，确保应用启动时开始监听快捷键
+
+5. 添加了在MenuBarView中对switchToTab通知的处理，使快捷键可以切换至Dictation选项卡
+
+### 文件修改列表
+- Sources/Tuna/TunaSettings.swift - 添加快捷键设置项
+- Sources/Tuna/Models/KeyboardShortcutManager.swift - 新增文件，实现快捷键管理
+- Sources/Tuna/TunaSettingsView.swift - 添加快捷键设置UI
+- Sources/Tuna/AppDelegate.swift - 初始化快捷键管理器
+- Sources/Tuna/MenuBarView.swift - 添加对switchToTab通知的处理
+
+### Manual Verification
+- Shortcut enabled: pending
+- Key combination recognition: pending
+- App activation: pending
+- Tab switching: pending
+- Recording started: pending
+
+### Build Status
+- Status: ✅ Passed
+
+### 构建注意事项
+- 构建通过，只有一些警告，无错误
+- KeyboardShortcutManager使用Carbon API实现全局快捷键功能，在macOS 13.0及以上版本上可用
+- 默认使用"option+t"作为快捷键组合，用户可以在设置中自定义
+
+### 下一步操作
+用户在手动测试后，应该确认以下功能：
+1. 快捷键设置UI是否正常工作
+2. 开启/禁用功能是否生效
+3. 自定义快捷键是否能正确注册
+4. 快捷键触发时是否能打开Tuna窗口、切换至Dictation选项卡并开始录音
+
+所有文件已就绪，可以提交到`quickdictation0414`分支。 

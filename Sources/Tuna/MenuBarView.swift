@@ -13,6 +13,10 @@ struct MenuBarView: View {
     @State private var outputButtonHovered = false
     @State private var inputButtonHovered = false
     @State private var statusAppeared = false
+    @State private var showVolumeControls = true
+    @State private var isPinned = false
+    @State private var currentTab = "devices" // 默认显示设备选项卡
+    @State private var isExpanded = true
     let cardWidth: CGFloat = 300
     
     var body: some View {
@@ -35,6 +39,28 @@ struct MenuBarView: View {
                     )
                 }
             }
+            
+            // 检查系统设置
+            showVolumeControls = settings.showVolumeSliders
+            
+            // 检查固定状态
+            isPinned = UserDefaults.standard.bool(forKey: "popoverPinned")
+            
+            // 添加切换选项卡通知监听
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("switchToTab"),
+                object: nil,
+                queue: .main) { notification in
+                if let tab = notification.userInfo?["tab"] as? String {
+                    withAnimation {
+                        currentTab = tab
+                    }
+                }
+            }
+        }
+        .onDisappear {
+            // 移除通知监听
+            NotificationCenter.default.removeObserver(self)
         }
     }
 }
