@@ -18,14 +18,14 @@ extension MenuBarView {
            let host = window.contentView?.subviews.first(where: { $0 is NSHostingView<MenuBarView> })
                 as? NSHostingView<MenuBarView> {
 
-            print("🔍 [DEBUG] 找到了MenuBarView实例，当前tab是: \(host.rootView.currentTab)")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.currentTab)")
+            print("🔍 [DEBUG] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.current)")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.current)")
             
             // 直接设置为dictation标签
-            host.rootView.currentTab = "dictation"
+            host.rootView.router.current = "dictation"
             
-            print("🔍 [DEBUG] MenuBarView.currentTab已设置为: \(host.rootView.currentTab)")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] MenuBarView.currentTab已设置为: \(host.rootView.currentTab)")
+            print("🔍 [DEBUG] MenuBarView.currentTab已设置为: \(host.rootView.router.current)")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] MenuBarView.currentTab已设置为: \(host.rootView.router.current)")
         } else {
             print("⚠️ [WARNING] 找不到MenuBarView实例，回退到通知机制")
             Logger(subsystem:"ai.tuna",category:"Shortcut").warning("[DIRECT] 找不到MenuBarView实例，回退到通知机制")
@@ -50,12 +50,12 @@ extension MenuBarView {
 struct MenuBarView: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
+    @ObservedObject var router = TabRouter.shared
     @State private var outputButtonHovered = false
     @State private var inputButtonHovered = false
     @State private var statusAppeared = false
     @State private var showVolumeControls = true
     @State private var isPinned = false
-    @State private var currentTab = "devices" // 默认显示设备选项卡
     @State private var isExpanded = true
     let cardWidth: CGFloat = 300
     
@@ -104,7 +104,7 @@ struct MenuBarView: View {
                     Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 MenuBarView 收到切换选项卡通知: \(tab)")
                     
                     withAnimation {
-                        self.currentTab = tab
+                        self.router.current = tab
                         print("switchToTab -> \(tab)")
                         Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[T] switchToTab -> \(tab)")
                         
@@ -181,6 +181,7 @@ struct DevicePreferenceRow: View {
 struct TunaMenuBarView: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
+    @ObservedObject var router = TabRouter.shared
     let isOutputHovered: Bool
     let isInputHovered: Bool
     let cardWidth: CGFloat
@@ -189,7 +190,6 @@ struct TunaMenuBarView: View {
     private let fixedWidth: CGFloat = 400  // 使用固定宽度400
     private let fixedHeight: CGFloat = 439  // 从462缩小5%到439
     
-    @State private var currentTab = "devices" // "devices", "dictation", "stats"
     @State private var showingAboutWindow = false
     @State private var isPinned = false // 添加固定状态
     
@@ -242,25 +242,25 @@ struct TunaMenuBarView: View {
                     TabButton(
                         title: "Devices",
                         iconName: "speaker.wave.2.fill",
-                        isSelected: currentTab == "devices"
+                        isSelected: router.current == "devices"
                     ) {
-                        currentTab = "devices"
+                        router.current = "devices"
                     }
                     
                     TabButton(
                         title: "Whispen",
                         iconName: "waveform",
-                        isSelected: currentTab == "dictation"
+                        isSelected: router.current == "dictation"
                     ) {
-                        currentTab = "dictation"
+                        router.current = "dictation"
                     }
                     
                     TabButton(
                         title: "Stats",
                         iconName: "chart.bar.fill",
-                        isSelected: currentTab == "stats"
+                        isSelected: router.current == "stats"
                     ) {
-                        currentTab = "stats"
+                        router.current = "stats"
                 }
             }
             .padding(.horizontal, 16)
@@ -270,7 +270,7 @@ struct TunaMenuBarView: View {
             // 2. 中间内容区域 - 固定高度的可滚动区域
             ScrollView {
                 VStack(spacing: 0) {
-                    switch currentTab {
+                    switch router.current {
                     case "devices":
                         // 设备卡片区域
                         VStack(spacing: 12) {
@@ -313,7 +313,7 @@ struct TunaMenuBarView: View {
             }
             .frame(height: 319) // 从336缩小5%到319
             .scrollIndicators(.hidden) // 隐藏所有滚动指示器
-            .scrollDisabled(currentTab == "devices") // 当在Devices标签页时禁用滚动
+            .scrollDisabled(router.current == "devices") // 当在Devices标签页时禁用滚动
             
             Divider() // 添加分隔线，视觉上区分内容区和底部按钮区
                 .background(Color.white.opacity(0.1))
@@ -395,7 +395,7 @@ struct TunaMenuBarView: View {
                     Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 TunaMenuBarView 收到切换选项卡通知: \(tab)")
                     
                     withAnimation {
-                        self.currentTab = tab
+                        self.router.current = tab
                         print("TunaMenuBarView switchToTab -> \(tab)")
                         Logger(subsystem:"ai.tuna",category:"Shortcut").notice("TunaMenuBarView switchToTab -> \(tab)")
                         

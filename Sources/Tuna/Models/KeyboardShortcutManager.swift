@@ -331,14 +331,14 @@ class KeyboardShortcutManager {
         
         // A. UI 处理 - 根据设置决定是否显示Dictation页面
         if settings.showDictationPageOnShortcut {
+            // 确保popover可见
             AppDelegate.shared?.ensurePopoverVisible()
             
-            // 添加延迟确保MenuBarView已加载完成，然后直接调用activateDictationTab()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                print("🔶 [Shortcut] 延迟0.25秒后调用MenuBarView.activateDictationTab()")
-                self.logger.notice("✅ 延迟0.25秒后调用MenuBarView.activateDictationTab()")
-                MenuBarView.activateDictationTab()
-            }
+            // 使用TabRouter直接切换标签页，不再依赖复杂的延迟和通知机制
+            TabRouter.switchTo("dictation")
+            
+            logger.notice("✅ 已使用TabRouter切换到听写页面")
+            print("✅ [Shortcut] 已使用TabRouter切换到听写页面")
         } else {
             // 不显示UI，只记录日志
             logger.notice("👻 静默录音模式 (showDictationPageOnShortcut=false)")
