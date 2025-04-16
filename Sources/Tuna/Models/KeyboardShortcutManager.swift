@@ -327,66 +327,32 @@ class KeyboardShortcutManager {
         }
         
         logger.notice("🎯 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
-        logger.notice("[H] handleDictationShortcutPressed")
         print("🔶 [Shortcut] 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
         
-        // 检查AppDelegate.shared是否为nil
-        if AppDelegate.shared == nil {
-            logger.error("⚠️ AppDelegate.shared 是 nil，尝试通过NSApp.delegate获取")
-            print("🔴 [ERROR] AppDelegate.shared 是 nil，尝试通过NSApp.delegate")
+        // A. UI 处理 - 根据设置决定是否显示Dictation页面
+        if settings.showDictationPageOnShortcut {
+            AppDelegate.shared?.ensurePopoverVisible()
             
-            // 直接通过NSApp.delegate尝试获取
-            if let appDelegate = NSApp.delegate as? AppDelegate {
-                logger.notice("✅ 成功通过NSApp.delegate获取AppDelegate")
-                
-                // ① 确保弹窗可见
-                appDelegate.ensurePopoverVisible()
-                
-                // 添加日志，确认弹窗已显示
-                logger.notice("✅ 已调用 ensurePopoverVisible()")
-                print("✅ [Shortcut] 已调用 ensurePopoverVisible()")
-                
-                // ② 使用MenuBarView静态方法激活dictation
-                MenuBarView.activateDictationTab()
-                
-                // 添加日志，确认调用
-                logger.notice("✅ 已调用 MenuBarView.activateDictationTab()")
-                print("✅ [Shortcut] 已调用 MenuBarView.activateDictationTab()")
-                
-                return
-            } else {
-                logger.error("⚠️ 无法通过NSApp.delegate获取AppDelegate")
-                print("🔴 [ERROR] 无法通过NSApp.delegate获取AppDelegate")
+            // 添加延迟确保MenuBarView已加载完成
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                NotificationCenter.default.post(
+                    name: .switchToTab,
+                    object: nil,
+                    userInfo: ["tab": "dictation"]
+                )
+                self.logger.notice("✅ 显示Dictation页面(延迟0.15秒)")
+                print("✅ [Shortcut] 显示Dictation页面(延迟0.15秒)")
             }
-            
-            // 如果还是无法获取，直接调用MenuBarView.activateDictationTab()
-            logger.notice("⚠️ 无法获取AppDelegate，直接调用MenuBarView.activateDictationTab()")
-            
-            // 直接使用静态方法
-            MenuBarView.activateDictationTab()
-            
-            // 添加日志，确认调用
-            logger.notice("✅ 已调用 MenuBarView.activateDictationTab() (直接方式)")
-            print("✅ [Shortcut] 已调用 MenuBarView.activateDictationTab() (直接方式)")
-            
-            return
+        } else {
+            // 不显示UI，只记录日志
+            logger.notice("👻 静默录音模式 (showDictationPageOnShortcut=false)")
+            print("🔷 [Shortcut] 静默录音模式 (不显示Dictation页面)")
         }
         
-        guard let appDelegate = AppDelegate.shared else { return }
-        
-        // ① 确保弹窗可见
-        appDelegate.ensurePopoverVisible()
-        
-        // 添加日志，确认弹窗已显示
-        logger.notice("✅ 已调用 ensurePopoverVisible()")
-        print("✅ [Shortcut] 已调用 ensurePopoverVisible()")
-        
-        // ② 使用MenuBarView静态方法激活dictation
-        MenuBarView.activateDictationTab()
-        
-        // 添加日志，确认调用
-        logger.notice("✅ 已调用 MenuBarView.activateDictationTab()")
-        print("✅ [Shortcut] 已调用 MenuBarView.activateDictationTab()")
+        // B. 业务逻辑 - 切换录音状态
+        DictationManager.shared.toggle()
+        logger.notice("🎙 已调用 DictationManager.toggle()")
+        print("🎙 [Shortcut] 已调用 DictationManager.toggle()")
     }
     
     @objc private func handleDictationShortcutSettingsChanged() {
