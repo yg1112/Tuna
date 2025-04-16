@@ -4,6 +4,7 @@
 // @depends_on: MenuBarView
 
 import SwiftUI
+import os.log
 
 final class TabRouter: ObservableObject {
     @Published var current: String = "devices"
