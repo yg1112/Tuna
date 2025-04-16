@@ -44,6 +44,9 @@ class KeyboardShortcutManager {
         
         // 初始化快捷键
         setupDictationShortcut()
+        
+        // 添加全局监听 - 作为辅助快捷键方案
+        setupGlobalMonitor()
     }
     
     // MARK: - Public Methods
@@ -197,11 +200,48 @@ class KeyboardShortcutManager {
     private func registerDictationShortcut(_ keyCombo: KeyCombo) {
         logger.debug("Registering dictation shortcut: keyCode=\(keyCombo.keyCode), modifiers=\(keyCombo.modifiers)")
         
-        // 权限自检
-        guard AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue():true] as CFDictionary) else {
-            logger.error("⚠️ Accessibility permission not granted")
+        // 更详细的权限检查和提示 - 强制显示权限对话框
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true]
+        let accessEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary)
+        
+        if !accessEnabled {
+            logger.error("⚠️ 辅助功能权限未授予或被拒绝，快捷键无法正常工作")
+            print("🔴 [Shortcut] 辅助功能权限被拒绝，快捷键将无法工作")
+            
+            // 显示提示窗口，指导用户开启权限
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = "需要辅助功能权限"
+                alert.informativeText = "Tuna需要辅助功能权限来启用全局快捷键功能。\n\n请执行以下步骤：\n1. 点击\"打开系统偏好设置\"\n2. 前往\"安全与隐私\" > \"隐私\" > \"辅助功能\"\n3. 找到并勾选Tuna应用\n4. 重启Tuna应用"
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "打开系统偏好设置")
+                alert.addButton(withTitle: "稍后再说")
+                
+                let response = alert.runModal()
+                if response == .alertFirstButtonReturn {
+                    // macOS Ventura及以上版本使用新的权限面板路径
+                    if #available(macOS 13.0, *) {
+                        let prefpaneURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+                        if let url = prefpaneURL {
+                            NSWorkspace.shared.open(url)
+                        } else {
+                            // 回退到旧路径
+                            let legacyURL = URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane")
+                            NSWorkspace.shared.open(legacyURL)
+                        }
+                    } else {
+                        // 旧版macOS
+                        let prefpaneURL = URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane")
+                        NSWorkspace.shared.open(prefpaneURL)
+                    }
+                }
+            }
+            
             return
         }
+        
+        logger.notice("✅ 辅助功能权限已授予，正在注册快捷键...")
+        print("🟢 [Shortcut] 辅助功能权限已授予，开始注册快捷键")
         
         // 创建事件处理器
         var eventHotKeyRef: EventHotKeyRef? = nil
@@ -211,6 +251,9 @@ class KeyboardShortcutManager {
         let status = InstallEventHandler(
             GetApplicationEventTarget(),
             { (nextHandler, theEvent, userData) -> OSStatus in
+                // 日志记录快捷键事件
+                print("🔶 [Shortcut] 接收到热键事件")
+                
                 // 获取触发的快捷键ID
                 var hotkeyID = EventHotKeyID()
                 GetEventParameter(
@@ -225,6 +268,7 @@ class KeyboardShortcutManager {
                 
                 // 检查是否是我们注册的Dictation快捷键
                 if hotkeyID.id == 1 {
+                    print("🔶 [Shortcut] 确认为Dictation快捷键，调用处理器")
                     KeyboardShortcutManager.shared.handleDictationShortcutPressed()
                 }
                 
@@ -260,7 +304,8 @@ class KeyboardShortcutManager {
         }
         
         currentDictationKeyCombo = keyCombo
-        logger.debug("Successfully registered dictation shortcut")
+        logger.notice("✅ 成功注册快捷键: \(self.settings.dictationShortcutKeyCombo)")
+        print("🔶 [Shortcut] 快捷键\(self.settings.dictationShortcutKeyCombo)注册成功")
     }
     
     private func unregisterDictationShortcut() {
@@ -281,35 +326,97 @@ class KeyboardShortcutManager {
             return
         }
         
-        logger.notice("triggered dictation")
-        NSApp.activate(ignoringOtherApps: true)
+        logger.notice("🎯 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
+        logger.notice("[H] handleDictationShortcutPressed")
+        print("🔶 [Shortcut] 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
         
-        // 显示主窗口/弹出窗口
-        if let appDelegate = AppDelegate.shared {
-            // 检查popover是否已打开
-            if !appDelegate.popover.isShown {
-                // 如果未打开，则触发状态栏图标点击显示popover
-                appDelegate.togglePopover()
+        // 检查AppDelegate.shared是否为nil
+        if AppDelegate.shared == nil {
+            logger.error("⚠️ AppDelegate.shared 是 nil，尝试通过NSApp.delegate获取")
+            print("🔴 [ERROR] AppDelegate.shared 是 nil，尝试通过NSApp.delegate")
+            
+            // 直接通过NSApp.delegate尝试获取
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                logger.notice("✅ 成功通过NSApp.delegate获取AppDelegate")
+                
+                // ① 确保弹窗可见
+                appDelegate.ensurePopoverVisible()
+                
+                // 添加日志，确认弹窗已显示
+                logger.notice("✅ 已调用 ensurePopoverVisible()")
+                print("✅ [Shortcut] 已调用 ensurePopoverVisible()")
+                
+                // ② 使用MenuBarView静态方法激活dictation
+                MenuBarView.activateDictationTab()
+                
+                // 添加日志，确认调用
+                logger.notice("✅ 已调用 MenuBarView.activateDictationTab()")
+                print("✅ [Shortcut] 已调用 MenuBarView.activateDictationTab()")
+                
+                return
+            } else {
+                logger.error("⚠️ 无法通过NSApp.delegate获取AppDelegate")
+                print("🔴 [ERROR] 无法通过NSApp.delegate获取AppDelegate")
             }
             
-            // 切换到Dictation选项卡
-            NotificationCenter.default.post(
-                name: Notification.Name.switchToTab,
-                object: nil,
-                userInfo: ["tab": "dictation"]
-            )
+            // 如果还是无法获取，直接调用MenuBarView.activateDictationTab()
+            logger.notice("⚠️ 无法获取AppDelegate，直接调用MenuBarView.activateDictationTab()")
             
-            // 添加短延迟，确保UI准备好
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                DictationManager.shared.startRecording()
-                self.logger.notice("startRecording")
-            }
+            // 直接使用静态方法
+            MenuBarView.activateDictationTab()
+            
+            // 添加日志，确认调用
+            logger.notice("✅ 已调用 MenuBarView.activateDictationTab() (直接方式)")
+            print("✅ [Shortcut] 已调用 MenuBarView.activateDictationTab() (直接方式)")
+            
+            return
         }
+        
+        guard let appDelegate = AppDelegate.shared else { return }
+        
+        // ① 确保弹窗可见
+        appDelegate.ensurePopoverVisible()
+        
+        // 添加日志，确认弹窗已显示
+        logger.notice("✅ 已调用 ensurePopoverVisible()")
+        print("✅ [Shortcut] 已调用 ensurePopoverVisible()")
+        
+        // ② 使用MenuBarView静态方法激活dictation
+        MenuBarView.activateDictationTab()
+        
+        // 添加日志，确认调用
+        logger.notice("✅ 已调用 MenuBarView.activateDictationTab()")
+        print("✅ [Shortcut] 已调用 MenuBarView.activateDictationTab()")
     }
     
     @objc private func handleDictationShortcutSettingsChanged() {
         logger.debug("Dictation shortcut settings changed, updating...")
         setupDictationShortcut()
+    }
+    
+    private func setupGlobalMonitor() {
+        // 使用NSEvent.addGlobalMonitorForEvents确保在所有情况下都能捕获
+        NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
+            // 检查是否按下了⌘U组合键
+            if event.modifierFlags.contains(.command) && event.keyCode == 32 { // 32是字母U的键码
+                print("🔍 [DEBUG] 检测到Command+U快捷键")
+                self.logger.notice("🎯 监测到Command+U快捷键（通过NSEvent全局监听）")
+                self.handleDictationShortcutPressed()
+            }
+        }
+        
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // 检查是否按下了⌘U组合键
+            if event.modifierFlags.contains(.command) && event.keyCode == 32 { // 32是字母U的键码
+                print("🔍 [DEBUG] 检测到Command+U快捷键（本地监听）")
+                self.logger.notice("🎯 监测到Command+U快捷键（通过NSEvent本地监听）")
+                self.handleDictationShortcutPressed()
+            }
+            return event
+        }
+        
+        print("🟢 [Shortcut] 已添加全局键盘监听，可直接捕获Command+U")
+        logger.notice("✅ 已添加全局键盘监听")
     }
     
     deinit {

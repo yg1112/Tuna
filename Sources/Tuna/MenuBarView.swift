@@ -2,9 +2,31 @@ import SwiftUI
 import AppKit
 import CoreAudio
 import CoreAudio.AudioHardware
+import os
 
 // 存储 About 窗口的全局变量
 var aboutWindowReference: NSWindowController?
+
+// 添加静态方法用于激活dictation标签页
+extension MenuBarView {
+    static func activateDictationTab() {
+        print("🔍 [DEBUG] MenuBarView.activateDictationTab() 被调用")
+        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] activateDictationTab 被调用")
+        
+        // 发送通知切换到dictation标签页
+        NotificationCenter.default.post(
+            name: Notification.Name.switchToTab,
+            object: nil,
+            userInfo: ["tab": "dictation"]
+        )
+        
+        // 给UI一些时间来切换，然后开始录音
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from static method")
+            DictationManager.shared.startRecording()
+        }
+    }
+}
 
 // 标准Tuna界面，使用现代的布局和组件
 struct MenuBarView: View {
@@ -18,6 +40,8 @@ struct MenuBarView: View {
     @State private var currentTab = "devices" // 默认显示设备选项卡
     @State private var isExpanded = true
     let cardWidth: CGFloat = 300
+    
+    private let logger = Logger(subsystem: "ai.tuna", category: "UI")
     
     var body: some View {
         TunaMenuBarView(
@@ -46,15 +70,35 @@ struct MenuBarView: View {
             // 检查固定状态
             isPinned = UserDefaults.standard.bool(forKey: "popoverPinned")
             
+            // 添加调试信息
+            print("🔍 [DEBUG] MenuBarView.onAppear - 开始监听switchToTab通知")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 MenuBarView.onAppear - 开始监听switchToTab通知")
+            
             // 添加切换选项卡通知监听
             NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("switchToTab"),
+                forName: Notification.Name.switchToTab,
                 object: nil,
                 queue: .main) { notification in
                 if let tab = notification.userInfo?["tab"] as? String {
+                    print("🔍 [DEBUG] MenuBarView 收到切换选项卡通知: \(tab)")
+                    Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 MenuBarView 收到切换选项卡通知: \(tab)")
+                    
                     withAnimation {
-                        currentTab = tab
+                        self.currentTab = tab
+                        print("switchToTab -> \(tab)")
+                        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[T] switchToTab -> \(tab)")
+                        
+                        // 如果切换到dictation选项卡，自动启动录音
+                        if tab == "dictation" {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from MenuBarView")
+                                DictationManager.shared.startRecording()
+                            }
+                        }
                     }
+                } else {
+                    print("❌ [ERROR] MenuBarView 收到切换选项卡通知，但tab参数为nil")
+                    Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ MenuBarView 收到切换选项卡通知，但tab参数为nil")
                 }
             }
         }
@@ -316,6 +360,38 @@ struct TunaMenuBarView: View {
                 )
                 print("\u{001B}[36m[UI]\u{001B}[0m Restored pin status: \(savedPinState)")
             }
+            
+            // 添加调试信息
+            print("🔍 [DEBUG] TunaMenuBarView.onAppear - 开始监听switchToTab通知")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 TunaMenuBarView.onAppear - 开始监听switchToTab通知")
+            
+            // 添加切换选项卡通知监听
+            NotificationCenter.default.addObserver(
+                forName: Notification.Name.switchToTab,
+                object: nil,
+                queue: .main) { notification in
+                if let tab = notification.userInfo?["tab"] as? String {
+                    print("🔍 [DEBUG] 收到切换选项卡通知: \(tab)")
+                    Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 收到切换选项卡通知: \(tab)")
+                    
+                    withAnimation {
+                        self.currentTab = tab
+                        print("switchToTab -> \(tab)")
+                        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[T] switchToTab -> \(tab)")
+                        
+                        // 如果切换到dictation选项卡，自动启动录音
+                        if tab == "dictation" {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from MenuBarView")
+                                DictationManager.shared.startRecording()
+                            }
+                        }
+                    }
+                } else {
+                    print("❌ [ERROR] 收到切换选项卡通知，但tab参数为nil")
+                    Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ 收到切换选项卡通知，但tab参数为nil")
+                }
+            }
         }
     }
     
@@ -378,13 +454,49 @@ struct TabButton: View {
 
 // 听写视图
 struct DictationView: View {
-    @ObservedObject private var dictationManager = DictationManager.shared
-    @State private var isRecording = false
-    @State private var isPaused = false
-    @State private var breathingAnimation = false
-        
-        var body: some View {
-        VStack(spacing: 12) {
+    @EnvironmentObject var dictationManager: DictationManager
+    @State private var showSavePanel = false
+    @State private var statusMessage = ""
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("语音转文字")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.white)
+            
+            // 如果有状态消息，显示错误提示
+            if !statusMessage.isEmpty {
+                Text(statusMessage)
+                    .font(.system(size: 14))
+                    .foregroundColor(.orange)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.2))
+                    .cornerRadius(6)
+            }
+            
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.black.opacity(0.3))
+                    .frame(height: 40)
+                
+                if dictationManager.isRecording {
+                    // 录音状态可视化
+                    HStack(spacing: 3) {
+                        ForEach(0..<10, id: \.self) { _ in
+                            AudioVisualBar()
+                        }
+                    }
+                    .transition(.opacity)
+                } else {
+                    Text(dictationManager.isRecording ? "正在录音..." : "按下按钮开始录音")
+                        .foregroundColor(.white.opacity(0.8))
+                        .font(.system(size: 14))
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: dictationManager.isRecording)
+            
             // 文本输出框和清除按钮
             ZStack(alignment: .topTrailing) {
                     ScrollView {
@@ -400,16 +512,16 @@ struct DictationView: View {
                     .overlay(
                     RoundedRectangle(cornerRadius: 8)
                             .stroke(
-                            isRecording && !isPaused ? 
+                            dictationManager.isRecording && !dictationManager.isPaused ? 
                                 Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
-                                Color.white.opacity(breathingAnimation ? 0.7 : 0.3), // 非录音时保持呼吸动画
-                            lineWidth: isRecording && !isPaused ? 2.0 : (breathingAnimation ? 2.0 : 0.5)
+                                Color.white.opacity(dictationManager.breathingAnimation ? 0.7 : 0.3), // 非录音时保持呼吸动画
+                            lineWidth: dictationManager.isRecording && !dictationManager.isPaused ? 2.0 : (dictationManager.breathingAnimation ? 2.0 : 0.5)
                         )
-                        .scaleEffect(isRecording && !isPaused ? 1.0 : (breathingAnimation ? 1.025 : 1.0)) // 录音时不需要缩放效果
+                        .scaleEffect(dictationManager.isRecording && !dictationManager.isPaused ? 1.0 : (dictationManager.breathingAnimation ? 1.025 : 1.0)) // 录音时不需要缩放效果
                 )
                 
                 // 清除按钮
-            Button(action: {
+                Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         dictationManager.transcribedText = ""
                     }
@@ -417,84 +529,196 @@ struct DictationView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
                         .foregroundColor(.white.opacity(0.6))
-                    .padding(8)
+                        .padding(8)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .focusable(false)
                 .opacity(dictationManager.transcribedText.isEmpty ? 0 : 1)
             }
-            .animation(
-                // 非录音状态时才应用呼吸动画
-                isRecording && !isPaused ? nil : 
-                Animation.easeInOut(duration: 1.5)
-                    .repeatForever(autoreverses: true),
-                value: breathingAnimation
-            )
             
             // 调整按钮布局 - 使录制按钮在左侧，复制/导出按钮在右侧
             HStack(spacing: 20) {
                 // 录制按钮 - 放在左边
-            Button(action: {
-                        if isRecording {
-                            if isPaused {
-                                dictationManager.startRecording()
-                            isPaused = false
-                            } else {
-                                dictationManager.pauseRecording()
-                            isPaused = true
-                            }
-                        } else {
+                Button(action: {
+                    if dictationManager.isRecording {
+                        if dictationManager.isPaused {
                             dictationManager.startRecording()
-                        isRecording = true
+                            dictationManager.isPaused = false
+                        } else {
+                            dictationManager.pauseRecording()
+                            dictationManager.isPaused = true
                         }
-                    breathingAnimation = isRecording && !isPaused
-                    }) {
-                    Circle()
-                        .fill(isRecording ? (isPaused ? Color.gray : Color.white) : Color.red)
-                            .frame(width: 36, height: 36)
-                        .overlay(
-                            Image(systemName: isRecording ? (isPaused ? "mic.slash.fill" : "stop.fill") : "mic.fill")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(isRecording ? (isPaused ? .white : .red) : .white)
-                        )
+                    } else {
+                        dictationManager.startRecording()
+                        dictationManager.isRecording = true
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .focusable(false)
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: dictationManager.isRecording ? (dictationManager.isPaused ? "play.circle" : "pause.circle") : "mic.circle")
+                            .font(.system(size: 18))
+                        Text(dictationManager.isRecording ? (dictationManager.isPaused ? "Continue" : "Pause") : "Record")
+                            .font(.system(size: 13))
+                    }
+                    .frame(height: 24)
+                    .padding(.horizontal, 10)
+                    .background(dictationManager.isRecording && !dictationManager.isPaused ? Color.red.opacity(0.8) : Color.blue.opacity(0.7))
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help(dictationManager.isRecording ? (dictationManager.isPaused ? "Continue recording" : "Pause recording") : "Start recording")
                 
-                    Spacer()
-                    
-                // 复制和导出按钮 - 放在右边
-                HStack(spacing: 16) {
+                // 停止按钮 - 只在录音过程中显示
+                if dictationManager.isRecording {
                     Button(action: {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(dictationManager.transcribedText, forType: .string)
+                        dictationManager.stopRecording()
+                        dictationManager.isRecording = false
+                        dictationManager.isPaused = false
                     }) {
-                        Image(systemName: "doc.on.doc")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
-            }
-            .buttonStyle(PlainButtonStyle())
-                    .focusable(false)
-                    .disabled(dictationManager.transcribedText.isEmpty)
-                    
-                    Button(action: {
-                        // TODO: 实现导出功能
-                    }) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
+                        HStack(spacing: 5) {
+                            Image(systemName: "stop.circle")
+                                .font(.system(size: 18))
+                            Text("Stop")
+                                .font(.system(size: 13))
+                        }
+                        .frame(height: 24)
+                        .padding(.horizontal, 10)
+                        .background(Color.gray.opacity(0.7))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .focusable(false)
-            .focusable(false)
-                    .disabled(dictationManager.transcribedText.isEmpty)
+                    .help("Stop recording")
+                    .transition(.scale)
+                }
+                
+                // 右侧按钮组 - 复制和导出
+                Spacer()
+                
+                // 复制按钮
+                Button(action: {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.setString(dictationManager.transcribedText, forType: .string)
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 16))
+                        Text("Copy")
+                            .font(.system(size: 13))
+                    }
+                    .frame(height: 24)
+                    .padding(.horizontal, 8)
+                    .background(Color.blue.opacity(0.6))
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(dictationManager.transcribedText.isEmpty)
+                .opacity(dictationManager.transcribedText.isEmpty ? 0.5 : 1)
+                .help("Copy text to clipboard")
+                
+                // 保存按钮
+                Button(action: {
+                    saveTranscription()
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 16))
+                        Text("Save")
+                            .font(.system(size: 13))
+                    }
+                    .frame(height: 24)
+                    .padding(.horizontal, 8)
+                    .background(Color.green.opacity(0.6))
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(dictationManager.transcribedText.isEmpty)
+                .opacity(dictationManager.transcribedText.isEmpty ? 0.5 : 1)
+                .help("Save transcription to a file")
+            }
+            
+            // 显示状态或进度文本
+            Text(dictationManager.progressMessage.isEmpty ? 
+                     (dictationManager.isRecording ? (dictationManager.isPaused ? "Paused" : "Recording...") : "Ready") : 
+                     dictationManager.progressMessage)
+                .font(.system(size: 12))
+                .foregroundColor(.gray)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 4)
+            
+            if dictationManager.isRecording && !dictationManager.isPaused {
+                // 音频可视化效果
+                HStack(spacing: 2) {
+                    ForEach(0..<15, id: \.self) { _ in
+                        AudioVisualBar()
+                    }
+                }
+                .frame(height: 20)
+                .padding(.top, -8)
+                .transition(.opacity)
+            }
+        }
+        .padding()
+        .onAppear {
+            // 启动呼吸动画
+            dictationManager.breathingAnimation = true
+            
+            // 注册录音失败回调
+            dictationManager.onStartFailure = {
+                self.statusMessage = "⚠️ 无法启动听写，请确认已授权麦克风权限并检查系统设置。"
+            }
+        }
+        .onDisappear {
+            // 清除回调
+            dictationManager.onStartFailure = nil
+            // 清除状态消息
+            self.statusMessage = ""
+        }
+    }
+    
+    // 保存转录到文件
+    private func saveTranscription() {
+        // 创建保存面板
+        let savePanel = NSSavePanel()
+        savePanel.allowedContentTypes = [.text]
+        savePanel.canCreateDirectories = true
+        savePanel.isExtensionHidden = false
+        savePanel.title = "Save Transcription"
+        savePanel.message = "Choose a location to save the transcription"
+        savePanel.nameFieldStringValue = "Transcription-\(Date().formatted(.dateTime.year().month().day().hour().minute()))"
+        
+        savePanel.begin { response in
+            if response == .OK, let url = savePanel.url {
+                do {
+                    try dictationManager.transcribedText.write(to: url, atomically: true, encoding: .utf8)
+                } catch {
+                    print("Failed to save transcription: \(error.localizedDescription)")
                 }
             }
         }
-        .onAppear {
-            // 无条件启动呼吸动画
-            breathingAnimation = true
-        }
+    }
+}
+
+// 音频可视化条
+struct AudioVisualBar: View {
+    @State private var animation = false
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(Color.white.opacity(0.7))
+            .frame(width: 3, height: animation ? 20 : 5)
+            .animation(
+                Animation.easeInOut(duration: 0.2)
+                    .repeatForever()
+                    .delay(Double.random(in: 0...0.3)),
+                value: animation
+            )
+            .onAppear {
+                animation = true
+            }
     }
 }
 
