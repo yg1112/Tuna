@@ -71,8 +71,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 添加快捷键管理器
     private var keyboardShortcutManager: KeyboardShortcutManager!
     
-    // 使用带域的UserDefaults
-    private let defaults = UserDefaults(suiteName: "ai.tuna.app")!
+    // 使用标准UserDefaults
+    private let defaults = UserDefaults.standard
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("\u{001B}[34m[APP]\u{001B}[0m Application finished launching")

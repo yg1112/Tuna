@@ -338,4 +338,50 @@
 ### 文件创建列表
 - docs/AudioBuddyGuide.md
 
-文档已完成，可以与代码一起提交到`quickdictation0414`分支。 
+文档已完成，可以与代码一起提交到`quickdictation0414`分支。
+
+## Module: EditableDictationText
+- Status: ✅ Ready for Commit
+- Prompt: 实现听写文本输出框可编辑功能，使用户可以手动修改语音转文本结果
+- Branch: improvement
+
+### 任务清单
+- [x] 修改QuickDictationView中的文本输出框支持编辑
+- [x] 优化TunaDictationView中的编辑功能
+- [x] 添加编辑提示标签
+- [x] 添加上下文菜单（右键菜单）支持更多文本操作
+- [x] 实现文本格式化功能
+- [x] 确保编辑的文本能够正确同步到DictationManager
+
+### 功能实现细节
+1. QuickDictationView的改进：
+   - 将TextEditor绑定到本地状态变量，而非直接绑定到dictationManager
+   - 添加状态同步逻辑，确保本地编辑能同步到dictationManager
+   - 添加上下文菜单支持文本操作（复制、粘贴、格式化等）
+   - 添加"点击文本可以编辑"提示
+
+2. TunaDictationView的改进：
+   - 增强TranscriptionTextBoxView的上下文菜单
+   - 优化编辑体验（添加更多操作选项）
+   - 添加文本格式化功能（首字母大写、句子格式优化）
+   - 添加编辑提示标签
+
+3. 共享功能：
+   - 实现文本同步逻辑，确保用户编辑不会被转写更新覆盖
+   - 优化占位符显示逻辑，提升用户体验
+   - 添加清除文本功能
+   - 整合录音控制到上下文菜单
+
+### Manual Verification
+- 文本编辑: ✅
+- 内容同步: ✅
+- 右键菜单: ✅
+- 格式化功能: ✅
+- 提示标签: ✅
+
+### 下一步操作
+1. 考虑添加更多文本处理功能，如拼写检查、自动格式化等
+2. 优化文本输入体验，如自动滚动、高亮显示等
+3. 添加键盘快捷键支持常用编辑操作
+
+所有文件已就绪，可以提交到`improvement`分支。 

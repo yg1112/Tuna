@@ -39,8 +39,8 @@ class TunaSettings: ObservableObject {
     private let logger = Logger(subsystem: "ai.tuna", category: "Settings")
     private var isUpdating = false // 防止循环更新
     
-    // 使用带域的UserDefaults
-    private let defaults = UserDefaults(suiteName: "ai.tuna.app")!
+    // 使用标准UserDefaults
+    private let defaults = UserDefaults.standard
     private let standardDefaults = UserDefaults.standard // 用于迁移旧数据
     
     // 当前操作模式
