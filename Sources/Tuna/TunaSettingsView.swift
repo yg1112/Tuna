@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import os.log
+import UserNotifications
 
 // 定义一个统一的强调色 - 使用mint green替代蓝灰色调
 extension Color {
@@ -139,6 +140,8 @@ struct TunaSettingsView: View {
     @State private var backupOutputDeviceUID = UserDefaults.standard.string(forKey: "backupOutputDeviceUID") ?? ""
     @State private var backupInputDeviceUID = UserDefaults.standard.string(forKey: "backupInputDeviceUID") ?? ""
     @State private var hoveredTab: SettingsTab? = nil
+    @State private var apiKey = UserDefaults.standard.string(forKey: "dictationApiKey") ?? ""
+    @State private var progressMessage = ""
     
     private let logger = Logger(subsystem: "com.tuna.app", category: "SettingsView")
     private let formats = ["txt", "srt", "vtt", "json"]
@@ -264,7 +267,7 @@ struct TunaSettingsView: View {
     // General Tab View
     private var generalTabView: some View {
         ScrollView {
-            VStack(spacing: 24) { // 保持24pt的部分间距
+            VStack(spacing: 30) { // 增加间距
                 // Launch at Login Setting with Toggle
                 VStack(alignment: .leading, spacing: 8) { // 使用8pt的标题/副标题间距
                     HStack(alignment: .firstTextBaseline) {
@@ -329,11 +332,11 @@ struct TunaSettingsView: View {
                 
                 // Default Audio Devices Setting已移到Smart Swaps选项卡
                 
-                Spacer()
+                Spacer(minLength: 20) // 提供一些最小间距
             }
-            .padding(.top, 24)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            .padding(.top, 30) // 增加顶部内边距
+            .padding(.horizontal, 24) // 稍微增加水平内边距
+            .padding(.bottom, 30) // 增加底部内边距
         }
         .scrollContentBackground(.hidden)
     }
@@ -341,18 +344,16 @@ struct TunaSettingsView: View {
     // Whispen Tab View
     private var whispenTabView: some View {
         ScrollView {
-            VStack(spacing: 24) { // 保持24pt的部分间距
+            VStack(spacing: 30) { // 增加间距从20pt到30pt，使布局更宽松
                 // Whispen Settings
-                VStack(alignment: .leading, spacing: 8) { // 使用8pt的标题/副标题间距
+                VStack(alignment: .leading, spacing: 12) { // 增加内部间距
                     HStack(alignment: .firstTextBaseline) {
-                        Text("Whispen Settings")
+                        Text("Whispen (Voice Recognition)")
                             .font(.title3) // 使用统一的title3字体
                             .fontWeight(.bold) // 只在标题使用粗体
                             .foregroundColor(.white)
                         
-                        Spacer()
-                        
-                        // Info button with tooltip
+                        // 添加Whispen信息按钮
                         Button(action: {
                             showWhispenInfo.toggle()
                         }) {
@@ -368,40 +369,114 @@ struct TunaSettingsView: View {
                                     .font(.subheadline) // 使用统一的subheadline字体
                                     .fontWeight(.bold) // 只在标题使用粗体
                                 
-                                Text("Files will be saved in selected format after each transcription. Auto Copy sends the text directly to your clipboard for quick pasting.")
+                                Text("Whispen uses OpenAI's Whisper model to transcribe your speech into text with high accuracy. The model automatically detects the spoken language.")
                                     .font(.footnote) // 使用统一的footnote字体
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Color(NSColor.secondaryLabelColor))
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                             .padding()
                             .frame(width: 280)
                         }
                     }
+                    .padding(.bottom, 8)
                     
-                    // File Format Selection
-                    VStack(alignment: .leading, spacing: 8) { // 使用8pt的标题/副标题间距
-                        Text("File Format")
-                            .font(.subheadline) // 使用统一的subheadline字体
+                    Text("Configure your voice recognition settings for dictation.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.bottom, 16)
+                    
+                    // API Key配置
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("API Key")
+                            .font(.subheadline)
                             .foregroundColor(.white)
                         
-                        Picker("", selection: $selectedTranscriptionFormat) {
-                            ForEach(formats, id: \.self) { format in
-                                Text(format.uppercased()).tag(format)
+                        HStack {
+                            if apiKey.isEmpty {
+                                SecureField("OpenAI API Key", text: $apiKey)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .onSubmit {
+                                        saveDictationSettings()
+                                    }
+                            } else {
+                                SecureField("••••••••••••••••••••••••", text: $apiKey)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .onSubmit {
+                                        saveDictationSettings()
+                                    }
                             }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .onChange(of: selectedTranscriptionFormat) { newValue in
-                            if !isInitializing && newValue != settings.transcriptionFormat {
-                                settings.transcriptionFormat = newValue
+                            
+                            Button("Save") {
+                                saveDictationSettings()
                             }
+                            .buttonStyle(GreenButtonStyle())
                         }
-                        .focusable(false)
-                        
-                        Text("Choose your export format")
-                            .font(.footnote) // 使用统一的footnote字体
-                            .foregroundColor(.secondary)
-                            .padding(.top, 2)
-                            .padding(.bottom, 4)
                     }
+                    .padding(.bottom, 16)
+                    
+                    // 添加语言选择
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("语言设置")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                        
+                        Text("默认情况下，Whisper会自动检测语言。您也可以指定要使用的语言。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .padding(.bottom, 8)
+                        
+                        HStack {
+                            Picker("转录语言", selection: $settings.transcriptionLanguage) {
+                                Text("自动检测").tag("")
+                                Text("中文").tag("zh")
+                                Text("英语").tag("en")
+                                Text("日语").tag("ja")
+                                Text("韩语").tag("ko")
+                                Text("法语").tag("fr")
+                                Text("德语").tag("de")
+                                Text("西班牙语").tag("es")
+                                Text("俄语").tag("ru")
+                                Text("意大利语").tag("it")
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(width: 150)
+                            
+                            Spacer()
+                            
+                            Button("重置为自动") {
+                                settings.transcriptionLanguage = ""
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .foregroundColor(.blue)
+                            .disabled(settings.transcriptionLanguage.isEmpty)
+                            .opacity(settings.transcriptionLanguage.isEmpty ? 0.5 : 1.0)
+                        }
+                    }
+                    .padding(.bottom, 16)
+                    
+                    // 格式选择
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Transcription Format")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                        
+                        HStack {
+                            Picker("Format", selection: $selectedTranscriptionFormat) {
+                                ForEach(formats, id: \.self) { format in
+                                    Text(format.uppercased()).tag(format)
+                                }
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .onChange(of: selectedTranscriptionFormat) { newValue in
+                                updateFormatSetting()
+                            }
+                        }
+                        
+                        Text("Select how transcriptions will be saved.")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.bottom, 16)
                     
                     Divider()
                         .background(
@@ -514,7 +589,7 @@ struct TunaSettingsView: View {
                 .glassCard()
                 
                 // 添加Dictation快捷键设置
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Dictation Shortcut")
                         .font(.title3)
                         .fontWeight(.bold)
@@ -563,43 +638,182 @@ struct TunaSettingsView: View {
                     }
                     .padding(.bottom, 8)
                     
-                    // 快捷键设置
-                    if settings.enableDictationShortcut {
-                        Text("Shortcut Key Combination")
+                    // 快捷键设置 - 不再包裹在if条件中，确保始终显示
+                    Text("Shortcut Key Combination")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .padding(.top, 8)
+                    
+                    HStack {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color(nsColor: .textBackgroundColor))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                                )
+                            
+                            ShortcutTextField(
+                                value: $settings.dictationShortcutKeyCombo,
+                                onCommit: saveShortcut
+                            )
+                                .frame(height: 24)
+                                .padding(.horizontal, 6)
+                        }
+                        .frame(height: 28)
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color(nsColor: .controlAccentColor), lineWidth: 1.5)
+                                .opacity(settings.enableDictationShortcut ? 0.7 : 0)
+                        )
+                        .animation(.easeInOut(duration: 0.2), value: settings.enableDictationShortcut)
+                        
+                        Button("Reset to Default") {
+                            settings.dictationShortcutKeyCombo = "cmd+u"
+                            saveShortcut()
+                        }
+                        .font(.system(size: 13))
+                        .buttonStyle(GreenButtonStyle())
+                        .disabled(!settings.enableDictationShortcut)
+                        .opacity(settings.enableDictationShortcut ? 1.0 : 0.5)
+                    }
+                    
+                    Text("Format examples: cmd+u, cmd+shift+d, ctrl+space")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
+                    
+                    Divider()
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.clear, Color.white.opacity(0.1), Color.clear]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .padding(.vertical, 8)
+                    
+                    // 显示模式设置 - 移出条件判断，但添加禁用效果
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Show Dictation Page on Shortcut")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                
+                                Text("When disabled, dictation runs silently in the background (shows menubar icon only)")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                settings.showDictationPageOnShortcut.toggle()
+                            }) {
+                                ZStack {
+                                    Capsule()
+                                        .fill(settings.showDictationPageOnShortcut ? Color(nsColor: .controlAccentColor) : Color.gray.opacity(0.3))
+                                        .frame(width: 40, height: 15)
+                                        .focusable(false)
+                                    
+                                    Circle()
+                                        .fill(Color.white)
+                                        .shadow(radius: 1)
+                                        .frame(width: 13, height: 13)
+                                        .offset(x: settings.showDictationPageOnShortcut ? 13 : -13)
+                                        .animation(.spring(response: 0.2), value: settings.showDictationPageOnShortcut)
+                                        .focusable(false)
+                                }
+                                .focusable(false)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .focusable(false)
+                            .disabled(!settings.enableDictationShortcut) // 禁用状态取决于开关
+                            .opacity(settings.enableDictationShortcut ? 1.0 : 0.5) // 设置透明度以指示状态
+                        }
+                    }
+                    
+                    Divider()
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.clear, Color.white.opacity(0.1), Color.clear]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .padding(.vertical, 8)
+                    
+                    // 添加说明文字，解释单击模式
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Shortcut Behavior")
                             .font(.subheadline)
                             .foregroundColor(.white)
-                            .padding(.top, 8)
                         
-                        HStack {
-                            TextField("e.g. option+t", text: $settings.dictationShortcutKeyCombo)
-                                .font(.system(size: 14))
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(maxWidth: .infinity)
-                            
-                            Button("Apply") {
-                                // 通过发送通知触发快捷键更新
-                                NotificationCenter.default.post(
-                                    name: NSNotification.Name("dictationShortcutSettingsChanged"),
-                                    object: nil
-                                )
-                            }
-                            .font(.system(size: 13))
-                            .buttonStyle(GreenButtonStyle())
-                        }
-                        
-                        Text("Format examples: option+t, cmd+shift+d, ctrl+space")
+                        Text("Press once to start recording, press again to stop. When paused, press to resume.")
                             .font(.footnote)
                             .foregroundColor(.secondary)
-                            .padding(.top, 4)
+                            .padding(.bottom, 4)
+                    }
+                    .opacity(settings.enableDictationShortcut ? 1.0 : 0.5) // 设置透明度以指示状态
+                    
+                    Divider()
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.clear, Color.white.opacity(0.1), Color.clear]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .padding(.vertical, 8)
+                    
+                    // 声音反馈设置
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Sound Feedback")
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                            
+                            Text("Play system sounds when dictation starts/stops")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            settings.enableDictationSoundFeedback.toggle()
+                        }) {
+                            ZStack {
+                                Capsule()
+                                    .fill(settings.enableDictationSoundFeedback ? Color(nsColor: .controlAccentColor) : Color.gray.opacity(0.3))
+                                    .frame(width: 40, height: 15)
+                                    .focusable(false)
+                                
+                                Circle()
+                                    .fill(Color.white)
+                                    .shadow(radius: 1)
+                                    .frame(width: 13, height: 13)
+                                    .offset(x: settings.enableDictationSoundFeedback ? 13 : -13)
+                                    .animation(.spring(response: 0.2), value: settings.enableDictationSoundFeedback)
+                                    .focusable(false)
+                            }
+                            .focusable(false)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .focusable(false)
+                        .disabled(!settings.enableDictationShortcut) // 禁用状态取决于开关
+                        .opacity(settings.enableDictationShortcut ? 1.0 : 0.5) // 设置透明度以指示状态
                     }
                 }
                 .glassCard()
                 
-                Spacer()
+                Spacer(minLength: 20) // 提供一些最小间距，确保底部有足够空间
             }
-            .padding(.top, 24)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            .padding(.top, 30) // 增加顶部内边距，使布局更加均衡
+            .padding(.horizontal, 24) // 稍微增加水平内边距
+            .padding(.bottom, 30) // 增加底部内边距，确保有足够空间
         }
         .scrollContentBackground(.hidden)
     }
@@ -607,9 +821,9 @@ struct TunaSettingsView: View {
     // Smart Swaps Tab View
     private var smartSwapsTabView: some View {
         ScrollView {
-            VStack(spacing: 24) { // 保持24pt的部分间距
+            VStack(spacing: 30) { // 增加间距
                 // Smart Swaps
-                VStack(alignment: .leading, spacing: 8) { // 使用8pt的标题/副标题间距
+                VStack(alignment: .leading, spacing: 12) { // 增加内部间距
                     HStack(alignment: .firstTextBaseline) {
                         Text("Smart Swaps (Auto-Routing)")
                             .font(.title3) // 使用统一的title3字体
@@ -768,20 +982,20 @@ struct TunaSettingsView: View {
                 }
                 .glassCard()
                 
-                Spacer()
+                Spacer(minLength: 20) // 提供一些最小间距
             }
-            .padding(.top, 24)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            .padding(.top, 30) // 增加顶部内边距
+            .padding(.horizontal, 24) // 稍微增加水平内边距
+            .padding(.bottom, 30) // 增加底部内边距
         }
         .scrollContentBackground(.hidden)
     }
     
     // Support Tab View
     private var supportTabView: some View {
-        VStack(spacing: 24) { // 保持24pt的部分间距
+        VStack(spacing: 40) { // 增加间距，支持页面可以更宽松
             // About & Support Card
-            VStack(alignment: .leading, spacing: 8) { // 使用8pt的标题/副标题间距
+            VStack(alignment: .leading, spacing: 12) { // 增加内部间距
                 Text("About & Support")
                     .font(.title3) // 使用统一的title3字体
                     .fontWeight(.bold) // 只在标题使用粗体
@@ -851,11 +1065,11 @@ struct TunaSettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 20)
+            .padding(.bottom, 30) // 增加底部内边距
         }
-        .padding(.top, 40)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 20)
+        .padding(.top, 30) // 增加顶部内边距
+        .padding(.horizontal, 24) // 稍微增加水平内边距
+        .padding(.bottom, 30) // 增加底部内边距
     }
     
     // MARK: - Helper Methods
@@ -963,5 +1177,63 @@ struct TunaSettingsView: View {
                 .cornerRadius(6)
             }
         }
+    }
+    
+    // 在TunaSettingsView中添加saveShortcut方法
+    private func saveShortcut() {
+        let v = settings.dictationShortcutKeyCombo
+        UserDefaults.standard.set(v, forKey:"dictationShortcutKeyCombo")
+        NotificationCenter.default.post(name:.dictationShortcutSettingsChanged, object:nil)
+    }
+    
+    private func saveDictationSettings() {
+        // 保存API密钥
+        UserDefaults.standard.set(apiKey, forKey: "dictationApiKey")
+        logger.debug("Saved dictation API key")
+        
+        // 保存其他Whispen设置
+        updateFormatSetting()
+        
+        // 显示保存成功信息
+        progressMessage = "API key saved successfully"
+        
+        // 请求通知权限
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if granted {
+                DispatchQueue.main.async {
+                    // 创建通知反馈
+                    let notification = UNMutableNotificationContent()
+                    notification.title = "Tuna"
+                    notification.body = "Dictation settings updated"
+                    notification.sound = UNNotificationSound.default
+                    
+                    let request = UNNotificationRequest(identifier: UUID().uuidString, content: notification, trigger: nil)
+                    UNUserNotificationCenter.current().add(request)
+                }
+            }
+        }
+    }
+    
+    private func updateFormatSetting() {
+        if !isInitializing && selectedTranscriptionFormat != settings.transcriptionFormat {
+            settings.transcriptionFormat = selectedTranscriptionFormat
+            logger.debug("Updated transcription format to: \(selectedTranscriptionFormat)")
+        }
+    }
+}
+
+// 以下是自定义按钮样式
+struct GreenButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(configuration.isPressed ? Color.green.opacity(0.6) : Color.green.opacity(0.8))
+            )
+            .foregroundColor(.white)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 } 
