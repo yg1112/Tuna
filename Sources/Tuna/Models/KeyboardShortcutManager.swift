@@ -333,15 +333,11 @@ class KeyboardShortcutManager {
         if settings.showDictationPageOnShortcut {
             AppDelegate.shared?.ensurePopoverVisible()
             
-            // 添加延迟确保MenuBarView已加载完成
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                NotificationCenter.default.post(
-                    name: .switchToTab,
-                    object: nil,
-                    userInfo: ["tab": "dictation"]
-                )
-                self.logger.notice("✅ 显示Dictation页面(延迟0.15秒)")
-                print("✅ [Shortcut] 显示Dictation页面(延迟0.15秒)")
+            // 添加延迟确保MenuBarView已加载完成，然后直接调用activateDictationTab()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                print("🔶 [Shortcut] 延迟0.25秒后调用MenuBarView.activateDictationTab()")
+                self.logger.notice("✅ 延迟0.25秒后调用MenuBarView.activateDictationTab()")
+                MenuBarView.activateDictationTab()
             }
         } else {
             // 不显示UI，只记录日志

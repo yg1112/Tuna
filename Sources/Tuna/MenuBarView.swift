@@ -13,17 +13,35 @@ extension MenuBarView {
         print("🔍 [DEBUG] MenuBarView.activateDictationTab() 被调用")
         Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] activateDictationTab 被调用")
         
-        // 发送通知切换到dictation标签页
-        NotificationCenter.default.post(
-            name: Notification.Name.switchToTab,
-            object: nil,
-            userInfo: ["tab": "dictation"]
-        )
+        // 找到当前 popover 里的 MenuBarView
+        if let window = AppDelegate.shared?.popover.contentViewController?.view.window,
+           let host = window.contentView?.subviews.first(where: { $0 is NSHostingView<MenuBarView> })
+                as? NSHostingView<MenuBarView> {
+
+            print("🔍 [DEBUG] 找到了MenuBarView实例，当前tab是: \(host.rootView.currentTab)")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.currentTab)")
+            
+            // 直接设置为dictation标签
+            host.rootView.currentTab = "dictation"
+            
+            print("🔍 [DEBUG] MenuBarView.currentTab已设置为: \(host.rootView.currentTab)")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] MenuBarView.currentTab已设置为: \(host.rootView.currentTab)")
+        } else {
+            print("⚠️ [WARNING] 找不到MenuBarView实例，回退到通知机制")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").warning("[DIRECT] 找不到MenuBarView实例，回退到通知机制")
+            
+            // 回退到通知机制
+            NotificationCenter.default.post(
+                name: Notification.Name.switchToTab,
+                object: nil,
+                userInfo: ["tab": "dictation"]
+            )
+        }
         
-        // 给UI一些时间来切换，然后开始录音
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        // 给UI一些时间来切换，然后开始录音 (可选，因为DictationManager.toggle()已在handleDictationShortcutPressed中调用)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from static method")
-            DictationManager.shared.startRecording()
+            // DictationManager.shared.startRecording() // 由于toggle()已经在KeyboardShortcutManager中调用，这里不需要再调用
         }
     }
 }
@@ -52,6 +70,8 @@ struct MenuBarView: View {
             cardWidth: cardWidth
         )
         .onAppear {
+            print("[DEBUG] MenuBarView appeared – observer added")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("MenuBarView appeared – observer added")
             // 确保Smart Swaps在UI加载后被应用
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 let smartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
@@ -365,31 +385,31 @@ struct TunaMenuBarView: View {
             print("🔍 [DEBUG] TunaMenuBarView.onAppear - 开始监听switchToTab通知")
             Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 TunaMenuBarView.onAppear - 开始监听switchToTab通知")
             
-            // 添加切换选项卡通知监听
+            // 添加通知监听
             NotificationCenter.default.addObserver(
                 forName: Notification.Name.switchToTab,
                 object: nil,
                 queue: .main) { notification in
                 if let tab = notification.userInfo?["tab"] as? String {
-                    print("🔍 [DEBUG] 收到切换选项卡通知: \(tab)")
-                    Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 收到切换选项卡通知: \(tab)")
+                    print("🔍 [DEBUG] TunaMenuBarView 收到切换选项卡通知: \(tab)")
+                    Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 TunaMenuBarView 收到切换选项卡通知: \(tab)")
                     
                     withAnimation {
                         self.currentTab = tab
-                        print("switchToTab -> \(tab)")
-                        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[T] switchToTab -> \(tab)")
+                        print("TunaMenuBarView switchToTab -> \(tab)")
+                        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("TunaMenuBarView switchToTab -> \(tab)")
                         
                         // 如果切换到dictation选项卡，自动启动录音
                         if tab == "dictation" {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from MenuBarView")
+                                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from TunaMenuBarView")
                                 DictationManager.shared.startRecording()
                             }
                         }
                     }
                 } else {
-                    print("❌ [ERROR] 收到切换选项卡通知，但tab参数为nil")
-                    Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ 收到切换选项卡通知，但tab参数为nil")
+                    print("❌ [ERROR] TunaMenuBarView 收到切换选项卡通知，但tab参数为nil")
+                    Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ TunaMenuBarView 收到切换选项卡通知，但tab参数为nil")
                 }
             }
         }
