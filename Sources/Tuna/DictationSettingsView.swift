@@ -255,15 +255,15 @@ struct GreenToggleStyle: ToggleStyle {
 }
 
 // 自定义绿色按钮样式
-struct GreenButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color(nsColor: .controlAccentColor))
-            .foregroundColor(.white)
-            .cornerRadius(6)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .focusable(false) // 禁用焦点环
-    }
-} 
+// struct GreenButtonStyle: ButtonStyle {
+//    func makeBody(configuration: Configuration) -> some View {
+//        configuration.label
+//            .padding(.horizontal, 12)
+//            .padding(.vertical, 6)
+//            .background(Color(nsColor: .controlAccentColor))
+//            .foregroundColor(.white)
+//            .cornerRadius(6)
+//            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+//            .focusable(false) // 禁用焦点环
+//    }
+// } 

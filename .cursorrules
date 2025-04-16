@@ -1,84 +1,164 @@
-# Instructions
+ 
+# Cursor Working Rules
 
-During your interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 
+本规则旨在帮助 Cursor 有效地参与项目开发，包括：  
+1. 快速熟悉与总结现有代码及架构；  
+2. 在一次对话中聚焦开发单一功能；  
+3. 维护简洁且高密度的技术文档、指导文档与变更记录；  
+4. 在当前模块/功能完成后，输出可复用的知识文档；  
+5. 严格按模块化、可测试、可追踪的方式进行更新；  
+6. 在提交前完成本地构建验证与必要的人工验证。
 
-You should also use the `.cursorrules` file as a Scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the Scratchpad, clear old different task if necessary, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
-[X] Task 1
-[ ] Task 2
+以下内容为通用流程，请遵循顺序执行，若遇到边界超出能力（例如无法读取未提供的外部文件），Cursor 应主动说明并请求更多上下文。
 
-Also update the progress of the task in the Scratchpad when you finish a subtask.
-Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the Scratchpad to reflect and plan.
-The goal is to help you maintain a big picture as well as the progress of the task. Always refer to the Scratchpad when you plan the next step.
+---
 
-# Lessons
+## 1. 代码基础熟悉与文档生成
+在第一次或需要时，让 Cursor 阅读（或由用户提供）现有重要代码模块，并生成 Markdown 文档，包括：  
+- 项目整体架构高层介绍  
+- 代码文件/模块依赖关系  
+- 功能模块调用逻辑  
+- 关键文件定位及索引  
 
-## User Specified Lessons
+将此文档存储于项目内（例如 docs/architecture.md），后续功能开发时可在 Chat 上下文中引用此文档。
 
-- You have a python venv in ./venv. Always use (activate) it when doing python development. First, to check whether 'uv' is available, use `which uv`. If that's the case, first activate the venv, and then use `uv pip install` to install packages. Otherwise, fall back to `pip`.
-- Include info useful for debugging in the program output.
-- Read the file before you try to edit it.
-- Due to Cursor's limit, when you use `git` and `gh` and need to submit a multiline commit message, first write the message in a file, and then use `git commit -F <filename>` or similar command to commit. And then remove the file. Include "[Cursor] " in the commit message and PR title.
+---
 
-## Cursor learned
+## 2. 专注单一功能开发
+每次与 Cursor 开启一个开发线程 (Chat) 时，聚焦于一个功能或模块。  
+在贴出上下文时，必须在开头引用或总结前述文档，以便 Cursor 知晓大局及相关接口。
 
-- For search results, ensure proper handling of different character encodings (UTF-8) for international queries
-- Add debug information to stderr while keeping the main output clean in stdout for better pipeline integration
-- When using seaborn styles in matplotlib, use 'seaborn-v0_8' instead of 'seaborn' as the style name due to recent seaborn version changes
-- Use 'gpt-4o' as the model name for OpenAI's GPT-4 with vision capabilities
-- When searching for recent news, use the current year (2025) instead of previous years, or simply use the "recent" keyword to get the latest information
+---
 
-# Scratchpad
+## 3. 功能级别的 .cursorscratchpad 记录
+每当开始新的功能或模块，须在 .cursorscratchpad 里开辟一个专门的 "模块" 区块，例如：
 
-# Audio Buddy Development Plan
+```
+## Module: [YourModuleName]
+- Status: in-progress
+- Prompt: [简要描述本次需求/功能]
+```
 
-## Project Overview
-开发一个 macOS 菜单栏应用，用于管理音频输入/输出设备和音量控制。
+### 3.1 分解任务并打上待办项
+把UI、ViewModel、后端集成、输出校验、设置开关等分拆为任务清单，并使用 [ ] 进行标记。例如：
+- [ ] UI / 视图完成  
+- [ ] ViewModel 逻辑绑定  
+- [ ] 后端调用集成  
+- [ ] 结果正确生成/触发  
+- [ ] 与设置开关的兼容  
+- [ ] 手动测试通过  
 
-## Core Features
-- [X] 创建项目基础结构
-  - [X] AudioBuddyApp.swift - 应用入口
-  - [X] AudioManager.swift - 音频设备管理
-  - [X] MenuBarView.swift - 菜单栏界面
-  - [X] Models/AudioDevice.swift - 设备模型
-- [ ] 实现音频设备管理核心功能
-  - [X] 枚举音频设备
-  - [ ] 切换默认设备
-  - [ ] 音量控制
-- [ ] 实现菜单栏界面
-  - [X] 设备列表显示
-  - [ ] 音量控制滑块
-  - [ ] 实时状态更新
-- [ ] 附加功能
-  - [ ] 音量电平显示
-  - [ ] 快捷键支持
-  - [ ] 开机自启动
+Cursor 的每次关键动作（UI 完成、测试通过、阻塞等）都必须在此处更新。
 
-## Project Cleanup (2024-04-09)
-- [X] 整理项目目录结构
-  - [X] 删除备份文件 (AudioManager.swift.bak, MenuBarView.swift.new)
-  - [X] 合并 Views 模块到 Tuna 模块
-  - [X] 删除不再使用的 Dial 目录
-  - [X] 更新代码引用关系
-- [X] 建立备份目录保存旧文件
+---
 
-## Current Task
-实现设备切换功能：
-1. 在 AudioManager 中添加切换默认设备的方法
-2. 实现设备选择的回调函数
-3. 添加音量控制功能
+## 4. 文档持续迭代管理
+### 4.1 通用功能完成后的指导文档
+若开发完成的功能具有通用价值（例如新增接口、封装服务方法），请让 Cursor 产出一份专门的 "指南文档"（guide doc），例如放入 docs/guides/xyz.md，以便后续类似需求直接引用。
 
-## Next Steps
-1. 完善 AudioManager 中的设备切换功能
-2. 添加音量控制相关的 API 调用
-3. 实现音量控制滑块 UI
+### 4.2 维护已有文档
+如果在开发中遇到需要更新的地方，如新功能的实现方式或依赖注意点，请让 Cursor 自动生成补充段落并追加到对应文档（architecture、guide、API 文档等），保持文档随开发演进。
 
-## Notes
-- 使用 Swift + SwiftUI 开发
-- 需要使用 Core Audio 框架
-- 目标 macOS 版本：10.15 及以上
+---
 
-## Lessons Learned
-- Core Audio API 需要正确处理权限
-- 使用 @Published 属性包装器实现 UI 自动更新
-- 设备监听器需要正确管理内存
-- 项目模块化管理，避免重复代码和文件冗余
+## 5. 文件注释与标记
+对于新增文件或较大修改，需在文件顶部加注释：
+```swift
+// @module: [YourModuleName]
+// @created_by_cursor: yes
+// @summary: [简要描述本文件的功能用途]
+// @depends_on: [列出依赖文件或模块]
+```
+同时在 .cursorscratchpad 里标明其关联模块，防重复与溯源。
+
+---
+
+## 6. 阶段性检查与多重验证
+以下环节完成后，均需要在 .cursorscratchpad 同一模块下更新进度：
+
+1) "UI 预览/视觉检查" 是否正常  
+2) "手动触发测试" 是否通过 (e.g. 按键快捷方式、窗口弹出、输出内容正确)  
+3) "后端逻辑集成" 是否正确且无冲突  
+4) "fallback 流程" (如本地/远端切换) 是否可用  
+5) "阻塞"/"无法解析" 时，应标明阻塞原因  
+
+若一切通过，标记当前阶段完成。
+
+---
+
+## 7. 构建与提交门槛
+### 7.1 必须进行本地构建验证
+在准备提交任何更改之前，需要由 Cursor 或开发者执行以下命令验证：
+```
+xcodebuild -scheme TunaApp build
+```
+如有错误，请在 .cursorscratchpad 上记录错误摘要并进行修复，直到编译通过，才可继续。
+
+### 7.2 手动触发校验
+对任何可见或可交互功能，必须执行一次人工操作或模拟测试来验证。  
+将测试结果（UI 是否出现、输出是否符合预期等）记录在 .cursorscratchpad 的 "Manual Verification" 中。  
+示例：
+
+```
+## Module: QuickDictation
+- Manual Verification:
+  - Shortcut pressed: ✅
+  - Window appeared: ✅
+  - Mic started: ✅
+  - Output copied: ✅
+```
+
+---
+
+## 8. 视觉或 Debug Log 证明
+在标记功能"Ready for Commit"时，必须至少提供以下三种形式之一：
+1. 截图  
+2. 简短 GIF 演示  
+3. Debug 日志打印（展示窗口状态、输出文本、过程关键调试信息）  
+
+若无法提供任何可视化/日志证据，则暂不可将此模块标为完成。
+
+---
+
+## 9. 最终提交策略
+Cursor 不应自动提交代码。由 Cursor 将准备提交的文件移动到 `precommit/<ModuleName>/` 目录，并在 .cursorscratchpad 中更新：
+
+```
+## Module: [YourModuleName]
+- Status: ✅ Ready for Commit
+- Build Status: ✅ Passed
+- Manual Verification: ✅
+- Files Moved to: precommit/[YourModuleName]
+```
+
+此时由开发者手动检查并执行最终提交。
+
+---
+
+## 10. 代码重复及文件审查
+在准备提交前，对所有修改/新增文件进行审查：
+- 文件命名是否冲突  
+- 功能实现是否重复或引发覆盖风险  
+- 模块依赖是否重复注册  
+- 最后再次执行 `swift build` 或 `xcodebuild build` 验证无误后，再行提交  
+
+在发现冲突时，请记录在 .cursorscratchpad 并征求开发者指令。
+
+---
+
+## 11. 边界与提示
+- 若需要数据或上下文但未提供，Cursor 应主动提示开发者补充说明或文档。  
+- 若开发者的需求与现有架构冲突，Cursor 应提出所有可能的替代方案。  
+- 若需求不明确，Cursor 应协助澄清后再行开发。
+
+---
+
+## 12. 结束条件
+一个功能或模块在所有勾选项完成、手动测试通过、构建通过并记录验证结果后，方可正式视为 "Done"。此时在 .cursorscratchpad 模块区块结尾写明：
+
+```
+- Status: complete
+- Reviewed by: [YourName or QA]
+- Completed On: [日期+时间]
+```
+ 

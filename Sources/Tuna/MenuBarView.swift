@@ -13,29 +13,21 @@ extension MenuBarView {
         print("🔍 [DEBUG] MenuBarView.activateDictationTab() 被调用")
         Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] activateDictationTab 被调用")
         
+        // 使用TabRouter.switchTo切换标签
+        TabRouter.switchTo("dictation")
+        print("🔍 [DEBUG] 已调用TabRouter.switchTo('dictation')")
+        
         // 找到当前 popover 里的 MenuBarView
         if let window = AppDelegate.shared?.popover.contentViewController?.view.window,
            let host = window.contentView?.subviews.first(where: { $0 is NSHostingView<MenuBarView> })
                 as? NSHostingView<MenuBarView> {
 
-            print("🔍 [DEBUG] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.current)")
+            print("🔍 [DEBUG] 找到了MenuBarView实例，检查当前tab是: \(host.rootView.router.current)")
+            print("🔍 [DEBUG] 该实例的router ID: \(ObjectIdentifier(host.rootView.router))")
             Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.current)")
-            
-            // 直接设置为dictation标签
-            host.rootView.router.current = "dictation"
-            
-            print("🔍 [DEBUG] MenuBarView.currentTab已设置为: \(host.rootView.router.current)")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] MenuBarView.currentTab已设置为: \(host.rootView.router.current)")
         } else {
-            print("⚠️ [WARNING] 找不到MenuBarView实例，回退到通知机制")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").warning("[DIRECT] 找不到MenuBarView实例，回退到通知机制")
-            
-            // 回退到通知机制
-            NotificationCenter.default.post(
-                name: Notification.Name.switchToTab,
-                object: nil,
-                userInfo: ["tab": "dictation"]
-            )
+            print("⚠️ [WARNING] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").warning("[DIRECT] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
         }
         
         // 给UI一些时间来切换，然后开始录音 (可选，因为DictationManager.toggle()已在handleDictationShortcutPressed中调用)
@@ -50,7 +42,7 @@ extension MenuBarView {
 struct MenuBarView: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-    @ObservedObject var router = TabRouter.shared
+    @EnvironmentObject var router: TabRouter
     @State private var outputButtonHovered = false
     @State private var inputButtonHovered = false
     @State private var statusAppeared = false
@@ -71,6 +63,8 @@ struct MenuBarView: View {
         )
         .onAppear {
             print("[DEBUG] MenuBarView appeared – observer added")
+            print("🖼 router id in MenuBarView.onAppear:", ObjectIdentifier(router))
+            print("🟡 router.current =", router.current, "router id =", ObjectIdentifier(router))
             Logger(subsystem:"ai.tuna",category:"Shortcut").notice("MenuBarView appeared – observer added")
             // 确保Smart Swaps在UI加载后被应用
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -104,9 +98,9 @@ struct MenuBarView: View {
                     Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 MenuBarView 收到切换选项卡通知: \(tab)")
                     
                     withAnimation {
-                        self.router.current = tab
-                        print("switchToTab -> \(tab)")
-                        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[T] switchToTab -> \(tab)")
+                        // 使用TabRouter.switchTo统一切换标签
+                        TabRouter.switchTo(tab)
+                        print("switchToTab -> \(tab), router id: \(ObjectIdentifier(self.router))")
                         
                         // 如果切换到dictation选项卡，自动启动录音
                         if tab == "dictation" {
@@ -181,7 +175,7 @@ struct DevicePreferenceRow: View {
 struct TunaMenuBarView: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-    @ObservedObject var router = TabRouter.shared
+    @EnvironmentObject var router: TabRouter
     let isOutputHovered: Bool
     let isInputHovered: Bool
     let cardWidth: CGFloat
@@ -244,6 +238,7 @@ struct TunaMenuBarView: View {
                         iconName: "speaker.wave.2.fill",
                         isSelected: router.current == "devices"
                     ) {
+                        print("⚠️ TabButton 在写 current=devices！", #file, #line)
                         router.current = "devices"
                     }
                     
@@ -252,6 +247,7 @@ struct TunaMenuBarView: View {
                         iconName: "waveform",
                         isSelected: router.current == "dictation"
                     ) {
+                        print("⚠️ TabButton 在写 current=dictation！", #file, #line)
                         router.current = "dictation"
                     }
                     
@@ -260,9 +256,10 @@ struct TunaMenuBarView: View {
                         iconName: "chart.bar.fill",
                         isSelected: router.current == "stats"
                     ) {
+                        print("⚠️ TabButton 在写 current=stats！", #file, #line)
                         router.current = "stats"
+                    }
                 }
-            }
             .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             }
@@ -368,6 +365,10 @@ struct TunaMenuBarView: View {
         .frame(width: fixedWidth, height: fixedHeight)
         .background(VisualEffectView(material: .menu, blendingMode: .behindWindow))
         .onAppear {
+            print("🖼 router id in TunaMenuBarView.onAppear:", ObjectIdentifier(router))
+            print("🟡 TunaMenuBarView.body router.current =", router.current, "router id =", ObjectIdentifier(router))
+            print("ROUTER-DBG [3]", ObjectIdentifier(router), router.current)
+            
             // 当视图出现时，恢复固定状态
             let savedPinState = UserDefaults.standard.bool(forKey: "popoverPinned")
             if savedPinState {
@@ -395,9 +396,9 @@ struct TunaMenuBarView: View {
                     Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 TunaMenuBarView 收到切换选项卡通知: \(tab)")
                     
                     withAnimation {
-                        self.router.current = tab
-                        print("TunaMenuBarView switchToTab -> \(tab)")
-                        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("TunaMenuBarView switchToTab -> \(tab)")
+                        // 使用TabRouter.switchTo统一切换标签
+                        TabRouter.switchTo(tab)
+                        print("TunaMenuBarView switchToTab -> \(tab), router id: \(ObjectIdentifier(self.router))")
                         
                         // 如果切换到dictation选项卡，自动启动录音
                         if tab == "dictation" {
@@ -480,9 +481,31 @@ struct DictationView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("语音转文字")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
+            // 顶部标题区域 - 现代化设计
+            HStack {
+                Text("语音转文字")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                if dictationManager.isRecording && !dictationManager.isPaused {
+                    // 录音指示器
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                        
+                        Text("录音中")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.black.opacity(0.2))
+                    .cornerRadius(10)
+                }
+            }
             
             // 如果有状态消息，显示错误提示
             if !statusMessage.isEmpty {
@@ -495,49 +518,27 @@ struct DictationView: View {
                     .cornerRadius(6)
             }
             
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.black.opacity(0.3))
-                    .frame(height: 40)
-                
-                if dictationManager.isRecording {
-                    // 录音状态可视化
-                    HStack(spacing: 3) {
-                        ForEach(0..<10, id: \.self) { _ in
-                            AudioVisualBar()
-                        }
-                    }
-                    .transition(.opacity)
-                } else {
-                    Text(dictationManager.isRecording ? "正在录音..." : "按下按钮开始录音")
-                        .foregroundColor(.white.opacity(0.8))
-                        .font(.system(size: 14))
-                        .transition(.opacity)
-                }
-            }
-            .animation(.easeInOut(duration: 0.3), value: dictationManager.isRecording)
-            
             // 文本输出框和清除按钮
             ZStack(alignment: .topTrailing) {
-                    ScrollView {
-                        Text(dictationManager.transcribedText.isEmpty ? "Transcription will appear here..." : dictationManager.transcribedText)
+                ScrollView {
+                    Text(dictationManager.transcribedText.isEmpty ? "Transcription will appear here..." : dictationManager.transcribedText)
                     .font(.system(size: 14))
-                            .foregroundColor(dictationManager.transcribedText.isEmpty ? .gray : .white)
+                    .foregroundColor(dictationManager.transcribedText.isEmpty ? .gray : .white)
                     .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 .frame(height: 170)
-                    .background(Color.black.opacity(0.2))
+                .background(Color.black.opacity(0.2))
                 .cornerRadius(8)
-                    .overlay(
+                .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                            .stroke(
-                            dictationManager.isRecording && !dictationManager.isPaused ? 
-                                Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
-                                Color.white.opacity(dictationManager.breathingAnimation ? 0.7 : 0.3), // 非录音时保持呼吸动画
-                            lineWidth: dictationManager.isRecording && !dictationManager.isPaused ? 2.0 : (dictationManager.breathingAnimation ? 2.0 : 0.5)
-                        )
-                        .scaleEffect(dictationManager.isRecording && !dictationManager.isPaused ? 1.0 : (dictationManager.breathingAnimation ? 1.025 : 1.0)) // 录音时不需要缩放效果
+                    .stroke(
+                        dictationManager.isRecording && !dictationManager.isPaused ? 
+                        Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
+                        Color.white.opacity(dictationManager.breathingAnimation ? 0.7 : 0.3), // 非录音时保持呼吸动画
+                        lineWidth: dictationManager.isRecording && !dictationManager.isPaused ? 2.0 : (dictationManager.breathingAnimation ? 2.0 : 0.5)
+                    )
+                    .scaleEffect(dictationManager.isRecording && !dictationManager.isPaused ? 1.0 : (dictationManager.breathingAnimation ? 1.025 : 1.0)) // 录音时不需要缩放效果
                 )
                 
                 // 清除按钮
@@ -660,25 +661,26 @@ struct DictationView: View {
                 .help("Save transcription to a file")
             }
             
-            // 显示状态或进度文本
-            Text(dictationManager.progressMessage.isEmpty ? 
+            // 状态指示区域
+            VStack(spacing: 4) {
+                // 显示状态或进度文本
+                Text(dictationManager.progressMessage.isEmpty ? 
                      (dictationManager.isRecording ? (dictationManager.isPaused ? "Paused" : "Recording...") : "Ready") : 
                      dictationManager.progressMessage)
-                .font(.system(size: 12))
-                .foregroundColor(.gray)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 4)
-            
-            if dictationManager.isRecording && !dictationManager.isPaused {
-                // 音频可视化效果
-                HStack(spacing: 2) {
-                    ForEach(0..<15, id: \.self) { _ in
-                        AudioVisualBar()
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                
+                if dictationManager.isRecording && !dictationManager.isPaused {
+                    // 音频可视化效果
+                    HStack(spacing: 2) {
+                        ForEach(0..<15, id: \.self) { _ in
+                            AudioVisualBar()
+                        }
                     }
+                    .frame(height: 20)
+                    .transition(.opacity)
                 }
-                .frame(height: 20)
-                .padding(.top, -8)
-                .transition(.opacity)
             }
         }
         .padding()

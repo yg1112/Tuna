@@ -329,16 +329,17 @@ class KeyboardShortcutManager {
         logger.notice("🎯 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
         print("🔶 [Shortcut] 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
         
-        // A. UI 处理 - 根据设置决定是否显示Dictation页面
+        // 使用TabRouter来跟踪当前状态，即使我们不显示完整UI
+        TabRouter.switchTo("dictation")
+        logger.notice("✅ 已使用TabRouter切换到听写页面")
+        print("✅ [Shortcut] 已使用TabRouter切换到听写页面")
+        
+        // A. UI 处理 - 根据设置决定是否显示UI
         if settings.showDictationPageOnShortcut {
-            // 确保popover可见
-            AppDelegate.shared?.ensurePopoverVisible()
-            
-            // 使用TabRouter直接切换标签页，不再依赖复杂的延迟和通知机制
-            TabRouter.switchTo("dictation")
-            
-            logger.notice("✅ 已使用TabRouter切换到听写页面")
-            print("✅ [Shortcut] 已使用TabRouter切换到听写页面")
+            // 使用简化版的QuickDictationWindow而不是完整的主窗口
+            QuickDictationWindow.shared.show()
+            logger.notice("🖼 已显示快速听写窗口")
+            print("🖼 [Shortcut] 已显示快速听写窗口")
         } else {
             // 不显示UI，只记录日志
             logger.notice("👻 静默录音模式 (showDictationPageOnShortcut=false)")

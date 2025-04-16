@@ -11,10 +11,47 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     private let logger = Logger(subsystem: "com.tuna.app", category: "DictationManager")
     private let tunaSettings = TunaSettings.shared
     
+    // 添加启动失败回调
+    public var onStartFailure: (() -> Void)?
+    
     // 状态和消息
-    @Published public var state: DictationState = .idle
+    @Published public var state: DictationState = .idle {
+        didSet {
+            if oldValue != state {
+                // 发送状态变更通知
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("dictationStateChanged"),
+                        object: nil,
+                        userInfo: ["state": self.state]
+                    )
+                }
+                
+                // 根据状态自动更新UI状态变量
+                switch state {
+                case .recording:
+                    isRecording = true
+                    isPaused = false
+                case .paused:
+                    isRecording = true
+                    isPaused = true 
+                case .idle, .error, .processing:
+                    isRecording = false
+                    isPaused = false
+                }
+                
+                // 记录状态变更
+                logger.debug("Dictation state changed from \(String(describing: oldValue)) to \(String(describing: self.state))")
+            }
+        }
+    }
     @Published public var progressMessage: String = ""
     @Published public var transcribedText: String = ""
+    
+    // UI相关的状态
+    @Published public var isRecording: Bool = false
+    @Published public var isPaused: Bool = false
+    @Published public var breathingAnimation: Bool = false
     
     // 录音相关
     private var audioRecorder: AVAudioRecorder?
@@ -44,16 +81,131 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     
     // MARK: - Public Methods
     
+    // 添加toggle方法，根据当前状态切换录音状态
+    public func toggle() {
+        switch state {
+        case .idle:
+            startRecording()
+        case .recording:
+            stopRecording()
+        case .paused:
+            resumeRecording()
+        case .processing, .error:
+            // 这些状态下不做任何操作
+            logger.warning("Toggle called while in processing or error state - ignored")
+            break
+        }
+    }
+    
+    public func resumeRecording() {
+        if state == .paused {
+            continueRecording()
+        }
+    }
+    
     public func startRecording() {
-        guard state != .recording && state != .processing else {
-            logger.warning("Cannot start recording while already recording or processing")
+        logger.notice("开始录音...")
+        
+        // 如果已经在录音，直接返回
+        if isRecording {
+            logger.notice("已经在录音中，忽略请求")
             return
         }
         
-        setupRecordingSession()
+        progressMessage = "准备录音..."
         
+#if os(iOS)
+        // 检查麦克风权限 - iOS版本
+        let audioSession = AVAudioSession.sharedInstance()
+        switch audioSession.recordPermission {
+        case .denied:
+            logger.error("麦克风权限被拒绝")
+            progressMessage = "麦克风权限被拒绝，请在设置中允许访问麦克风"
+            onStartFailure?()
+            return
+            
+        case .undetermined:
+            logger.notice("麦克风权限未确定，请求权限")
+            audioSession.requestRecordPermission { [weak self] allowed in
+                guard let self = self else { return }
+                if !allowed {
+                    logger.error("用户拒绝了麦克风权限")
+                    self.progressMessage = "麦克风权限被拒绝，请在设置中允许访问麦克风"
+                    self.onStartFailure?()
+                    return
+                }
+                // 权限获取成功，继续录音流程
+                DispatchQueue.main.async {
+                    self.continueRecording()
+                }
+            }
+            return
+            
+        case .granted:
+            logger.notice("麦克风权限已获取")
+            // 继续录音流程
+        @unknown default:
+            logger.error("未知的麦克风权限状态")
+            progressMessage = "未知的麦克风权限状态"
+            onStartFailure?()
+            return
+        }
+#else
+        // macOS版本 - 使用AVCaptureDevice检查权限
+        if #available(macOS 10.14, *) {
+            switch AVCaptureDevice.authorizationStatus(for: .audio) {
+            case .denied, .restricted:
+                logger.error("麦克风权限被拒绝或受限")
+                progressMessage = "麦克风权限被拒绝，请在系统偏好设置中允许访问麦克风"
+                onStartFailure?()
+                return
+                
+            case .notDetermined:
+                logger.notice("麦克风权限未确定，请求权限")
+                AVCaptureDevice.requestAccess(for: .audio) { [weak self] allowed in
+                    guard let self = self else { return }
+                    if !allowed {
+                        logger.error("用户拒绝了麦克风权限")
+                        self.progressMessage = "麦克风权限被拒绝，请在系统偏好设置中允许访问麦克风"
+                        self.onStartFailure?()
+                        return
+                    }
+                    // 权限获取成功，继续录音流程
+                    DispatchQueue.main.async {
+                        self.continueRecording()
+                    }
+                }
+                return
+                
+            case .authorized:
+                logger.notice("麦克风权限已获取")
+                // 继续录音流程
+            @unknown default:
+                logger.error("未知的麦克风权限状态")
+                progressMessage = "未知的麦克风权限状态"
+                onStartFailure?()
+                return
+            }
+        } else {
+            // 旧版macOS默认有权限，但记录日志
+            logger.notice("macOS 10.14以下版本无法检查麦克风权限，默认继续")
+        }
+#endif
+
+        continueRecording()
+    }
+    
+    private func continueRecording() {
+        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] startRecording() actually called")
+        
+        // 确保我们处于正确的状态
+        guard state == .idle || state == .paused else {
+            logger.warning("Cannot start recording - wrong state")
+            return
+        }
+        
+        // 如果处于暂停状态，创建新的录音片段
         if state == .paused && audioRecorder != nil {
-            // 当前处于暂停状态，此时我们需要创建一个新的录音文件来继续录音
             // 保存已有的audioRecorder用于清理
             let oldRecorder = audioRecorder
             
@@ -63,7 +215,8 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             
             guard let recordingURL = recordingURL else {
                 logger.error("Failed to create recording URL")
-                progressMessage = "Failed to create recording file"
+                progressMessage = "⚠️ 无法创建录音文件"
+                onStartFailure?()
                 return
             }
             
@@ -89,25 +242,26 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 // 停止并释放旧的录音器
                 oldRecorder?.stop()
                 
-                // 更新状态 - 确保UI能够更新
+                // 更新状态
                 DispatchQueue.main.async {
-                    // 这里特意使用主线程来确保UI能及时更新
                     self.state = .recording
-                    self.progressMessage = "Continuing recording..."
+                    self.progressMessage = "🎙 正在录音..."
                     
-                    // 触发一个值变化的通知，确保转录内容更新到UI
+                    // 触发UI更新
                     let current = self.transcribedText
                     self.transcribedText = ""
                     self.transcribedText = current
                 }
                 
                 logger.debug("Created new recording segment at \(recordingURL.path)")
+                logger.notice("state -> recording (continue)")
             } catch {
                 logger.error("Failed to continue recording: \(error.localizedDescription)")
-                progressMessage = "Failed to continue recording: \(error.localizedDescription)"
+                progressMessage = "⚠️ 录音失败: \(error.localizedDescription)"
                 
                 // 恢复旧的录音器状态
                 audioRecorder = oldRecorder
+                onStartFailure?()
             }
             
             return
@@ -127,17 +281,18 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         
         guard let recordingURL = recordingURL else {
             logger.error("Failed to create recording URL")
-            progressMessage = "Failed to create recording file"
+            progressMessage = "⚠️ 无法创建录音文件"
+            onStartFailure?()
             return
         }
         
-        // 设置录音参数 - 使用更简单的WAV格式，更容易被Whisper API处理
+        // 设置录音参数
         let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatLinearPCM), // 使用无损PCM格式
-            AVSampleRateKey: 16000.0, // 16kHz采样率，Whisper模型接受这个采样率
-            AVNumberOfChannelsKey: 1, // 单声道
+            AVFormatIDKey: Int(kAudioFormatLinearPCM),
+            AVSampleRateKey: 16000.0,
+            AVNumberOfChannelsKey: 1,
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
-            AVLinearPCMBitDepthKey: 16, // 16位
+            AVLinearPCMBitDepthKey: 16,
             AVLinearPCMIsBigEndianKey: false,
             AVLinearPCMIsFloatKey: false
         ]
@@ -151,11 +306,13 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             recordingParts.append(recordingURL)
             
             state = .recording
-            progressMessage = "Recording..."
+            progressMessage = "🎙 正在录音..."
             logger.debug("Started new recording at \(recordingURL.path)")
+            logger.notice("state -> recording (new)")
         } catch {
             logger.error("Failed to start recording: \(error.localizedDescription)")
-            progressMessage = "Failed to start recording: \(error.localizedDescription)"
+            progressMessage = "⚠️ 录音失败: \(error.localizedDescription)"
+            onStartFailure?()
         }
     }
     
@@ -274,20 +431,44 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     // MARK: - Private Methods
     
     private func setupRecordingSession() {
+#if os(iOS)
+        // iOS版本 - 使用AVAudioSession
         // 检查麦克风权限
-        AVCaptureDevice.requestAccess(for: .audio) { [weak self] allowed in
+        let audioSession = AVAudioSession.sharedInstance()
+        audioSession.requestRecordPermission { [weak self] allowed in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
                 if !allowed {
-                    self.progressMessage = "Microphone access required"
-                    self.logger.error("Microphone access denied")
+                    self.progressMessage = "麦克风访问权限被拒绝"
+                    self.logger.error("麦克风访问权限被拒绝")
                     return
                 }
                 
-                self.logger.debug("Microphone access granted")
+                self.logger.debug("麦克风访问权限已授予")
             }
         }
+#else
+        // macOS版本 - 使用AVCaptureDevice
+        if #available(macOS 10.14, *) {
+            AVCaptureDevice.requestAccess(for: .audio) { [weak self] allowed in
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    if !allowed {
+                        self.progressMessage = "麦克风访问权限被拒绝"
+                        self.logger.error("麦克风访问权限被拒绝")
+                        return
+                    }
+                    
+                    self.logger.debug("麦克风访问权限已授予")
+                }
+            }
+        } else {
+            // 旧版macOS默认有权限
+            logger.debug("macOS 10.14以下版本无法检查麦克风权限，默认继续")
+        }
+#endif
     }
     
     private func processRecordings() {
@@ -566,9 +747,18 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         httpBody.append("Content-Disposition: form-data; name=\"response_format\"\r\n\r\n".data(using: .utf8)!)
         httpBody.append("json\r\n".data(using: .utf8)!)
         
-        // 不指定语言，让API自动检测
-        // 注意：如果想要支持自动检测语言，需要完全移除language参数
-        // Whisper API会根据音频内容自动检测语言
+        // 如果用户指定了语言，则添加language参数，否则让API自动检测
+        let selectedLanguage = TunaSettings.shared.transcriptionLanguage
+        if !selectedLanguage.isEmpty {
+            httpBody.append("--\(boundary)\r\n".data(using: .utf8)!)
+            httpBody.append("Content-Disposition: form-data; name=\"language\"\r\n\r\n".data(using: .utf8)!)
+            httpBody.append("\(selectedLanguage)\r\n".data(using: .utf8)!)
+            logger.debug("Using specified language for transcription: \(selectedLanguage)")
+        } else {
+            // 不指定语言，让API自动检测
+            // Whisper API会根据音频内容自动检测语言
+            logger.debug("Using automatic language detection for transcription")
+        }
         
         // 添加温度参数（可以调整模型输出的随机性）
         httpBody.append("--\(boundary)\r\n".data(using: .utf8)!)
