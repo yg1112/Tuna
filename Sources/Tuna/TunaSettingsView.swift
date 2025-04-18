@@ -142,7 +142,7 @@ struct TunaSettingsView: View {
     var body: some View {
         HStack(spacing: 0) {
             // Sidebar
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 ForEach(SettingsTab.allCases) { tab in
                     SidebarTab(
                         icon: tab.icon,
@@ -155,7 +155,7 @@ struct TunaSettingsView: View {
                 Spacer()
             }
             .frame(width: Metrics.sidebarW)
-            .padding(.top, 24)
+            .padding(.top, 20)
             .background(Color(.windowBackgroundColor).opacity(0.9))
             
             // Content
@@ -179,7 +179,7 @@ struct TunaSettingsView: View {
                 .padding(Metrics.cardPad * 2)
             }
         }
-        .frame(minWidth: 630, minHeight: 420)
+        .frame(minWidth: 630, minHeight: 300)
     }
     
     // MARK: - Tab Views

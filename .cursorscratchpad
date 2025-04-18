@@ -512,3 +512,64 @@ fix(menu‑bar): wire status‑item button target/action and add popover tests
 - Sources/Tuna/Models/DictationManager.swift (修改)
 - Sources/Tuna/TunaSettings.swift (修改)
 - Tests/MagicTransformTests/ (新增目录及测试文件) 
+
+## Module: LeanSettings
+- Status: ✅ Ready for Commit
+- Prompt: 精简Tuna设置窗口，保持内容可见，优化UI体验
+- Branch: dev-lean-settings
+
+### 任务清单
+- [x] 创建SettingsSidebarItemStyle修饰符
+- [x] 更新侧边栏宽度为120pt
+- [x] 调整图标尺寸为22×22pt
+- [x] 更新标签字体为system 13-bold
+- [x] 减少默认窗口高度约40%
+- [x] 实现窗口自动调整高度功能
+- [x] 设置窗口最大高度为800pt
+- [x] 创建测试用例验证布局
+- [x] 手动测试验证
+
+### 功能实现细节
+1. 更新了DesignTokens.swift：
+   - 保持Metrics.sidebarW为120pt
+   - 更新Typography.caption为bold样式
+   - 创建SettingsSidebarItemStyle修饰符统一侧边栏样式
+
+2. 更新了SidebarTab.swift：
+   - 调整图标大小为22pt
+   - 更新标签字体为system 13-bold
+   - 优化组件内边距和布局
+
+3. 更新了TunaSettingsView.swift：
+   - 调整侧边栏宽度为120pt
+   - 减少内边距和间距
+   - 减少最小窗口高度
+
+4. 更新了TunaSettingsWindow.swift：
+   - 实现窗口自动调整高度功能
+   - 根据内容高度自动计算理想高度
+   - 设置窗口最大高度为800pt
+   - 添加tab切换辅助方法用于测试
+
+5. 创建了SettingsWindowLayoutTests.swift测试文件：
+   - 测试侧边栏宽度
+   - 测试默认窗口高度
+   - 测试Audio选项卡内容是否适合窗口高度
+
+### Manual Verification
+- 侧边栏宽度: ✅
+- 图标和字体大小: ✅
+- 窗口高度减少: ✅
+- 自动调整窗口高度: ✅
+- 无垂直滚动条: ✅
+- 布局测试: ✅
+
+### Build Status
+- Status: ✅ Passed
+
+### 下一步操作
+1. 合并到主分支
+2. 考虑进一步优化设置项的布局和组织
+3. 提升设置项的可访问性
+
+所有文件已就绪，可以提交到`dev-lean-settings`分支。 
