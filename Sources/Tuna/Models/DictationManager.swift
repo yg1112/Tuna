@@ -5,6 +5,30 @@ import Combine
 import os.log
 // import Views -- 已移至 Tuna 模块
 
+// 添加错误枚举
+public enum DictationError: Error, LocalizedError {
+    case noAPIKey
+    case audioFileReadError
+    case transcriptionFailed(Error)
+    
+    public var errorDescription: String? {
+        switch self {
+        case .noAPIKey:
+            return "No API key provided. Please add your OpenAI API key in Settings."
+        case .audioFileReadError:
+            return "Could not read audio file."
+        case .transcriptionFailed(let error):
+            return "Transcription failed: \(error.localizedDescription)"
+        }
+    }
+}
+
+// 添加通知名称扩展
+extension Notification.Name {
+    static let dictationAPIKeyMissing = Notification.Name("dictationAPIKeyMissing")
+    static let dictationAPIKeyUpdated = Notification.Name("dictationAPIKeyUpdated")
+}
+
 public class DictationManager: ObservableObject, DictationManagerProtocol {
     public static let shared = DictationManager()
     
@@ -61,8 +85,10 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     // 跟踪已转录的片段
     private var processedSegments: Set<URL> = []
     
-    // 设置
-    private var apiKey: String = UserDefaults.standard.string(forKey: "dictationApiKey") ?? ""
+    // 修改API密钥获取方式，使用SecureStore
+    private var apiKey: String {
+        SecureStore.currentAPIKey() ?? ""
+    }
     
     private init() {
         logger.debug("DictationManager initialized")
@@ -402,9 +428,23 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     }
     
     public func setApiKey(_ key: String) {
-        apiKey = key
-        UserDefaults.standard.set(key, forKey: "dictationApiKey")
-        logger.debug("API key updated")
+        // 保存密钥到Keychain
+        do {
+            try SecureStore.save(key: SecureStore.defaultAccount, value: key)
+            logger.debug("API key updated and securely stored in Keychain")
+            // 刷新UI状态
+            NotificationCenter.default.post(name: .dictationAPIKeyUpdated, object: nil)
+        } catch {
+            logger.error("Failed to save API key to Keychain: \(error.localizedDescription)")
+        }
+        
+        // 保持UserDefaults的向后兼容性，但只存储一个空字符串表示API密钥已设置
+        // 不实际存储密钥内容
+        if !key.isEmpty {
+            UserDefaults.standard.set(" ", forKey: "dictationApiKey") // 只存储一个空格表示有密钥
+        } else {
+            UserDefaults.standard.removeObject(forKey: "dictationApiKey")
+        }
     }
     
     public func getDocumentsDirectory() -> URL {
@@ -564,10 +604,19 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     }
     
     private func transcribeAudio(_ audioURL: URL) {
+        // 检查API密钥是否存在
         guard !apiKey.isEmpty else {
             state = .idle
             progressMessage = "Please set API key in settings"
             logger.error("API key not set")
+            
+            // 发送通知，表示缺少API密钥
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .dictationAPIKeyMissing,
+                    object: nil
+                )
+            }
             return
         }
         
@@ -625,9 +674,18 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     
     // 转录当前录音片段，但保持录音状态
     private func transcribeCurrentSegment(_ audioURL: URL) {
+        // 检查API密钥是否存在
         guard !apiKey.isEmpty else {
             progressMessage = "Please set API key in settings"
             logger.error("API key not set")
+            
+            // 发送通知，表示缺少API密钥
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .dictationAPIKeyMissing,
+                    object: nil
+                )
+            }
             return
         }
         
@@ -686,13 +744,21 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     private func callWhisperAPI(audioURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
         // 检查API密钥
         guard !apiKey.isEmpty else {
-            completion(.failure(NSError(domain: "com.tuna.error", code: 401, userInfo: [NSLocalizedDescriptionKey: "API key not set"])))
+            completion(.failure(DictationError.noAPIKey))
+            
+            // 发送通知，表示缺少API密钥
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .dictationAPIKeyMissing,
+                    object: nil
+                )
+            }
             return
         }
         
         // 检查音频文件并获取文件大小
         guard let audioData = try? Data(contentsOf: audioURL) else {
-            completion(.failure(NSError(domain: "com.tuna.error", code: 404, userInfo: [NSLocalizedDescriptionKey: "Cannot read audio file"])))
+            completion(.failure(DictationError.audioFileReadError))
             return
         }
         
