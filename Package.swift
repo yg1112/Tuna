@@ -20,6 +20,9 @@ let package = Package(
             path: "Sources/Tuna",
             resources: [
                 .process("Resources")
+            ],
+            swiftSettings: [
+                .define("NEW_SETTINGS_UI")
             ]
         ),
         .testTarget(

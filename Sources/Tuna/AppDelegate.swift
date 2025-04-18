@@ -448,13 +448,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("\u{001B}[36m[SETTINGS]\u{001B}[0m User requested settings window")
         fflush(stdout)
         
-#if NEW_SETTINGS_UI
-        // 使用新的设置窗口
-        TunaSettingsWindow.shared.show()
-        
-        print("\u{001B}[36m[SETTINGS]\u{001B}[0m New settings window displayed")
-        fflush(stdout)
-#else
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController()
         }
@@ -466,7 +459,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print("\u{001B}[36m[SETTINGS]\u{001B}[0m Settings window displayed")
             fflush(stdout)
         }
-#endif
     }
     
     @objc func handleDeviceSelection(_ sender: NSMenuItem) {
