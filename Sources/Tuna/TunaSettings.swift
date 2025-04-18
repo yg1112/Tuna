@@ -2,6 +2,7 @@ import Foundation
 import ServiceManagement
 import CoreAudio
 import os.log
+import SwiftUI
 
 // 添加UI实验模式枚举
 enum UIExperimentMode: String, CaseIterable, Identifiable {
@@ -623,5 +624,105 @@ class TunaSettings: ObservableObject {
             defaults.synchronize()
             logger.notice("Settings migrated from standard UserDefaults to ai.tuna.app domain")
         }
+    }
+}
+
+// MARK: - UI Settings Extension
+// 添加UI设置扩展 - 计算属性而不是存储属性
+
+// @module: SettingsUI
+// @created_by_cursor: yes
+// @summary: Properties extension for TunaSettings
+// @depends_on: TunaSettings.swift
+
+extension TunaSettings {
+    // Theme settings
+    var theme: String {
+        get { UserDefaults.standard.string(forKey: "theme") ?? "system" }
+        set { UserDefaults.standard.set(newValue, forKey: "theme") }
+    }
+    
+    var glassStrength: Double {
+        get { UserDefaults.standard.double(forKey: "glassStrength") }
+        set { UserDefaults.standard.set(newValue, forKey: "glassStrength") }
+    }
+    
+    var fontScale: String {
+        get { UserDefaults.standard.string(forKey: "fontScale") ?? "system" }
+        set { UserDefaults.standard.set(newValue, forKey: "fontScale") }
+    }
+    
+    var reduceMotion: Bool {
+        get { UserDefaults.standard.bool(forKey: "reduceMotion") }
+        set { UserDefaults.standard.set(newValue, forKey: "reduceMotion") }
+    }
+    
+    // Beta features
+    var enableBeta: Bool {
+        get { UserDefaults.standard.bool(forKey: "enableBeta") }
+        set { UserDefaults.standard.set(newValue, forKey: "enableBeta") }
+    }
+    
+    // Magic Transform settings (already exists but renaming for consistency)
+    var magicTransformEnabled: Bool {
+        get { magicEnabled }
+        set { magicEnabled = newValue }
+    }
+    
+    var magicTransformStyle: PresetStyle {
+        get { magicPreset }
+        set { magicPreset = newValue }
+    }
+    
+    // Shortcut settings (aliases to existing properties)
+    var shortcutEnabled: Bool {
+        get { enableDictationShortcut }
+        set { enableDictationShortcut = newValue }
+    }
+    
+    var shortcutKey: String {
+        get { dictationShortcutKeyCombo }
+        set { dictationShortcutKeyCombo = newValue }
+    }
+    
+    // Smart Swaps alias
+    var smartSwaps: Bool {
+        get { enableSmartSwitching }
+        set { enableSmartSwitching = newValue }
+    }
+    
+    // Whisper API Key
+    var whisperAPIKey: String {
+        get { UserDefaults.standard.string(forKey: "whisperAPIKey") ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: "whisperAPIKey") }
+    }
+    
+    // Reset all settings
+    static func resetAll() {
+        let defaults = UserDefaults.standard
+        
+        // Get all default keys
+        if let bundleID = Bundle.main.bundleIdentifier {
+            defaults.removePersistentDomain(forName: bundleID)
+        }
+        
+        // Reload default values
+        TunaSettings.shared.loadDefaults()
+        
+        // Post notification for UI refresh
+        NotificationCenter.default.post(name: Notification.Name("settingsReset"), object: nil)
+    }
+    
+    // Method to load default values
+    func loadDefaults() {
+        // Set default values
+        UserDefaults.standard.set("system", forKey: "theme")
+        UserDefaults.standard.set(0.7, forKey: "glassStrength")
+        UserDefaults.standard.set("system", forKey: "fontScale")
+        UserDefaults.standard.set(false, forKey: "reduceMotion")
+        UserDefaults.standard.set(false, forKey: "enableBeta")
+        UserDefaults.standard.set("", forKey: "whisperAPIKey")
+        
+        // Other defaults are handled by the original init method
     }
 } 

@@ -72,7 +72,7 @@ final class UISnapshots: XCTestCase {
     
     // 快捷键文本框组件快照
     func test_ShortcutTextField() throws {
-        let view = ShortcutTextField(value: .constant("⌘+X"), onCommit: {})
+        let view = ShortcutTextField(keyCombo: .constant("⌘+X"))
             .frame(width: 200, height: 50)
             .background(Color.gray.opacity(0.2))
         

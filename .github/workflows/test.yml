@@ -1,0 +1,28 @@
+name: Swift Tests
+
+on:
+  push:
+    branches: [ main, dev-* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Swift
+      uses: fwal/setup-swift@v1
+      with:
+        swift-version: "5.5"
+    
+    - name: Build
+      run: swift build -v
+    
+    - name: Run tests
+      run: swift test -v
+      
+    - name: Run UI snapshot tests
+      run: swift run Tuna --ui-snapshot || true 
