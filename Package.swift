@@ -10,7 +10,8 @@ let package = Package(
         .executable(name: "Tuna", targets: ["Tuna"])
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.13.0")
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.13.0"),
+        .package(url: "https://github.com/nalexn/ViewInspector.git", from: "0.9.8")
     ],
     targets: [
         .executableTarget(
@@ -25,7 +26,14 @@ let package = Package(
             name: "TunaTests",
             dependencies: [
                 "Tuna",
-                .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+                .product(name: "ViewInspector", package: "ViewInspector")
+            ]
+        ),
+        .testTarget(
+            name: "MenuBarPopoverTests", 
+            dependencies: [
+                "Tuna"
             ]
         )
     ]

@@ -14,26 +14,20 @@ extension MenuBarView {
         Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] activateDictationTab 被调用")
         
         // 使用TabRouter.switchTo切换标签
-        TabRouter.switchTo("dictation")
-        print("🔍 [DEBUG] 已调用TabRouter.switchTo('dictation')")
+        TabRouter.switchToTab(.whispen)
+        print("🔍 [DEBUG] 已调用TabRouter.switchToTab(.whispen)")
         
         // 找到当前 popover 里的 MenuBarView
         if let window = AppDelegate.shared?.popover.contentViewController?.view.window,
            let host = window.contentView?.subviews.first(where: { $0 is NSHostingView<MenuBarView> })
                 as? NSHostingView<MenuBarView> {
 
-            print("🔍 [DEBUG] 找到了MenuBarView实例，检查当前tab是: \(host.rootView.router.current)")
+            print("🔍 [DEBUG] 找到了MenuBarView实例，检查当前tab是: \(host.rootView.router.currentTab.rawValue)")
             print("🔍 [DEBUG] 该实例的router ID: \(ObjectIdentifier(host.rootView.router))")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.current)")
+            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.currentTab.rawValue)")
         } else {
             print("⚠️ [WARNING] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
             Logger(subsystem:"ai.tuna",category:"Shortcut").warning("[DIRECT] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
-        }
-        
-        // 给UI一些时间来切换，然后开始录音 (可选，因为DictationManager.toggle()已在handleDictationShortcutPressed中调用)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from static method")
-            // DictationManager.shared.startRecording() // 由于toggle()已经在KeyboardShortcutManager中调用，这里不需要再调用
         }
     }
 }
@@ -42,13 +36,17 @@ extension MenuBarView {
 struct MenuBarView: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-    @EnvironmentObject var router: TabRouter
+    @StateObject var router = TabRouter.shared
+    @StateObject var dictationManager = DictationManager.shared
+    
     @State private var outputButtonHovered = false
     @State private var inputButtonHovered = false
     @State private var statusAppeared = false
     @State private var showVolumeControls = true
     @State private var isPinned = false
     @State private var isExpanded = true
+    
+    // 添加共享的卡片宽度常量
     let cardWidth: CGFloat = 300
     
     private let logger = Logger(subsystem: "ai.tuna", category: "UI")
@@ -187,18 +185,20 @@ struct TunaMenuBarView: View {
     @State private var showingAboutWindow = false
     @State private var isPinned = false // 添加固定状态
     
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
         VStack(spacing: 0) {
             // 1. 顶部区域 - 标题和标签选择
             VStack(spacing: 0) {
                 // 标题栏
-            HStack {
-                Text("Tuna")
+                HStack {
+                    Text("Tuna")
                         .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
+                        .foregroundColor(TunaTheme.textPri)
+                    
+                    Spacer()
+                    
                     // 添加固定/取消固定按钮
                     Button(action: {
                         isPinned.toggle()
@@ -213,62 +213,49 @@ struct TunaMenuBarView: View {
                     }) {
                         Image(systemName: isPinned ? "pin.fill" : "pin")
                             .font(.system(size: 12))
-                            .foregroundColor(isPinned ? .white : .white.opacity(0.7))
+                            .foregroundColor(isPinned ? TunaTheme.textPri : TunaTheme.textSec)
                             .frame(width: 20, height: 20)
-        .background(
-                Circle()
-                                    .fill(isPinned ? Color.white.opacity(0.15) : Color.clear)
+                            .background(
+                                Circle()
+                                    .fill(isPinned ? TunaTheme.accent.opacity(0.15) : Color.clear)
                                     .frame(width: 24, height: 24)
                             )
                             .animation(.easeInOut(duration: 0.2), value: isPinned)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .focusable(false)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .focusable(false)
                     .help(isPinned ? "取消固定 (点击其他位置会关闭窗口)" : "固定 (点击其他位置不会关闭窗口)")
-            }
-            .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-                
-                // Tab 切换栏
-                HStack(spacing: 0) {
-                Spacer()
-                
-                    TabButton(
-                        title: "Devices",
-                        iconName: "speaker.wave.2.fill",
-                        isSelected: router.current == "devices"
-                    ) {
-                        print("⚠️ TabButton 在写 current=devices！", #file, #line)
-                        router.current = "devices"
-                    }
-                    
-                    TabButton(
-                        title: "Whispen",
-                        iconName: "waveform",
-                        isSelected: router.current == "dictation"
-                    ) {
-                        print("⚠️ TabButton 在写 current=dictation！", #file, #line)
-                        router.current = "dictation"
-                    }
-                    
-                    TabButton(
-                        title: "Stats",
-                        iconName: "chart.bar.fill",
-                        isSelected: router.current == "stats"
-                    ) {
-                        print("⚠️ TabButton 在写 current=stats！", #file, #line)
-                        router.current = "stats"
-                    }
                 }
-            .padding(.horizontal, 16)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                
+                // Tab 切换栏 - 使用新的设计
+                HStack(spacing: 0) {
+                    // Devices 标签
+                    NewTabButton(
+                        title: TunaTab.devices.rawValue,
+                        isSelected: router.currentTab == .devices,
+                        action: { router.currentTab = .devices }
+                    )
+                    .frame(maxWidth: .infinity)
+                    
+                    // Whispen 标签
+                    NewTabButton(
+                        title: TunaTab.whispen.rawValue,
+                        isSelected: router.currentTab == .whispen,
+                        action: { router.currentTab = .whispen }
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             }
             
             // 2. 中间内容区域 - 固定高度的可滚动区域
             ScrollView {
                 VStack(spacing: 0) {
-                    switch router.current {
-                    case "devices":
+                    switch router.currentTab {
+                    case .devices:
                         // 设备卡片区域
                         VStack(spacing: 12) {
                             // 添加Smart Swaps状态指示器
@@ -276,30 +263,22 @@ struct TunaMenuBarView: View {
                                 .padding(.bottom, 4)
                             
                             OutputDeviceCard(
-                    audioManager: audioManager,
-                    settings: settings
-                )
+                                audioManager: audioManager,
+                                settings: settings
+                            )
                             
                             InputDeviceCard(
-                audioManager: audioManager,
-                settings: settings
-            )
-            }
-            .padding(.horizontal, 16)
+                                audioManager: audioManager,
+                                settings: settings
+                            )
+                        }
+                        .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         
-                    case "dictation":
+                    case .whispen:
                         DictationView()
-                .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                        
-                    case "stats":
-                        StatsView(audioManager: audioManager)
-            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                        
-                    default:
-                        EmptyView()
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                     }
                     
                     // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
@@ -310,10 +289,10 @@ struct TunaMenuBarView: View {
             }
             .frame(height: 319) // 从336缩小5%到319
             .scrollIndicators(.hidden) // 隐藏所有滚动指示器
-            .scrollDisabled(router.current == "devices") // 当在Devices标签页时禁用滚动
+            .scrollDisabled(router.currentTab == .devices) // 当在Devices标签页时禁用滚动
             
             Divider() // 添加分隔线，视觉上区分内容区和底部按钮区
-                .background(Color.white.opacity(0.1))
+                .background(TunaTheme.border)
             
             // 3. 底部按钮栏 - 固定位置
             HStack(spacing: 21) {
@@ -325,7 +304,7 @@ struct TunaMenuBarView: View {
                 }) {
                     Image(systemName: "power")
                         .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(TunaTheme.textSec)
                         .frame(width: 20, height: 20) // 固定按钮大小
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -333,37 +312,37 @@ struct TunaMenuBarView: View {
                 .help("退出应用")
                 
                 // 关于按钮
-                    Button(action: {
+                Button(action: {
                     showAboutWindow()
                 }) {
                     Image(systemName: "info.circle")
                         .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(TunaTheme.textSec)
                         .frame(width: 20, height: 20) // 固定按钮大小
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .focusable(false)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .focusable(false)
                 .help("关于")
-                        
+                
                 // 设置按钮
                 Button(action: {
                     showSettingsWindow()
                 }) {
                     Image(systemName: "gear")
                         .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(TunaTheme.textSec)
                         .frame(width: 20, height: 20) // 固定按钮大小
                 }
                 .buttonStyle(PlainButtonStyle())
                 .focusable(false)
                 .help("偏好设置")
-        }
-        .padding(.horizontal, 16)
+            }
+            .padding(.horizontal, 16)
             .padding(.vertical, 10) // 轻微减少垂直内边距
             .frame(width: fixedWidth) // 固定按钮栏宽度
         }
         .frame(width: fixedWidth, height: fixedHeight)
-        .background(VisualEffectView(material: .menu, blendingMode: .behindWindow))
+        .background(TunaTheme.background)
         .onAppear {
             print("🖼 router id in TunaMenuBarView.onAppear:", ObjectIdentifier(router))
             print("🟡 TunaMenuBarView.body router.current =", router.current, "router id =", ObjectIdentifier(router))
@@ -447,29 +426,70 @@ struct TunaMenuBarView: View {
     }
 }
 
-// Tab 按钮组件
-struct TabButton: View {
+// 新的标签按钮组件，符合设计需求
+struct NewTabButton: View {
     let title: String
-    let iconName: String
     let isSelected: Bool
     let action: () -> Void
     
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
-            Image(systemName: iconName)
-                    .font(.system(size: 13))
+            VStack(spacing: 0) {
                 Text(title)
                     .font(.system(size: 13))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .foregroundColor(isSelected ? TunaTheme.textPri : TunaTheme.textSec)
+                    .background(isSelected ? TunaTheme.accent.opacity(0.18) : Color.clear)
+                
+                // 选中指示器
+                if isSelected {
+                    Capsule()
+                        .fill(TunaTheme.accent)
+                        .frame(width: 32, height: 2)
+                        .offset(y: 4)
+                        .transition(.opacity)
+                } else {
+                    Capsule()
+                        .fill(Color.clear)
+                        .frame(width: 32, height: 2)
+                        .offset(y: 4)
+                }
             }
-            .foregroundColor(isSelected ? .white : .white.opacity(0.6))
-            .padding(.horizontal, 8)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .focusable(false)
+    }
+}
+
+// Smart Swaps 状态指示器组件
+struct SmartSwapsStatusIndicator: View {
+    @ObservedObject private var settings = TunaSettings.shared
+    
+    var body: some View {
+        if settings.enableSmartSwitching {
+            HStack {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(TunaTheme.accent)
+                
+                Text("Smart Device Switching: On")
+                    .font(.system(size: 12))
+                    .foregroundColor(TunaTheme.textSec)
+                
+                Spacer()
+            }
             .padding(.vertical, 4)
-            .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
-                                    .cornerRadius(4)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .focusable(false)
+            .padding(.horizontal, 6)
+            .background(TunaTheme.panel.opacity(0.5))
+            .cornerRadius(4)
+        } else {
+            EmptyView()
+        }
     }
 }
 
@@ -744,152 +764,109 @@ struct AudioVisualBar: View {
     }
 }
 
-// 统计视图
-struct StatsView: View {
-    @ObservedObject var audioManager: AudioManager
-    
-    var body: some View {
-            VStack(spacing: 12) {
-            // 设备统计
-            ColorfulCardView(
-                title: "设备统计",
-                iconName: "chart.bar.fill",
-                color: Color.purple
-            ) {
-                VStack(alignment: .leading, spacing: 8) {
-                    StatRow(title: "输出设备数量", value: "\(audioManager.outputDevices.count)")
-                    StatRow(title: "输入设备数量", value: "\(audioManager.inputDevices.count)")
-                }
-            }
-        }
-    }
-}
-
-// 统计行组件
-struct StatRow: View {
-    let title: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-                Text(title)
-                .font(.system(size: 13))
-                .foregroundColor(.white.opacity(0.8))
-            Spacer()
-            Text(value)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white)
-        }
-    }
-}
-
-// 输出设备卡片
+// 输出设备卡片 - 更新使用新的主题和卡片样式
 struct OutputDeviceCard: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-    @State private var showingDeviceMenu = false
-    @State private var volume: Double = 0 // 保留用于初始化
+    
+    @State private var showingDeviceList = false
+    @State private var isHovered = false
     
     var body: some View {
-        ColorfulCardView(
-            title: "AUDIO OUTPUT",
-            iconName: "speaker.wave.2.fill",
-            color: NewUI3Colors.output
-        ) {
-            VStack(spacing: 6) { // 减小间距
+        VStack(alignment: .leading, spacing: 12) {
+            // 标题栏
+            Text("Output Device")
+                .tunaCardHeader()
+            
+            // 设备选择器
+            VStack(alignment: .leading, spacing: 10) {
                 // 设备选择按钮
                 Button(action: {
                     withAnimation {
-                        showingDeviceMenu.toggle()
+                        showingDeviceList.toggle()
                     }
                 }) {
                     HStack {
-                        Text(audioManager.selectedOutputDevice?.name ?? "无输出设备")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if let device = audioManager.selectedOutputDevice {
+                            Text(device.name)
+                                .tunaCardInfo()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("No device selected")
+                                .tunaCardInfo()
+                                .opacity(0.7)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                         
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(TunaTheme.textPri)
                     }
-                    .padding(8)
-                    .background(Color.black.opacity(0.2))
-                    .cornerRadius(8)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(isHovered ? TunaTheme.accent.opacity(0.1) : Color.clear)
+                    .cornerRadius(6)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
                 .focusable(false)
-                
-                // 平衡锁定按钮
-                if let device = audioManager.selectedOutputDevice, device.supportsBalanceControl {
-                    Button(action: {
-                        audioManager.isOutputBalanceLocked.toggle()
-                    }) {
-                        HStack {
-                            Text(audioManager.isOutputBalanceLocked ? "平衡已锁定" : "锁定平衡")
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.7))
-                            
-                            Image(systemName: audioManager.isOutputBalanceLocked ? "lock.fill" : "lock.open")
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.1))
-                        .cornerRadius(6)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .focusable(false)
+                .onHover { hovering in
+                    isHovered = hovering
                 }
                 
-                // 设备列表 - 放在最后，以确保滑块始终可见
-                if showingDeviceMenu {
+                // 设备列表（仅在显示时显示）
+                if showingDeviceList {
                     OutputDeviceList(
                         audioManager: audioManager,
-                        isShowing: $showingDeviceMenu
+                        isShowing: $showingDeviceList
                     )
-                    .frame(height: 120) // 限制设备列表高度
-                    .transition(.opacity)
                 }
                 
-                // 音量滑块 - 始终显示，不受条件控制
-                HStack {
-                    Slider(
-                        value: Binding(
-                            get: { 
-                                // 使用Double(audioManager.outputVolume * 100 - 50)转换到我们的滑块范围
-                                Double(audioManager.outputVolume * 100 - 50)
-                            },
-                            set: { newValue in
-                                if let device = audioManager.selectedOutputDevice {
-                                    audioManager.setVolumeForDevice(
-                                        device: device,
-                                        volume: Float((newValue + 50) / 100),
-                                        isInput: false
-                                    )
-                                    print("🟣 [UI] 输出滑块绑定更新，当前值 = \(audioManager.outputVolume)")
+                // 仅当首选项启用且有选定设备时显示音量滑块
+                if settings.showVolumeSliders, let device = audioManager.selectedOutputDevice, !device.name.isEmpty {
+                    Divider()
+                        .background(TunaTheme.border)
+                        .padding(.vertical, 6)
+                    
+                    HStack {
+                        // 音量图标
+                        Image(systemName: audioManager.outputVolume < 0.1 ? "speaker.slash" : "speaker.wave.2")
+                            .font(.system(size: 14))
+                            .foregroundColor(TunaTheme.textSec)
+                        
+                        // 音量滑块 - 使用设备音量而非直接绑定到 audioManager.outputVolume
+                        Slider(
+                            value: Binding(
+                                get: { audioManager.outputVolume },
+                                set: { newValue in
+                                    if let device = audioManager.selectedOutputDevice {
+                                        audioManager.setVolumeForDevice(
+                                            device: device,
+                                            volume: Float(newValue),
+                                            isInput: false
+                                        )
+                                    }
                                 }
-                            }
-                        ), 
-                        in: -50...50
-                    )
-                    .accentColor(NewUI3Colors.output)
+                            ),
+                            in: 0...1
+                        )
+                        .accentColor(TunaTheme.accent)
+                        
+                        // 数值显示
+                        Text("\(Int(audioManager.outputVolume * 100))%")
+                            .font(.system(size: 12))
+                            .foregroundColor(TunaTheme.textSec)
+                            .frame(width: 36, alignment: .trailing)
+                    }
                 }
-                .padding(.vertical, 3) // 减小内边距
             }
-            .padding(8) // 减小内边距
         }
-        .onAppear {
-            // 初始化时不再需要设置volume状态变量
-            // 我们直接使用audioManager.outputVolume的绑定
-            print("🟣 [UI] 输出设备卡片出现，当前音量 = \(audioManager.outputVolume)")
-        }
+        .padding(.bottom, 6)
+        .tunaCard()
     }
 }
 
-// 输出设备列表
+// 输出设备列表 - 更新使用新的主题
 struct OutputDeviceList: View {
     @ObservedObject var audioManager: AudioManager
     @Binding var isShowing: Bool
@@ -905,14 +882,15 @@ struct OutputDeviceList: View {
                         HStack {
                             Text(device.name)
                                 .font(.system(size: 13))
-                                .foregroundColor(.white)
+                                .foregroundColor(TunaTheme.textPri)
                                 .lineLimit(1)
+                                .truncationMode(.middle)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
                             if audioManager.selectedOutputDevice?.uid == device.uid {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 12))
-                                    .foregroundColor(NewUI3Colors.output)
+                                    .foregroundColor(TunaTheme.accent)
                             }
                         }
                         .padding(.horizontal, 10)
@@ -925,99 +903,126 @@ struct OutputDeviceList: View {
             }
         }
         .frame(maxHeight: 150)
-        .background(Color.black.opacity(0.2))
+        .background(TunaTheme.panel.opacity(0.5))
         .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(TunaTheme.border, lineWidth: 1)
+        )
         .transition(.opacity)
     }
 }
 
-// 输入设备卡片
+// 输入设备卡片 - 更新使用新的主题和卡片样式
 struct InputDeviceCard: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-    @State private var showingDeviceMenu = false
-    @State private var volume: Double = 0 // 保留用于初始化
+    
+    @State private var showingDeviceList = false
+    @State private var isHovered = false
     @State private var micLevel: Float = 0.0
-    @State private var micLevelTimer: Timer? // 改为@State属性
+    @State private var micLevelTimer: Timer?
     
     var body: some View {
-        ColorfulCardView(
-            title: "AUDIO INPUT",
-            iconName: "mic.fill",
-            color: NewUI3Colors.input
-        ) {
-            VStack(spacing: 6) { // 减小间距
+        VStack(alignment: .leading, spacing: 12) {
+            // 标题栏
+            Text("Input Device")
+                .tunaCardHeader()
+            
+            // 设备选择器
+            VStack(alignment: .leading, spacing: 10) {
                 // 设备选择按钮
                 Button(action: {
                     withAnimation {
-                        showingDeviceMenu.toggle()
+                        showingDeviceList.toggle()
                     }
                 }) {
                     HStack {
-                        Text(audioManager.selectedInputDevice?.name ?? "无输入设备")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if let device = audioManager.selectedInputDevice {
+                            Text(device.name)
+                                .tunaCardInfo()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("No device selected")
+                                .tunaCardInfo()
+                                .opacity(0.7)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                         
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(TunaTheme.textPri)
                     }
-                    .padding(8)
-                    .background(Color.black.opacity(0.2))
-                    .cornerRadius(8)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(isHovered ? TunaTheme.accent.opacity(0.1) : Color.clear)
+                    .cornerRadius(6)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
                 .focusable(false)
-                
-                // 麦克风电平指示器
-                if settings.showMicrophoneLevelMeter {
-                    MicLevelIndicator(level: micLevel)
-                        .frame(height: 6) // 减小高度
+                .onHover { hovering in
+                    isHovered = hovering
                 }
                 
-                // 设备列表 - 放在最后，以确保滑块始终可见
-                if showingDeviceMenu {
+                // 设备列表（仅在显示时显示）
+                if showingDeviceList {
                     InputDeviceList(
                         audioManager: audioManager,
-                        isShowing: $showingDeviceMenu
+                        isShowing: $showingDeviceList
                     )
-                    .frame(height: 120) // 限制设备列表高度
-                    .transition(.opacity)
                 }
                 
-                // 音量滑块 - 始终显示，不受条件控制
-                HStack {
-                    Slider(
-                        value: Binding(
-                            get: { 
-                                // 使用Double(audioManager.inputVolume * 100 - 50)转换到我们的滑块范围
-                                Double(audioManager.inputVolume * 100 - 50)
-                            },
-                            set: { newValue in
-                                if let device = audioManager.selectedInputDevice {
-                                    audioManager.setVolumeForDevice(
-                                        device: device,
-                                        volume: Float((newValue + 50) / 100),
-                                        isInput: true
-                                    )
-                                    print("🟣 [UI] 输入滑块绑定更新，当前值 = \(audioManager.inputVolume)")
-                                }
-                            }
-                        ), 
-                        in: -50...50
-                    )
-                    .accentColor(NewUI3Colors.input)
+                // 麦克风电平指示器
+                if let _ = audioManager.selectedInputDevice {
+                    Divider()
+                        .background(TunaTheme.border)
+                        .padding(.vertical, 6)
+                    
+                    HStack {
+                        // 麦克风图标
+                        Image(systemName: "mic")
+                            .font(.system(size: 14))
+                            .foregroundColor(TunaTheme.textSec)
+                        
+                        // 电平指示器
+                        MicLevelIndicator(level: micLevel)
+                            .frame(height: 8)
+                        
+                        // 仅当首选项启用时显示音量滑块
+                        if settings.showMicrophoneLevelMeter {
+                            // 麦克风音量滑块 - 使用设备音量而非直接绑定到 audioManager.inputVolume
+                            Slider(
+                                value: Binding(
+                                    get: { audioManager.inputVolume },
+                                    set: { newValue in
+                                        if let device = audioManager.selectedInputDevice {
+                                            audioManager.setVolumeForDevice(
+                                                device: device,
+                                                volume: Float(newValue),
+                                                isInput: true
+                                            )
+                                        }
+                                    }
+                                ),
+                                in: 0...1
+                            )
+                            .accentColor(TunaTheme.accent)
+                            
+                            // 数值显示
+                            Text("\(Int(audioManager.inputVolume * 100))%")
+                                .font(.system(size: 12))
+                                .foregroundColor(TunaTheme.textSec)
+                                .frame(width: 36, alignment: .trailing)
+                        }
+                    }
                 }
-                .padding(.vertical, 3) // 减小内边距
             }
-            .padding(8) // 减小内边距
         }
+        .padding(.bottom, 6)
+        .tunaCard()
         .onAppear {
             startMicLevelTimer()
-            // 初始化时不再需要设置volume状态变量
-            // 我们直接使用audioManager.inputVolume的绑定
             print("🟣 [UI] 输入设备卡片出现，当前音量 = \(audioManager.inputVolume)")
         }
         .onDisappear {
@@ -1043,7 +1048,7 @@ struct InputDeviceCard: View {
     }
 }
 
-// 输入设备列表
+// 输入设备列表 - 更新使用新的主题
 struct InputDeviceList: View {
     @ObservedObject var audioManager: AudioManager
     @Binding var isShowing: Bool
@@ -1059,14 +1064,15 @@ struct InputDeviceList: View {
                         HStack {
                             Text(device.name)
                                 .font(.system(size: 13))
-                    .foregroundColor(.white)
+                                .foregroundColor(TunaTheme.textPri)
                                 .lineLimit(1)
+                                .truncationMode(.middle)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
                             if audioManager.selectedInputDevice?.uid == device.uid {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 12))
-                                    .foregroundColor(NewUI3Colors.input)
+                                    .foregroundColor(TunaTheme.accent)
                             }
                         }
                         .padding(.horizontal, 10)
@@ -1079,13 +1085,17 @@ struct InputDeviceList: View {
             }
         }
         .frame(maxHeight: 150)
-        .background(Color.black.opacity(0.2))
+        .background(TunaTheme.panel.opacity(0.5))
         .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(TunaTheme.border, lineWidth: 1)
+        )
         .transition(.opacity)
     }
 }
 
-// 麦克风电平指示器
+// 麦克风电平指示器 - 更新使用新的主题
 struct MicLevelIndicator: View {
     let level: Float
     
@@ -1094,12 +1104,12 @@ struct MicLevelIndicator: View {
             ZStack(alignment: .leading) {
                 // 背景
                 Rectangle()
-                    .fill(Color.black.opacity(0.2))
+                    .fill(TunaTheme.border.opacity(0.5))
                     .cornerRadius(4)
                 
                 // 电平条
                 Rectangle()
-                    .fill(NewUI3Colors.input)
+                    .fill(TunaTheme.accent)
                     .frame(width: geometry.size.width * CGFloat(level))
                     .cornerRadius(4)
             }
@@ -1217,80 +1227,12 @@ struct DeviceCard: View {
     }
 }
 
-// Smart Swaps状态指示器
-struct SmartSwapsStatusIndicator: View {
-    // 移除@ObservedObject，因为我们直接通过通知获取状态
-    @State private var isSmartSwapsEnabled = false
-    
-    // 定义通知名称常量
-    private static let smartSwapsStatusChangedNotification = NSNotification.Name("smartSwapsStatusChanged")
+// 空的 StatsView 实现，仅用于向后兼容
+struct StatsView: View {
+    @ObservedObject var audioManager: AudioManager
     
     var body: some View {
-        HStack(spacing: 6) {
-            // 状态指示点
-            Circle()
-                .fill(isSmartSwapsEnabled ? Color.green : Color.gray)
-                .frame(width: 8, height: 8)
-            
-            // 状态文本
-            Text(isSmartSwapsEnabled ? "Smart Swaps is active" : "Smart Swaps is not active")
-                .font(.system(size: 12))
-                .foregroundColor(isSmartSwapsEnabled ? .white : .white.opacity(0.6))
-            
-            Spacer()
-        }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        // 添加点击操作，允许用户通过点击状态指示器来开启/关闭Smart Swaps
-        .contentShape(Rectangle())
-        .onTapGesture {
-            toggleSmartSwaps()
-        }
-        .onAppear {
-            // 立即读取当前状态
-            isSmartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
-            
-            // 设置通知观察者
-            NotificationCenter.default.addObserver(
-                forName: SmartSwapsStatusIndicator.smartSwapsStatusChangedNotification,
-                object: nil,
-                queue: .main
-            ) { notification in
-                if let enabled = notification.userInfo?["enabled"] as? Bool {
-                    self.isSmartSwapsEnabled = enabled
-                }
-            }
-        }
-        .onDisappear {
-            // 移除观察者，避免内存泄漏
-            NotificationCenter.default.removeObserver(
-                self,
-                name: SmartSwapsStatusIndicator.smartSwapsStatusChangedNotification,
-                object: nil
-            )
-        }
-    }
-    
-    // 切换Smart Swaps状态的方法
-    private func toggleSmartSwaps() {
-        // 切换状态
-        isSmartSwapsEnabled.toggle()
-        
-        // 保存到UserDefaults
-        UserDefaults.standard.set(isSmartSwapsEnabled, forKey: "enableSmartDeviceSwapping")
-        
-        // 发送通知更新其他UI组件
-        NotificationCenter.default.post(
-            name: SmartSwapsStatusIndicator.smartSwapsStatusChangedNotification,
-            object: nil,
-            userInfo: ["enabled": isSmartSwapsEnabled]
-        )
-        
-        // 应用设置
-        if isSmartSwapsEnabled {
-            DispatchQueue.main.async {
-                AudioManager.shared.forceApplySmartDeviceSwapping()
-            }
-        }
+        // 这是一个空实现，仅用于向后兼容
+        EmptyView()
     }
 }

@@ -1,0 +1,37 @@
+## Module: MenuBarFix
+- Status: ✅ Complete
+- Prompt: 修复状态栏鱼图标点击不显示弹出窗口的问题
+- Completed On: 2024-05-18
+
+### 任务清单
+- [x] 添加测试文件和测试用例
+- [x] 修复AppDelegate中的错误
+- [x] 确保target和action设置正确
+- [x] 验证修复是否生效
+
+### 实现细节
+1. 问题分析：
+   - 状态栏鱼图标点击时不显示弹出窗口
+   - 通过添加单元测试发现button的target和action设置有问题
+
+2. 修复方法：
+   - 在`AppDelegate.swift`的`setupStatusItem`方法中，确保正确设置了button的target和action
+   - 调整`togglePopover`方法的签名为`togglePopover(_:)`以符合标准Selector格式
+   - 添加`setupStatusItemForTesting`辅助方法以支持单元测试
+
+3. 测试验证：
+   - 创建测试确认button的target是AppDelegate实例
+   - 验证button的action是`#selector(AppDelegate.togglePopover(_:))`
+   - 构建项目确认没有错误
+
+### Manual Verification
+- 构建通过: ✅
+- 点击图标显示弹窗: ✅
+
+### 提交信息
+```
+fix(menu‑bar): wire status‑item button target/action and add popover tests
+
+* Ensure button.target = self and button.action = #selector(togglePopover)
+* Added MenuBarPopoverTests to verify wiring and that togglePopover shows content
+``` 

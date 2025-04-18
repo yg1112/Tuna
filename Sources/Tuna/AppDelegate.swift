@@ -140,8 +140,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let coloredImage = fishImage.tinted(with: NSColor.white)
                 button.image = coloredImage
             }
-            button.action = #selector(togglePopover)
+            // 确保同时设置target和action
             button.target = self
+            button.action = #selector(togglePopover(_:))
         }
         
         popover = NSPopover()
@@ -184,7 +185,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         fflush(stdout)
     }
     
-    @objc func togglePopover() {
+    @objc func togglePopover(_ sender: Any?) {
         if let button = statusItem.button {
             // 正常 popover 逻辑
             if popover.isShown {
@@ -552,5 +553,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logger.notice("通过AppDelegate显示主窗口")
         print("\u{001B}[34m[WINDOW]\u{001B}[0m 通过AppDelegate显示主窗口")
         fflush(stdout)
+    }
+    
+    /// For unit tests: sets up statusItem without relying on NSApplication run‑loop.
+    @objc func setupStatusItemForTesting() {
+        if statusItem == nil {
+            setupStatusItem()   // 使用正确的方法名
+        }
     }
 } 
