@@ -406,7 +406,9 @@
 - ⌨️ 全局快捷键支持
 - 🔊 音频设备管理
 
-所有文件已就绪，可以提交到`improvement`分支。 ## Module: MenuBarFix
+所有文件已就绪，可以提交到`improvement`分支。
+
+## Module: MenuBarFix
 - Status: ✅ Complete
 - Prompt: 修复状态栏鱼图标点击不显示弹出窗口的问题
 - Completed On: 2024-05-18
@@ -442,4 +444,71 @@ fix(menu‑bar): wire status‑item button target/action and add popover tests
 
 * Ensure button.target = self and button.action = #selector(togglePopover)
 * Added MenuBarPopoverTests to verify wiring and that togglePopover shows content
-``` 
+```
+
+## Module: MagicButton
+- Status: ✅ Complete
+- Prompt: 实现Magic Transform按钮功能，优化听写文本
+- Branch: dev-magic-button
+- Completed On: 2025-04-18
+- Merged To: main
+
+### 任务清单
+- [x] 创建MagicTransformManager类管理转换逻辑
+- [x] 实现MagicTransformService与OpenAI API集成
+- [x] 在TunaDictationView中添加Magic按钮UI
+- [x] 添加处理状态指示器和错误反馈
+- [x] 添加测试用例验证功能
+- [x] 确保错误处理和用户反馈完善
+
+### 功能实现细节
+1. MagicTransformManager实现：
+   - 创建ObservableObject类进行状态管理
+   - 添加处理状态跟踪（isProcessing）
+   - 实现错误处理和消息显示
+   - 集成剪贴板功能自动复制转换结果
+
+2. MagicTransformService实现：
+   - 创建网络服务与OpenAI API集成
+   - 实现请求构建和响应处理
+   - 添加错误处理和超时管理
+   - 确保API密钥安全管理
+
+3. TunaDictationView集成：
+   - 在工具栏添加Magic按钮
+   - 根据处理状态更新按钮图标
+   - 显示处理进度消息
+   - 实现错误提示反馈
+
+4. 测试用例实现：
+   - 创建单元测试验证转换功能
+   - 添加模拟测试避免实际API调用
+   - 测试错误处理和边界情况
+   - 确保UI反馈正确显示
+
+### Manual Verification
+- 转换功能: ✅
+- API集成: ✅
+- 进度指示: ✅
+- 错误处理: ✅
+- 结果复制: ✅
+- 单元测试: ✅
+
+### 发布信息
+- 已合并到main分支
+- 代码已通过审查
+- 所有测试通过
+
+### 下一步操作
+1. 考虑添加更多转换模式和选项
+2. 优化API调用效率和响应速度
+3. 添加更多定制化转换模板
+4. 实现转换历史记录功能
+
+### 文件修改列表
+- Sources/Tuna/Models/MagicTransformManager.swift (新增)
+- Sources/Tuna/Networking/MagicTransformService.swift (新增)
+- Sources/Tuna/Views/TunaDictationView.swift (修改)
+- Sources/Tuna/Models/DictationManager.swift (修改)
+- Sources/Tuna/TunaSettings.swift (修改)
+- Tests/MagicTransformTests/ (新增目录及测试文件) 
