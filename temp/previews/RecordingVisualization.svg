@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="400" height="120" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .bar {
+      animation-duration: 1.2s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+    }
+    #bar1 { animation-name: bar1; }
+    #bar2 { animation-name: bar2; }
+    #bar3 { animation-name: bar3; }
+    #bar4 { animation-name: bar4; }
+    #bar5 { animation-name: bar5; }
+    #bar6 { animation-name: bar6; }
+    #bar7 { animation-name: bar7; }
+    #bar8 { animation-name: bar8; }
+    #bar9 { animation-name: bar9; }
+    #bar10 { animation-name: bar10; }
+    #bar11 { animation-name: bar11; }
+    
+    @keyframes bar1 { from { height: 10px; } to { height: 40px; } }
+    @keyframes bar2 { from { height: 30px; } to { height: 60px; } }
+    @keyframes bar3 { from { height: 20px; } to { height: 50px; } }
+    @keyframes bar4 { from { height: 15px; } to { height: 45px; } }
+    @keyframes bar5 { from { height: 25px; } to { height: 55px; } }
+    @keyframes bar6 { from { height: 40px; } to { height: 70px; } }
+    @keyframes bar7 { from { height: 35px; } to { height: 65px; } }
+    @keyframes bar8 { from { height: 20px; } to { height: 50px; } }
+    @keyframes bar9 { from { height: 15px; } to { height: 45px; } }
+    @keyframes bar10 { from { height: 25px; } to { height: 55px; } }
+    @keyframes bar11 { from { height: 10px; } to { height: 40px; } }
+  </style>
+  
+  <!-- 背景 -->
+  <rect x="0" y="0" width="400" height="120" fill="#2A2A2A" rx="10" ry="10" />
+  
+  <!-- 标题 -->
+  <text x="20" y="30" font-family="Arial" font-size="14" fill="white">录音可视化效果 (RecordingVisualization)</text>
+  
+  <!-- 说明文本 -->
+  <text x="20" y="60" font-family="Arial" font-size="10" fill="#CCCCCC">使用DesignTokens.Colors.critical颜色的音频可视化</text>
+  
+  <!-- 录音按钮 -->
+  <rect x="20" y="70" width="80" height="30" rx="6" ry="6" fill="#FF5959" />
+  <text x="35" y="90" font-family="Arial" font-size="12" fill="white">录音</text>
+  
+  <!-- 可视化条形图 -->
+  <g transform="translate(120, 70)">
+    <rect id="bar1" class="bar" x="0" y="0" width="4" height="10" fill="#4DE6B5" />
+    <rect id="bar2" class="bar" x="10" y="0" width="4" height="30" fill="#4DE6B5" />
+    <rect id="bar3" class="bar" x="20" y="0" width="4" height="20" fill="#4DE6B5" />
+    <rect id="bar4" class="bar" x="30" y="0" width="4" height="15" fill="#4DE6B5" />
+    <rect id="bar5" class="bar" x="40" y="0" width="4" height="25" fill="#4DE6B5" />
+    <rect id="bar6" class="bar" x="50" y="0" width="4" height="40" fill="#4DE6B5" />
+    <rect id="bar7" class="bar" x="60" y="0" width="4" height="35" fill="#4DE6B5" />
+    <rect id="bar8" class="bar" x="70" y="0" width="4" height="20" fill="#4DE6B5" />
+    <rect id="bar9" class="bar" x="80" y="0" width="4" height="15" fill="#4DE6B5" />
+    <rect id="bar10" class="bar" x="90" y="0" width="4" height="25" fill="#4DE6B5" />
+    <rect id="bar11" class="bar" x="100" y="0" width="4" height="10" fill="#4DE6B5" />
+  </g>
+  
+  <!-- 颜色说明 -->
+  <rect x="240" y="80" width="15" height="15" fill="#FF5959" />
+  <text x="260" y="92" font-family="Arial" font-size="10" fill="white">DesignTokens.Colors.critical</text>
+  <rect x="240" y="100" width="15" height="15" fill="#4DE6B5" />
+  <text x="260" y="112" font-family="Arial" font-size="10" fill="white">DesignTokens.Colors.accent</text>
+</svg> 

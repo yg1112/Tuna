@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="400" height="120" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes glow {
+      0% { opacity: 0.7; }
+      100% { opacity: 1.0; }
+    }
+    .pin {
+      animation-name: glow;
+      animation-duration: 1.5s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+    }
+  </style>
+  
+  <!-- 背景 -->
+  <rect x="0" y="0" width="400" height="120" fill="#2A2A2A" rx="10" ry="10" />
+  
+  <!-- 标题栏 -->
+  <rect x="0" y="0" width="400" height="30" fill="#333333" rx="10" ry="10" />
+  
+  <!-- 应用标题 -->
+  <text x="20" y="20" font-family="Arial" font-size="14" fill="white">Tuna</text>
+  
+  <!-- 边框指示 -->
+  <rect x="5" y="5" width="390" height="110" stroke="#4DE6B5" stroke-width="2" fill="none" rx="8" ry="8" />
+  
+  <!-- 固定按钮 -->
+  <g class="pin">
+    <circle cx="370" cy="15" r="10" fill="#333333" />
+    <path d="M370,8 L370,12 M366,12 C366,16 370,20 370,20 C370,20 374,16 374,12 C374,9 372,7 370,7 C368,7 366,9 366,12 Z" 
+      stroke="#4DE6B5" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- 说明文本 -->
+  <text x="20" y="50" font-family="Arial" font-size="12" fill="white">菜单可固定模式</text>
+  <text x="20" y="70" font-family="Arial" font-size="10" fill="#CCCCCC">使用固定按钮来保持窗口打开</text>
+  <text x="20" y="90" font-family="Arial" font-size="10" fill="#CCCCCC">点击外部区域不会关闭窗口</text>
+  
+  <!-- 辅助图标 -->
+  <path d="M20,110 L35,110 M27.5,102.5 L27.5,117.5" stroke="#CCCCCC" stroke-width="1" />
+  <text x="40" y="113" font-family="Arial" font-size="10" fill="#CCCCCC">点击外部区域测试</text>
+</svg> 

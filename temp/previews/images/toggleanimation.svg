@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="400" height="120" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes toggleMove {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(30px); }
+    }
+    @keyframes colorChange {
+      0% { fill: rgba(150, 150, 150, 0.3); }
+      100% { fill: rgba(77, 230, 181, 0.8); }
+    }
+    .toggle-circle {
+      animation-name: toggleMove;
+      animation-duration: 0.8s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1.0);
+    }
+    .toggle-bg {
+      animation-name: colorChange;
+      animation-duration: 0.8s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1.0);
+    }
+  </style>
+  
+  <!-- 背景 -->
+  <rect x="0" y="0" width="400" height="120" fill="#2A2A2A" rx="10" ry="10" />
+  
+  <!-- 标题 -->
+  <text x="20" y="30" font-family="Arial" font-size="14" fill="white">开关切换动画 (ToggleAnimation)</text>
+  
+  <!-- 说明文本 -->
+  <text x="20" y="50" font-family="Arial" font-size="10" fill="#CCCCCC">使用0.2秒弹簧动画效果，提供流畅且有弹性的交互体验</text>
+  
+  <!-- 开关部分 -->
+  <g transform="translate(20, 70)">
+    <text x="0" y="15" font-family="Arial" font-size="14" fill="white">启用功能</text>
+    
+    <!-- 开关背景 -->
+    <rect class="toggle-bg" x="100" y="0" width="60" height="30" rx="15" ry="15" />
+    
+    <!-- 开关滑块 -->
+    <circle class="toggle-circle" cx="115" cy="15" r="12" fill="white" />
+  </g>
+  
+  <!-- 技术细节 -->
+  <text x="20" y="110" font-family="Arial" font-size="10" fill="#4DE6B5">.animation(.spring(response: 0.2, dampingFraction: 0.8), value: isOn)</text>
+</svg> 

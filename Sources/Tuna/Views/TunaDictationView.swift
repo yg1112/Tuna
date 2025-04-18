@@ -894,7 +894,7 @@ struct TunaDictationView: View {
                         title: dictationManager.state == .recording ? "Pause Recording" : "Start Recording",
                         action: handlePlayPauseAction,
                         isDisabled: dictationManager.state == .processing,
-                        width: (geometry.size.width - 80) / 5
+                        width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
                     
                     // 停止按钮 - 只在录音/暂停状态下激活
@@ -903,7 +903,18 @@ struct TunaDictationView: View {
                         title: "Stop Recording",
                         action: { dictationManager.stopRecording() },
                         isDisabled: dictationManager.state == .idle || dictationManager.state == .processing,
-                        width: (geometry.size.width - 80) / 5
+                        width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
+                    )
+                    
+                    // Magic 按钮 - 添加新按钮
+                    controlButton(
+                        icon: "wand.and.stars",
+                        title: "Magic Transform",
+                        action: {
+                            Task { await MagicTransformManager.shared.run(raw: editableText) }
+                        },
+                        isDisabled: !TunaSettings.shared.magicEnabled || editableText.isEmpty || (isPlaceholderVisible && editableText == "This is the live transcription..."),
+                        width: (geometry.size.width - 80) / 6
                     )
                     
                     // 清除按钮 - 放宽禁用条件，当占位符显示时才禁用
@@ -912,7 +923,7 @@ struct TunaDictationView: View {
                         title: "Clear Text",
                         action: clearText,
                         isDisabled: isPlaceholderVisible && editableText == "This is the live transcription...",
-                        width: (geometry.size.width - 80) / 5
+                        width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
                     
                     // 复制按钮 - 放宽禁用条件，当占位符显示时才禁用
@@ -921,7 +932,7 @@ struct TunaDictationView: View {
                         title: "Copy to Clipboard",
                         action: copyToClipboard,
                         isDisabled: isPlaceholderVisible && editableText == "This is the live transcription...",
-                        width: (geometry.size.width - 80) / 5
+                        width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
                     
                     // 保存按钮 - 放宽禁用条件，当占位符显示时才禁用
@@ -930,7 +941,7 @@ struct TunaDictationView: View {
                         title: "Export to File",
                         action: saveTranscription,
                         isDisabled: isPlaceholderVisible && editableText == "This is the live transcription...",
-                        width: (geometry.size.width - 80) / 5
+                        width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
                     
                     Spacer(minLength: 8)

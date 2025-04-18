@@ -868,6 +868,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 logger.debug("Auto-copied transcription to clipboard")
                 progressMessage = "Transcription completed and copied to clipboard"
             }
+            
+            // Magic Transform 功能集成
+            Task { await MagicTransformManager.shared.run(raw: transcribedText) }
         }
     }
 } 

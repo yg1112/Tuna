@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="400" height="120" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes buttonHover {
+      0% { opacity: 0.7; fill: rgba(70, 70, 70, 0.5); }
+      100% { opacity: 1.0; fill: rgba(100, 100, 100, 0.8); }
+    }
+    @keyframes textHover {
+      0% { opacity: 0.8; }
+      100% { opacity: 1.0; }
+    }
+    @keyframes indicatorHover {
+      0% { opacity: 0.0; }
+      100% { opacity: 1.0; }
+    }
+    .button-hover {
+      animation-name: buttonHover;
+      animation-duration: 0.8s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+    }
+    .text-hover {
+      animation-name: textHover;
+      animation-duration: 0.8s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+    }
+    .indicator-hover {
+      animation-name: indicatorHover;
+      animation-duration: 0.8s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+    }
+  </style>
+  
+  <!-- 背景 -->
+  <rect x="0" y="0" width="400" height="120" fill="#2A2A2A" rx="10" ry="10" />
+  
+  <!-- 标题 -->
+  <text x="20" y="30" font-family="Arial" font-size="14" fill="white">悬停状态 (HoverStates)</text>
+  
+  <!-- 说明文本 -->
+  <text x="20" y="50" font-family="Arial" font-size="10" fill="#CCCCCC">按钮和标签使用0.15秒淡入淡出动画显示悬停状态</text>
+  
+  <!-- 底部按钮栏 -->
+  <rect x="20" y="70" width="360" height="40" fill="#333333" rx="5" ry="5" />
+  
+  <!-- 按钮 -->
+  <g transform="translate(40, 80)">
+    <!-- 退出按钮 -->
+    <g>
+      <rect class="button-hover" x="0" y="0" width="60" height="20" rx="4" ry="4" />
+      <text class="text-hover" x="15" y="15" font-family="Arial" font-size="12" fill="white">退出</text>
+    </g>
+    
+    <!-- 关于按钮 -->
+    <g transform="translate(80, 0)">
+      <text x="15" y="15" font-family="Arial" font-size="12" fill="#CCCCCC">关于</text>
+    </g>
+    
+    <!-- 设置按钮 -->
+    <g transform="translate(160, 0)">
+      <text x="15" y="15" font-family="Arial" font-size="12" fill="#CCCCCC">设置</text>
+    </g>
+  </g>
+  
+  <!-- 悬停指示器 -->
+  <rect class="indicator-hover" x="40" y="100" width="60" height="2" fill="#4DE6B5" rx="1" ry="1" />
+  
+  <!-- 技术细节 -->
+  <text x="200" y="110" font-family="Arial" font-size="10" fill="#4DE6B5">.opacity(isHovered ? 1.0 : 0.8)</text>
+</svg> 

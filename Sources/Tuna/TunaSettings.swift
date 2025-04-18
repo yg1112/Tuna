@@ -34,6 +34,28 @@ enum Mode: String, CaseIterable, Identifiable {
     }
 }
 
+// Magic Transform 相关定义
+enum PresetStyle: String, CaseIterable, Identifiable {
+    case abit = "ABit"
+    case concise = "Concise"
+    case custom = "Custom"
+    
+    var id: String { self.rawValue }
+}
+
+struct PromptTemplate {
+    let id: PresetStyle
+    let system: String
+}
+
+extension PromptTemplate {
+    static let library: [PresetStyle: PromptTemplate] = [
+        .abit:    .init(id: .abit,    system:"Rephrase to sound a bit more native."),
+        .concise: .init(id: .concise, system:"Summarize concisely in ≤2 lines."),
+        .custom:  .init(id: .custom,  system:"") // placeholder
+    ]
+}
+
 class TunaSettings: ObservableObject {
     static let shared = TunaSettings()
     private let logger = Logger(subsystem: "ai.tuna", category: "Settings")
@@ -439,6 +461,46 @@ class TunaSettings: ObservableObject {
         }
     }
     
+    // Magic Transform 功能设置
+    @Published var magicEnabled: Bool {
+        didSet {
+            if oldValue != magicEnabled && !isUpdating {
+                isUpdating = true
+                defaults.set(magicEnabled, forKey: "magicEnabled")
+                logger.debug("Saved magic enabled: \(self.magicEnabled)")
+                print("[SETTINGS] Magic transform: \(magicEnabled ? "enabled" : "disabled")")
+                fflush(stdout)
+                isUpdating = false
+            }
+        }
+    }
+    
+    @Published var magicPreset: PresetStyle {
+        didSet {
+            if oldValue != magicPreset && !isUpdating {
+                isUpdating = true
+                defaults.set(magicPreset.rawValue, forKey: "magicPreset")
+                logger.debug("Saved magic preset: \(self.magicPreset.rawValue)")
+                print("[SETTINGS] Magic preset: \(magicPreset.rawValue)")
+                fflush(stdout)
+                isUpdating = false
+            }
+        }
+    }
+    
+    @Published var magicCustomPrompt: String {
+        didSet {
+            if oldValue != magicCustomPrompt && !isUpdating {
+                isUpdating = true
+                defaults.set(magicCustomPrompt, forKey: "magicCustomPrompt")
+                logger.debug("Saved magic custom prompt: \(self.magicCustomPrompt)")
+                print("[SETTINGS] Magic custom prompt updated")
+                fflush(stdout)
+                isUpdating = false
+            }
+        }
+    }
+    
     private init() {
         // 初始化操作模式
         let savedModeString = defaults.string(forKey: "currentMode") ?? Mode.standard.rawValue
@@ -499,6 +561,12 @@ class TunaSettings: ObservableObject {
         self.preferredExperimentalInputDeviceName = defaults.string(forKey: "preferredExperimentalInputDeviceName")
         self.preferredExperimentalOutputDeviceName = defaults.string(forKey: "preferredExperimentalOutputDeviceName")
         
+        // 初始化Magic Transform设置
+        self.magicEnabled = defaults.bool(forKey: "magicEnabled")
+        let savedPresetString = defaults.string(forKey: "magicPreset") ?? PresetStyle.abit.rawValue
+        self.magicPreset = PresetStyle(rawValue: savedPresetString) ?? .abit
+        self.magicCustomPrompt = defaults.string(forKey: "magicCustomPrompt") ?? ""
+        
         // 迁移旧数据 - 移到最后，所有属性都初始化后执行
         migrateOldSettings()
         
@@ -532,7 +600,9 @@ class TunaSettings: ObservableObject {
             "preferredStandardInputDeviceName", "preferredStandardOutputDeviceName",
             "preferredExperimentalInputDeviceName", "preferredExperimentalOutputDeviceName",
             // 新添加的语音转录语言设置
-            "transcriptionLanguage"
+            "transcriptionLanguage",
+            // Magic Transform 设置
+            "magicEnabled", "magicPreset", "magicCustomPrompt"
         ]
         
         var migrated = false

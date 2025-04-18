@@ -588,6 +588,22 @@ struct TunaSettingsView: View {
                 }
                 .glassCard()
                 
+                // 添加Magic Transform设置
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Magic Transform")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text("Configure settings for the Magic Transform feature")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.bottom, 8)
+                    
+                    TranscriptSettingsView(settings: settings)
+                }
+                .glassCard()
+                
                 // 添加Dictation快捷键设置
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Dictation Shortcut")
