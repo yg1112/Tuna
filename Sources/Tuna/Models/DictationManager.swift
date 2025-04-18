@@ -138,95 +138,25 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
         
+        // 设置状态消息
         progressMessage = "准备录音..."
+        print("🎙 DictationManager.startRecording() 被调用，当前状态: \(state)")
         
-#if os(iOS)
-        // 检查麦克风权限 - iOS版本
-        let audioSession = AVAudioSession.sharedInstance()
-        switch audioSession.recordPermission {
-        case .denied:
-            logger.error("麦克风权限被拒绝")
-            progressMessage = "麦克风权限被拒绝，请在设置中允许访问麦克风"
-            onStartFailure?()
-            return
-            
-        case .undetermined:
-            logger.notice("麦克风权限未确定，请求权限")
-            audioSession.requestRecordPermission { [weak self] allowed in
-                guard let self = self else { return }
-                if !allowed {
-                    logger.error("用户拒绝了麦克风权限")
-                    self.progressMessage = "麦克风权限被拒绝，请在设置中允许访问麦克风"
-                    self.onStartFailure?()
-                    return
-                }
-                // 权限获取成功，继续录音流程
-                DispatchQueue.main.async {
-                    self.continueRecording()
-                }
-            }
-            return
-            
-        case .granted:
-            logger.notice("麦克风权限已获取")
-            // 继续录音流程
-        @unknown default:
-            logger.error("未知的麦克风权限状态")
-            progressMessage = "未知的麦克风权限状态"
-            onStartFailure?()
-            return
-        }
-#else
-        // macOS版本 - 使用AVCaptureDevice检查权限
-        if #available(macOS 10.14, *) {
-            switch AVCaptureDevice.authorizationStatus(for: .audio) {
-            case .denied, .restricted:
-                logger.error("麦克风权限被拒绝或受限")
-                progressMessage = "麦克风权限被拒绝，请在系统偏好设置中允许访问麦克风"
-                onStartFailure?()
-                return
-                
-            case .notDetermined:
-                logger.notice("麦克风权限未确定，请求权限")
-                AVCaptureDevice.requestAccess(for: .audio) { [weak self] allowed in
-                    guard let self = self else { return }
-                    if !allowed {
-                        logger.error("用户拒绝了麦克风权限")
-                        self.progressMessage = "麦克风权限被拒绝，请在系统偏好设置中允许访问麦克风"
-                        self.onStartFailure?()
-                        return
-                    }
-                    // 权限获取成功，继续录音流程
-                    DispatchQueue.main.async {
-                        self.continueRecording()
-                    }
-                }
-                return
-                
-            case .authorized:
-                logger.notice("麦克风权限已获取")
-                // 继续录音流程
-            @unknown default:
-                logger.error("未知的麦克风权限状态")
-                progressMessage = "未知的麦克风权限状态"
-                onStartFailure?()
-                return
-            }
-        } else {
-            // 旧版macOS默认有权限，但记录日志
-            logger.notice("macOS 10.14以下版本无法检查麦克风权限，默认继续")
-        }
-#endif
-
+        // 确保音频会话已设置
+        setupRecordingSession()
+        
+        // 实际启动录音逻辑
         continueRecording()
     }
     
     private func continueRecording() {
         Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] startRecording() actually called")
+        sendDebugNotification(message: "开始执行录音流程")
         
         // 确保我们处于正确的状态
         guard state == .idle || state == .paused else {
             logger.warning("Cannot start recording - wrong state")
+            sendDebugNotification(message: "无法开始录音 - 状态错误: \(state)")
             return
         }
         
@@ -918,13 +848,50 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         logger.debug("API request sent")
     }
     
-    // 设置录音中状态为处理中
+    // 计算文本中的单词数
+    private func countWords(in text: String) -> Int {
+        // 处理空文本
+        if text.isEmpty {
+            return 0
+        }
+        
+        // 使用NSLinguisticTagger来进行更准确的单词分析
+        let tagger = NSLinguisticTagger(tagSchemes: [.tokenType], options: 0)
+        tagger.string = text
+        
+        // 只计算实际词语，忽略标点和空格
+        let options: NSLinguisticTagger.Options = [.omitPunctuation, .omitWhitespace]
+        let range = NSRange(location: 0, length: text.utf16.count)
+        
+        var wordCount = 0
+        
+        tagger.enumerateTags(in: range, scheme: .tokenType, options: options) { _, tokenRange, _, _ in
+            wordCount += 1
+        }
+        
+        return wordCount
+    }
+    
+    // 替换原有的finalizeTranscription方法
     func finalizeTranscription() {
+        // 更新状态
         state = .idle
+        
+        // 计算单词数
+        let wordCount = countWords(in: transcribedText)
+        
+        // 发送完成通知，包含词数信息
+        NotificationCenter.default.post(
+            name: NSNotification.Name("dictationFinished"),
+            object: nil,
+            userInfo: ["wordCount": wordCount]
+        )
+        
         if transcribedText.isEmpty {
             progressMessage = "Transcription failed, no text result"
         } else {
-            progressMessage = "Transcription completed - click Save to save"
+            // 添加词数信息到进度消息
+            progressMessage = "Transcription completed (\(wordCount) words) - click Save to save"
             
             // 检查是否启用了自动复制功能，如果是则复制到剪贴板
             if TunaSettings.shared.autoCopyTranscriptionToClipboard && !transcribedText.isEmpty {
@@ -932,11 +899,26 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 pasteboard.clearContents()
                 pasteboard.setString(transcribedText, forType: .string)
                 logger.debug("Auto-copied transcription to clipboard")
-                progressMessage = "Transcription completed and copied to clipboard"
+                progressMessage = "Transcription completed (\(wordCount) words) and copied to clipboard"
             }
             
             // Magic Transform 功能集成
             Task { await MagicTransformManager.shared.run(raw: transcribedText) }
+        }
+        
+        self.breathingAnimation = false
+        self.logger.debug("Completed transcription. Word count: \(wordCount)")
+    }
+    
+    // 添加一个实用工具方法，用于发送通知
+    private func sendDebugNotification(message: String) {
+        print("📣 [DEBUG] DictationManager: \(message)")
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("dictationDebugMessage"),
+                object: nil,
+                userInfo: ["message": message]
+            )
         }
     }
 } 

@@ -476,7 +476,7 @@ struct TunaMenuBarView: View {
     
     // 显示设置窗口
     private func showSettingsWindow() {
-        TunaSettingsWindow.shared.show()
+        NotificationCenter.default.post(name: NSNotification.Name("showSettings"), object: nil)
     }
 }
 
