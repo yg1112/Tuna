@@ -25,9 +25,23 @@ extension MenuBarView {
             print("🔍 [DEBUG] 找到了MenuBarView实例，检查当前tab是: \(host.rootView.router.currentTab.rawValue)")
             print("🔍 [DEBUG] 该实例的router ID: \(ObjectIdentifier(host.rootView.router))")
             Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.currentTab.rawValue)")
+            
+            // 确保路由状态正确后，启动录音
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                print("🔍 [DEBUG] 延时0.3秒后启动录音")
+                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("延时0.3秒后启动录音")
+                DictationManager.shared.startRecording()
+            }
         } else {
             print("⚠️ [WARNING] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
             Logger(subsystem:"ai.tuna",category:"Shortcut").warning("[DIRECT] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
+            
+            // 即使找不到MenuBarView实例，也尝试启动录音
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("🔍 [DEBUG] 找不到实例，延时0.5秒后启动录音")
+                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("找不到实例，延时0.5秒后启动录音")
+                DictationManager.shared.startRecording()
+            }
         }
     }
 }
@@ -38,6 +52,7 @@ struct MenuBarView: View {
     @ObservedObject var settings: TunaSettings
     @StateObject var router = TabRouter.shared
     @StateObject var dictationManager = DictationManager.shared
+    @StateObject var statsStore = StatsStore.shared
     
     @State private var outputButtonHovered = false
     @State private var inputButtonHovered = false
@@ -45,6 +60,7 @@ struct MenuBarView: View {
     @State private var showVolumeControls = true
     @State private var isPinned = false
     @State private var isExpanded = true
+    @State private var debugMessage: String = "" // 添加调试消息状态
     
     // 添加共享的卡片宽度常量
     let cardWidth: CGFloat = 300
@@ -55,10 +71,13 @@ struct MenuBarView: View {
         TunaMenuBarView(
             audioManager: audioManager,
             settings: settings,
+            statsStore: statsStore,
             isOutputHovered: outputButtonHovered,
             isInputHovered: inputButtonHovered,
             cardWidth: cardWidth
         )
+        .environmentObject(router)
+        .environmentObject(dictationManager)
         .onAppear {
             print("[DEBUG] MenuBarView appeared – observer added")
             print("🖼 router id in MenuBarView.onAppear:", ObjectIdentifier(router))
@@ -104,7 +123,8 @@ struct MenuBarView: View {
                         if tab == "dictation" {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from MenuBarView")
-                                DictationManager.shared.startRecording()
+                                self.dictationManager.startRecording()
+                                print("🎙 通过MenuBarView启动录音")
                             }
                         }
                     }
@@ -113,10 +133,23 @@ struct MenuBarView: View {
                     Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ MenuBarView 收到切换选项卡通知，但tab参数为nil")
                 }
             }
+            
+            // 添加dictationDebugMessage通知监听
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("dictationDebugMessage"),
+                object: nil,
+                queue: .main) { notification in
+                if let message = notification.userInfo?["message"] as? String {
+                    print("🔍 [DEBUG] MenuBarView 收到dictationDebugMessage通知: \(message)")
+                    self.debugMessage = message
+                }
+            }
         }
         .onDisappear {
             // 移除通知监听
-            NotificationCenter.default.removeObserver(self)
+            print("🔍 [DEBUG] MenuBarView.onDisappear - 移除通知监听器")
+            NotificationCenter.default.removeObserver(self, name: Notification.Name.switchToTab, object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name("dictationDebugMessage"), object: nil)
         }
     }
 }
@@ -174,13 +207,15 @@ struct TunaMenuBarView: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
     @EnvironmentObject var router: TabRouter
+    @EnvironmentObject var dictationManager: DictationManager
+    @ObservedObject var statsStore: StatsStore
     let isOutputHovered: Bool
     let isInputHovered: Bool
     let cardWidth: CGFloat
     
     // 固定尺寸
     private let fixedWidth: CGFloat = 400  // 使用固定宽度400
-    private let fixedHeight: CGFloat = 439  // 从462缩小5%到439
+    // 去除固定高度，改为自适应
     
     @State private var showingAboutWindow = false
     @State private var isPinned = false // 添加固定状态
@@ -229,6 +264,11 @@ struct TunaMenuBarView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 
+                // 添加Stats Ribbon
+                StatsRibbonView(store: statsStore)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                
                 // Tab 切换栏 - 使用新的设计
                 HStack(spacing: 0) {
                     // Devices 标签
@@ -251,45 +291,48 @@ struct TunaMenuBarView: View {
                 .padding(.vertical, 8)
             }
             
-            // 2. 中间内容区域 - 固定高度的可滚动区域
-            ScrollView {
-                VStack(spacing: 0) {
-                    switch router.currentTab {
-                    case .devices:
-                        // 设备卡片区域
-                        VStack(spacing: 12) {
-                            // 添加Smart Swaps状态指示器
-                            SmartSwapsStatusIndicator()
-                                .padding(.bottom, 4)
+            // 2. 中间内容区域 - 使用GeometryReader动态调整高度的可滚动区域
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        switch router.currentTab {
+                        case .devices:
+                            // 设备卡片区域
+                            VStack(spacing: 12) {
+                                // 添加Smart Swaps状态指示器
+                                SmartSwapsStatusIndicator()
+                                    .padding(.bottom, 4)
+                                
+                                OutputDeviceCard(
+                                    audioManager: audioManager,
+                                    settings: settings
+                                )
+                                
+                                InputDeviceCard(
+                                    audioManager: audioManager,
+                                    settings: settings
+                                )
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
                             
-                            OutputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
-                            )
-                            
-                            InputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
-                            )
+                        case .whispen:
+                            DictationView()
+                                .environmentObject(dictationManager) // 明确注入DictationManager
+                                .environmentObject(router) // 确保router被正确传递
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
                         
-                    case .whispen:
-                        DictationView()
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
+                        // 这样可以保证底部按钮位置一致
+                        Spacer(minLength: 50)
                     }
-                    
-                    // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
-                    // 这样可以保证底部按钮位置一致
-                    Spacer(minLength: 50)
+                    .padding(.bottom, 8)
                 }
-                .padding(.bottom, 8)
+                .frame(maxHeight: min(proxy.size.height * 0.80, 520))
+                .scrollIndicators(.hidden) // 隐藏所有滚动指示器
             }
-            .frame(height: 319) // 从336缩小5%到319
-            .scrollIndicators(.hidden) // 隐藏所有滚动指示器
-            .scrollDisabled(router.currentTab == .devices) // 当在Devices标签页时禁用滚动
             
             Divider() // 添加分隔线，视觉上区分内容区和底部按钮区
                 .background(TunaTheme.border)
@@ -341,7 +384,7 @@ struct TunaMenuBarView: View {
             .padding(.vertical, 10) // 轻微减少垂直内边距
             .frame(width: fixedWidth) // 固定按钮栏宽度
         }
-        .frame(width: fixedWidth, height: fixedHeight)
+        .frame(width: fixedWidth) // 只固定宽度，高度自适应
         .background(TunaTheme.background)
         .onAppear {
             print("🖼 router id in TunaMenuBarView.onAppear:", ObjectIdentifier(router))
@@ -359,6 +402,11 @@ struct TunaMenuBarView: View {
                     userInfo: ["isPinned": savedPinState]
                 )
                 print("\u{001B}[36m[UI]\u{001B}[0m Restored pin status: \(savedPinState)")
+            }
+            
+            // 添加AutoSize Popover
+            if let hostingView = NSApplication.shared.windows.first?.contentView {
+                AppDelegate.shared?.popover.contentSize = hostingView.intrinsicContentSize
             }
             
             // 添加调试信息
@@ -383,7 +431,8 @@ struct TunaMenuBarView: View {
                         if tab == "dictation" {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from TunaMenuBarView")
-                                DictationManager.shared.startRecording()
+                                self.dictationManager.startRecording()  // 使用self.dictationManager代替DictationManager.shared
+                                print("🎙 尝试通过TunaMenuBarView启动录音")
                             }
                         }
                     }
@@ -392,6 +441,11 @@ struct TunaMenuBarView: View {
                     Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ TunaMenuBarView 收到切换选项卡通知，但tab参数为nil")
                 }
             }
+        }
+        .onDisappear {
+            // 移除通知监听
+            print("🔍 [DEBUG] TunaMenuBarView.onDisappear - 移除通知监听器")
+            NotificationCenter.default.removeObserver(self, name: Notification.Name.switchToTab, object: nil)
         }
     }
     
@@ -422,7 +476,7 @@ struct TunaMenuBarView: View {
     
     // 显示设置窗口
     private func showSettingsWindow() {
-        NotificationCenter.default.post(name: NSNotification.Name("showSettings"), object: nil)
+        TunaSettingsWindow.shared.show()
     }
 }
 
