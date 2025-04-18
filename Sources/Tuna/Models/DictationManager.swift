@@ -918,13 +918,50 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         logger.debug("API request sent")
     }
     
-    // 设置录音中状态为处理中
+    // 计算文本中的单词数
+    private func countWords(in text: String) -> Int {
+        // 处理空文本
+        if text.isEmpty {
+            return 0
+        }
+        
+        // 使用NSLinguisticTagger来进行更准确的单词分析
+        let tagger = NSLinguisticTagger(tagSchemes: [.tokenType], options: 0)
+        tagger.string = text
+        
+        // 只计算实际词语，忽略标点和空格
+        let options: NSLinguisticTagger.Options = [.omitPunctuation, .omitWhitespace]
+        let range = NSRange(location: 0, length: text.utf16.count)
+        
+        var wordCount = 0
+        
+        tagger.enumerateTags(in: range, scheme: .tokenType, options: options) { _, tokenRange, _, _ in
+            wordCount += 1
+        }
+        
+        return wordCount
+    }
+    
+    // 替换原有的finalizeTranscription方法
     func finalizeTranscription() {
+        // 更新状态
         state = .idle
+        
+        // 计算单词数
+        let wordCount = countWords(in: transcribedText)
+        
+        // 发送完成通知，包含词数信息
+        NotificationCenter.default.post(
+            name: NSNotification.Name("dictationFinished"),
+            object: nil,
+            userInfo: ["wordCount": wordCount]
+        )
+        
         if transcribedText.isEmpty {
             progressMessage = "Transcription failed, no text result"
         } else {
-            progressMessage = "Transcription completed - click Save to save"
+            // 添加词数信息到进度消息
+            progressMessage = "Transcription completed (\(wordCount) words) - click Save to save"
             
             // 检查是否启用了自动复制功能，如果是则复制到剪贴板
             if TunaSettings.shared.autoCopyTranscriptionToClipboard && !transcribedText.isEmpty {
@@ -932,11 +969,14 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 pasteboard.clearContents()
                 pasteboard.setString(transcribedText, forType: .string)
                 logger.debug("Auto-copied transcription to clipboard")
-                progressMessage = "Transcription completed and copied to clipboard"
+                progressMessage = "Transcription completed (\(wordCount) words) and copied to clipboard"
             }
             
             // Magic Transform 功能集成
             Task { await MagicTransformManager.shared.run(raw: transcribedText) }
         }
+        
+        self.breathingAnimation = false
+        self.logger.debug("Completed transcription. Word count: \(wordCount)")
     }
 } 

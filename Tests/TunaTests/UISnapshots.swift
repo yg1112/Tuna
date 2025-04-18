@@ -33,6 +33,7 @@ final class UISnapshots: XCTestCase {
         let view = TunaMenuBarView(
             audioManager: audioManager,
             settings: settings,
+            statsStore: StatsStore.shared,
             isOutputHovered: false,
             isInputHovered: false,
             cardWidth: 300

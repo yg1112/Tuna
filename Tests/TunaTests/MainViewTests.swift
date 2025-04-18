@@ -14,6 +14,7 @@ final class MainViewTests: XCTestCase {
         let menuBarView = TunaMenuBarView(
             audioManager: AudioManager.shared,
             settings: TunaSettings.shared,
+            statsStore: StatsStore.shared,
             isOutputHovered: false,
             isInputHovered: false,
             cardWidth: 300

@@ -146,7 +146,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 480)
+        popover.contentSize = NSSize(width: 400, height: 480) // 增加宽度为400，高度将自动调整
         popover.behavior = .transient
         
         // 移除弹出窗口的背景和阴影，解决灰色阴影问题
@@ -159,9 +159,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 预先创建内容视图，提高首次显示速度
         let contentView = MenuBarView(audioManager: AudioManager.shared, settings: TunaSettings.shared)
-        .environmentObject(DictationManager.shared)
-        .environmentObject(TabRouter.shared)
-        popover.contentViewController = NSHostingController(rootView: contentView)
+            .environmentObject(DictationManager.shared)
+            .environmentObject(TabRouter.shared)
+        let hostingController = NSHostingController(rootView: contentView)
+        popover.contentViewController = hostingController
+        
+        // 当视图加载完成后调整popover大小
+        DispatchQueue.main.async {
+            // 直接使用view而不是尝试解包
+            let hostingView = hostingController.view
+            // 使用intrinsicContentSize自动调整高度
+            self.popover.contentSize = hostingView.intrinsicContentSize
+        }
         
         print("\u{001B}[36m[UI]\u{001B}[0m Status bar icon configured")
         fflush(stdout)
@@ -314,7 +323,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("👁 [DEBUG] 新Popover的router id: \(ObjectIdentifier(TabRouter.shared))")
         print("ROUTER-DBG [2]", ObjectIdentifier(TabRouter.shared), TabRouter.shared.current)
         
-        popover.contentViewController = NSHostingController(rootView: contentView)
+        let hostingController = NSHostingController(rootView: contentView)
+        popover.contentViewController = hostingController
+        
+        // 调整popover大小以适应内容
+        DispatchQueue.main.async {
+            // 直接使用view而不是尝试解包
+            let hostingView = hostingController.view
+            // 使用intrinsicContentSize获取内容的自然大小
+            let size = hostingView.intrinsicContentSize
+            // 设置popover的大小，保持宽度固定，使高度适应内容
+            self.popover.contentSize = NSSize(width: 400, height: size.height)
+            print("🔄 [DEBUG] 调整Popover大小: \(size.width) x \(size.height)")
+        }
     }
     
     // 显示弹出窗口的方法

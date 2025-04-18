@@ -38,6 +38,7 @@ struct MenuBarView: View {
     @ObservedObject var settings: TunaSettings
     @StateObject var router = TabRouter.shared
     @StateObject var dictationManager = DictationManager.shared
+    @StateObject var statsStore = StatsStore.shared
     
     @State private var outputButtonHovered = false
     @State private var inputButtonHovered = false
@@ -55,6 +56,7 @@ struct MenuBarView: View {
         TunaMenuBarView(
             audioManager: audioManager,
             settings: settings,
+            statsStore: statsStore,
             isOutputHovered: outputButtonHovered,
             isInputHovered: inputButtonHovered,
             cardWidth: cardWidth
@@ -174,13 +176,14 @@ struct TunaMenuBarView: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
     @EnvironmentObject var router: TabRouter
+    @ObservedObject var statsStore: StatsStore
     let isOutputHovered: Bool
     let isInputHovered: Bool
     let cardWidth: CGFloat
     
     // 固定尺寸
     private let fixedWidth: CGFloat = 400  // 使用固定宽度400
-    private let fixedHeight: CGFloat = 439  // 从462缩小5%到439
+    // 去除固定高度，改为自适应
     
     @State private var showingAboutWindow = false
     @State private var isPinned = false // 添加固定状态
@@ -229,6 +232,11 @@ struct TunaMenuBarView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 
+                // 添加Stats Ribbon
+                StatsRibbonView(store: statsStore)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                
                 // Tab 切换栏 - 使用新的设计
                 HStack(spacing: 0) {
                     // Devices 标签
@@ -251,45 +259,46 @@ struct TunaMenuBarView: View {
                 .padding(.vertical, 8)
             }
             
-            // 2. 中间内容区域 - 固定高度的可滚动区域
-            ScrollView {
-                VStack(spacing: 0) {
-                    switch router.currentTab {
-                    case .devices:
-                        // 设备卡片区域
-                        VStack(spacing: 12) {
-                            // 添加Smart Swaps状态指示器
-                            SmartSwapsStatusIndicator()
-                                .padding(.bottom, 4)
+            // 2. 中间内容区域 - 使用GeometryReader动态调整高度的可滚动区域
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        switch router.currentTab {
+                        case .devices:
+                            // 设备卡片区域
+                            VStack(spacing: 12) {
+                                // 添加Smart Swaps状态指示器
+                                SmartSwapsStatusIndicator()
+                                    .padding(.bottom, 4)
+                                
+                                OutputDeviceCard(
+                                    audioManager: audioManager,
+                                    settings: settings
+                                )
+                                
+                                InputDeviceCard(
+                                    audioManager: audioManager,
+                                    settings: settings
+                                )
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
                             
-                            OutputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
-                            )
-                            
-                            InputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
-                            )
+                        case .whispen:
+                            DictationView()
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
                         
-                    case .whispen:
-                        DictationView()
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
+                        // 这样可以保证底部按钮位置一致
+                        Spacer(minLength: 50)
                     }
-                    
-                    // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
-                    // 这样可以保证底部按钮位置一致
-                    Spacer(minLength: 50)
+                    .padding(.bottom, 8)
                 }
-                .padding(.bottom, 8)
+                .frame(maxHeight: min(proxy.size.height * 0.80, 520))
+                .scrollIndicators(.hidden) // 隐藏所有滚动指示器
             }
-            .frame(height: 319) // 从336缩小5%到319
-            .scrollIndicators(.hidden) // 隐藏所有滚动指示器
-            .scrollDisabled(router.currentTab == .devices) // 当在Devices标签页时禁用滚动
             
             Divider() // 添加分隔线，视觉上区分内容区和底部按钮区
                 .background(TunaTheme.border)
@@ -341,7 +350,7 @@ struct TunaMenuBarView: View {
             .padding(.vertical, 10) // 轻微减少垂直内边距
             .frame(width: fixedWidth) // 固定按钮栏宽度
         }
-        .frame(width: fixedWidth, height: fixedHeight)
+        .frame(width: fixedWidth) // 只固定宽度，高度自适应
         .background(TunaTheme.background)
         .onAppear {
             print("🖼 router id in TunaMenuBarView.onAppear:", ObjectIdentifier(router))
@@ -359,6 +368,11 @@ struct TunaMenuBarView: View {
                     userInfo: ["isPinned": savedPinState]
                 )
                 print("\u{001B}[36m[UI]\u{001B}[0m Restored pin status: \(savedPinState)")
+            }
+            
+            // 添加AutoSize Popover
+            if let hostingView = NSApplication.shared.windows.first?.contentView {
+                AppDelegate.shared?.popover.contentSize = hostingView.intrinsicContentSize
             }
             
             // 添加调试信息
