@@ -1,0 +1,4 @@
+tasks:
+  snapshot-ui:
+    description: Record UI snapshots and update manifest
+    cmd: ./scripts/snapshot_ui.sh 

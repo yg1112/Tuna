@@ -1,0 +1,3 @@
+tasks:
+  gen-screenshot:
+    cmd: "./scripts/capture_ui.sh Sources/Tuna/Views/TunaDictationView.swift" 
