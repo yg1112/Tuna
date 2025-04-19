@@ -330,7 +330,7 @@ struct TunaMenuBarView: View {
                     }
                     .padding(.bottom, 8)
                 }
-                .frame(maxHeight: min(proxy.size.height * 0.80, 520))
+                .frame(maxHeight: 520) // let it grow, cap at 520pt
                 .scrollIndicators(.hidden) // 隐藏所有滚动指示器
             }
             
@@ -384,7 +384,7 @@ struct TunaMenuBarView: View {
             .padding(.vertical, 10) // 轻微减少垂直内边距
             .frame(width: fixedWidth) // 固定按钮栏宽度
         }
-        .frame(width: fixedWidth) // 只固定宽度，高度自适应
+        .frame(width: fixedWidth, minHeight: 460) // 只固定宽度，高度自适应，但确保最小高度
         .background(TunaTheme.background)
         .onAppear {
             print("🖼 router id in TunaMenuBarView.onAppear:", ObjectIdentifier(router))

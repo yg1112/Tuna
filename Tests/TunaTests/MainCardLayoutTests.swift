@@ -43,4 +43,23 @@ final class MainCardLayoutTests: XCTestCase {
         // 验证在较大尺寸的屏幕上，弹窗高度应该不超过屏幕高度的80%
         XCTAssertLessThanOrEqual(520.0, maxAllowedHeight, "Popover height should not exceed 80% of screen height")
     }
+    
+    func testDeviceCardsVisible() {
+        let view = TunaMenuBarView(
+            audioManager: AudioManager.shared,
+            settings: TunaSettings.shared,
+            statsStore: StatsStore.preview(),
+            isOutputHovered: false,
+            isInputHovered: false,
+            cardWidth: 300
+        ).environmentObject(TabRouter.shared)
+
+        let host = NSHostingView(rootView: view)
+        host.layout()                     // force layout pass
+        let cardCount = host.subviews
+            .flatMap(\.subviews)
+            .filter { $0.layer?.cornerRadius == 16 } // our cards
+            .count
+        XCTAssert(cardCount >= 2)
+    }
 } 

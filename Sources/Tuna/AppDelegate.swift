@@ -166,10 +166,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 当视图加载完成后调整popover大小
         DispatchQueue.main.async {
-            // 直接使用view而不是尝试解包
-            let hostingView = hostingController.view
-            // 使用intrinsicContentSize自动调整高度
-            self.popover.contentSize = hostingView.intrinsicContentSize
+            // 直接使用fittingSize进行自动调整
+            self.popover.contentSize = hostingController.view.fittingSize  // respects new height
         }
         
         print("\u{001B}[36m[UI]\u{001B}[0m Status bar icon configured")
@@ -328,13 +326,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 调整popover大小以适应内容
         DispatchQueue.main.async {
-            // 直接使用view而不是尝试解包
-            let hostingView = hostingController.view
-            // 使用intrinsicContentSize获取内容的自然大小
-            let size = hostingView.intrinsicContentSize
-            // 设置popover的大小，保持宽度固定，使高度适应内容
-            self.popover.contentSize = NSSize(width: 400, height: size.height)
-            print("🔄 [DEBUG] 调整Popover大小: \(size.width) x \(size.height)")
+            self.popover.contentSize = hostingController.view.fittingSize  // respects new height
+            print("🔄 [DEBUG] 调整Popover大小: \(hostingController.view.fittingSize.width) x \(hostingController.view.fittingSize.height)")
         }
     }
     
