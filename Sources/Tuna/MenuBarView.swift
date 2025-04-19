@@ -384,8 +384,16 @@ struct TunaMenuBarView: View {
             .padding(.vertical, 10) // 轻微减少垂直内边距
             .frame(width: fixedWidth) // 固定按钮栏宽度
         }
-        .frame(width: fixedWidth, minHeight: 460) // 只固定宽度，高度自适应，但确保最小高度
+        .frame(width: fixedWidth) // 只固定宽度
         .background(TunaTheme.background)
+        .overlay(
+            // 使用overlay添加最小高度约束
+            VStack {
+                Spacer()
+            }
+            .frame(minHeight: 460) // 确保最小高度
+            .allowsHitTesting(false)
+        )
         .onAppear {
             print("🖼 router id in TunaMenuBarView.onAppear:", ObjectIdentifier(router))
             print("🟡 TunaMenuBarView.body router.current =", router.current, "router id =", ObjectIdentifier(router))
