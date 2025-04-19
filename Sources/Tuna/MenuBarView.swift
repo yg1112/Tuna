@@ -292,47 +292,45 @@ struct TunaMenuBarView: View {
             }
             
             // 2. 中间内容区域 - 使用GeometryReader动态调整高度的可滚动区域
-            GeometryReader { proxy in
-                ScrollView {
-                    VStack(spacing: 0) {
-                        switch router.currentTab {
-                        case .devices:
-                            // 设备卡片区域
-                            VStack(spacing: 12) {
-                                // 添加Smart Swaps状态指示器
-                                SmartSwapsStatusIndicator()
-                                    .padding(.bottom, 4)
-                                
-                                OutputDeviceCard(
-                                    audioManager: audioManager,
-                                    settings: settings
-                                )
-                                
-                                InputDeviceCard(
-                                    audioManager: audioManager,
-                                    settings: settings
-                                )
-                            }
+            ScrollView {
+                VStack(spacing: 0) {
+                    switch router.currentTab {
+                    case .devices:
+                        // 设备卡片区域
+                        VStack(spacing: 12) {
+                            // 添加Smart Swaps状态指示器
+                            SmartSwapsStatusIndicator()
+                                .padding(.bottom, 4)
+                            
+                            OutputDeviceCard(
+                                audioManager: audioManager,
+                                settings: settings
+                            )
+                            
+                            InputDeviceCard(
+                                audioManager: audioManager,
+                                settings: settings
+                            )
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        
+                    case .whispen:
+                        DictationView()
+                            .environmentObject(dictationManager) // 明确注入DictationManager
+                            .environmentObject(router) // 确保router被正确传递
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            
-                        case .whispen:
-                            DictationView()
-                                .environmentObject(dictationManager) // 明确注入DictationManager
-                                .environmentObject(router) // 确保router被正确传递
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                        }
-                        
-                        // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
-                        // 这样可以保证底部按钮位置一致
-                        Spacer(minLength: 50)
                     }
-                    .padding(.bottom, 8)
+                    
+                    // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
+                    // 这样可以保证底部按钮位置一致
+                    Spacer(minLength: 50)
                 }
-                .frame(maxHeight: 520) // let it grow, cap at 520pt
-                .scrollIndicators(.hidden) // 隐藏所有滚动指示器
+                .padding(.bottom, 8)
             }
+            .frame(height: 360) // 固定高度，确保足够显示两个设备卡片
+            .scrollIndicators(.hidden) // 隐藏所有滚动指示器
             
             Divider() // 添加分隔线，视觉上区分内容区和底部按钮区
                 .background(TunaTheme.border)

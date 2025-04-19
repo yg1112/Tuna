@@ -146,7 +146,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 400, height: 480) // 增加宽度为400，高度将自动调整
+        popover.contentSize = NSSize(width: 400, height: 600) // 设置固定尺寸，确保足够显示所有内容
         popover.behavior = .transient
         
         // 移除弹出窗口的背景和阴影，解决灰色阴影问题
@@ -163,12 +163,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .environmentObject(TabRouter.shared)
         let hostingController = NSHostingController(rootView: contentView)
         popover.contentViewController = hostingController
-        
-        // 当视图加载完成后调整popover大小
-        DispatchQueue.main.async {
-            // 直接使用fittingSize进行自动调整
-            self.popover.contentSize = hostingController.view.fittingSize  // respects new height
-        }
         
         print("\u{001B}[36m[UI]\u{001B}[0m Status bar icon configured")
         fflush(stdout)
@@ -324,11 +318,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: contentView)
         popover.contentViewController = hostingController
         
-        // 调整popover大小以适应内容
-        DispatchQueue.main.async {
-            self.popover.contentSize = hostingController.view.fittingSize  // respects new height
-            print("🔄 [DEBUG] 调整Popover大小: \(hostingController.view.fittingSize.width) x \(hostingController.view.fittingSize.height)")
-        }
+        // 设置固定尺寸，确保足够显示所有内容
+        popover.contentSize = NSSize(width: 400, height: 600)
+        print("🔄 [DEBUG] 设置Popover固定大小: 400 x 600")
     }
     
     // 显示弹出窗口的方法
