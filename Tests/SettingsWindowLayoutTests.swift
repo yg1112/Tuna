@@ -13,7 +13,7 @@ final class SettingsWindowLayoutTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Wait for window adjustment")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if let frame = window.windowController?.window?.frame {
-                XCTAssertLessThanOrEqual(frame.height, 700)
+                XCTAssertLessThanOrEqual(frame.height, 700, "默认窗口高度应小于等于700pt")
                 expectation.fulfill()
             } else {
                 XCTFail("Window frame not available")
@@ -34,7 +34,10 @@ final class SettingsWindowLayoutTests: XCTestCase {
             if let contentView = window.windowController?.window?.contentView,
                let frame = window.windowController?.window?.frame {
                 let contentHeight = contentView.fittingSize.height
-                XCTAssertLessThanOrEqual(contentHeight, frame.height)
+                XCTAssertLessThanOrEqual(contentHeight, frame.height, "Audio标签页内容应完全显示，无需滚动")
+                
+                // 验证窗口高度不超过最大值
+                XCTAssertLessThanOrEqual(frame.height, 800, "窗口高度不应超过最大值800pt")
                 expectation.fulfill()
             } else {
                 XCTFail("Window or content view not available")

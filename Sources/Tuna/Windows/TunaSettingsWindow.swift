@@ -112,9 +112,13 @@ class TunaSettingsWindow {
         // 获取内容的理想尺寸
         let idealSize = hostingView.intrinsicContentSize
         
-        // 计算理想高度，降低约 40%，并限制在最大高度范围内
-        let calculatedHeight = idealSize.height * 0.6
-        let idealHeight = min(calculatedHeight + 40, 800)
+        // 计算理想高度，降低约 40%，但确保能显示全部内容
+        // 对于内容较多的标签页（如 Audio），不缩减高度以确保内容可见
+        let contentSize = hostingView.fittingSize.height
+        let reducedHeight = idealSize.height * 0.6
+        
+        // 确保高度不小于内容高度，但不超过最大高度
+        let idealHeight = min(max(contentSize + 40, reducedHeight), 800)
         
         // 设置窗口大小
         var frame = window.frame
