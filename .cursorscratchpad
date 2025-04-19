@@ -608,15 +608,60 @@ fix(menu‑bar): wire status‑item button target/action and add popover tests
    - 在 DictationSettingsView 中添加 onChange 调试器，监控状态变化
 
 ### Manual Verification
-- Engine 卡片点击展开: ✅
+- Engine 卡片点击一次展开: ✅
+- Engine 卡片保持展开状态: ✅
+- API Key 字段正确显示: ✅
 - Transcription Output 卡片点击展开: ✅
-- 点击事件正确传递: ✅
-- 展开/折叠状态正确切换: ✅
-- 点击日志显示正常: ✅
-- 动画效果正常: ✅
+- Format 选择器正常工作: ✅
+- Directory 选择器正常工作: ✅
+- 单元测试通过: ✅
 
 ### 提交信息
-"fix(card): use Button to guarantee CollapsibleCard click-to-expand works reliably"
+"fix(settings): eliminate duplicate controls and ensure state consistency in DictationSettingsView"
 
 ### 备注
 该修复适用于所有使用 CollapsibleCard 的地方，包括设置窗口中的 Engine 和 Transcription Output 卡片。使用 Button 作为点击区域是确保点击事件穿透所有覆盖层的最可靠解决方案。 
+
+## Module: SettingsStateConsistency
+- Status: ✅ Complete
+- Prompt: 修复 DictationSettingsView 中折叠卡片展开后立即折叠的问题
+- Branch: fix-clickable-card-button
+- Completed On: 2025-04-19
+
+### 任务清单
+- [x] 分析 DictationSettingsView 状态管理问题
+- [x] 添加调试日志确认问题根因
+- [x] 移除重复控件和冗余状态变量
+- [x] 确保 @State 变量保持一致
+- [x] 测试修复效果
+
+### 实现细节
+1. 问题根因分析：
+   - DictationSettingsView 中存在重复的控件结构，导致界面状态混乱
+   - 同时存在 `@State private var apiKey` 和 `tunaSettings.apiKey` 两种不同的状态源
+   - 同时存在 `@State private var selectedFormat` 和 `tunaSettings.exportFormat` 两种不同的状态源
+   - 存在重复的 Output Format 和 Output Directory 控件（一组在 CollapsibleCard 外部，一组在内部）
+
+2. 完整修复方法：
+   - 仅保留必要的 @State 变量：isEngineExpanded、isTranscriptionOutputExpanded 和 isApiKeyValid
+   - 移除冗余的 apiKey, selectedFormat 和 outputDirectory 局部状态变量
+   - 删除 CollapsibleCard 外部重复的 Output Format 和 Output Directory 控件
+   - 在 CollapsibleCard 中使用 tunaSettings 统一的数据源
+   - 添加 `.onAppear` 和 `.onDisappear` 调试日志追踪视图生命周期
+
+3. 其他改进：
+   - 简化 selectOutputDirectory 函数，直接更新 tunaSettings.exportURL
+   - 减少不必要的日志和调试信息
+   - 实现 validateApiKey 函数，检查 API Key 格式有效性
+
+### Manual Verification
+- Engine 卡片点击一次展开: ✅
+- Engine 卡片保持展开状态: ✅
+- API Key 字段正确显示: ✅
+- Transcription Output 卡片点击展开: ✅
+- Format 选择器正常工作: ✅
+- Directory 选择器正常工作: ✅
+- 单元测试通过: ✅
+
+### 提交信息
+"fix(settings): eliminate duplicate controls and ensure state consistency in DictationSettingsView"
