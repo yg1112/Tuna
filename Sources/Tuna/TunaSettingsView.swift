@@ -154,8 +154,8 @@ struct TunaSettingsView: View {
                 
                 Spacer()
             }
-            .frame(width: Metrics.sidebarW)
-            .padding(.top, 20)
+            .frame(width: 120)
+            .padding(.top, 16)
             .background(Color(.windowBackgroundColor).opacity(0.9))
             
             // Content

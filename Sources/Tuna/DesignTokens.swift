@@ -22,7 +22,7 @@ enum Typography {
     static let caption = Font.system(size: 9, weight: .bold)
 }
 
-// 新增设置侧边栏项的修饰符
+// 设置侧边栏项的修饰符
 struct SettingsSidebarItemStyle: ViewModifier {
     let isSelected: Bool
     

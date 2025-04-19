@@ -12,7 +12,17 @@ class TunaSettingsWindow {
     
     // 侧边栏宽度
     var sidebarWidth: CGFloat {
-        return Metrics.sidebarW
+        return 120
+    }
+    
+    // 获取当前窗口的 frame
+    var frame: NSRect {
+        return windowController?.window?.frame ?? NSRect(x: 0, y: 0, width: 600, height: 300)
+    }
+    
+    // 获取内容视图
+    var contentView: NSView? {
+        return windowController?.window?.contentView
     }
     
     // 初始化方法改为内部可见，以便测试可以创建实例
@@ -102,8 +112,9 @@ class TunaSettingsWindow {
         // 获取内容的理想尺寸
         let idealSize = hostingView.intrinsicContentSize
         
-        // 计算理想高度，并限制在最大高度范围内
-        let idealHeight = min(idealSize.height + 40, 800)
+        // 计算理想高度，降低约 40%，并限制在最大高度范围内
+        let calculatedHeight = idealSize.height * 0.6
+        let idealHeight = min(calculatedHeight + 40, 800)
         
         // 设置窗口大小
         var frame = window.frame

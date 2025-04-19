@@ -16,11 +16,10 @@ struct SidebarTab: View {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 22))
-                    .frame(height: 22)
+                    .frame(width: 22, height: 22)
                 
                 Text(label)
-                    .font(.system(size: 13, weight: .bold))
-                    .lineLimit(1)
+                    .sidebarItemStyle(isSelected: isSelected)
             }
             .frame(width: Metrics.sidebarW - 20)
             .padding(.vertical, 6)
