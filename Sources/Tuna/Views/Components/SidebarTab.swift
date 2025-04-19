@@ -15,15 +15,15 @@ struct SidebarTab: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .frame(height: 20)
+                    .font(.system(size: 22))
+                    .frame(height: 22)
                 
                 Text(label)
-                    .font(Typography.caption)
+                    .font(.system(size: 13, weight: .bold))
                     .lineLimit(1)
             }
-            .frame(width: Metrics.sidebarW - 24)
-            .padding(.vertical, 8)
+            .frame(width: Metrics.sidebarW - 20)
+            .padding(.vertical, 6)
             .foregroundColor(isSelected ? Colors.accent : .primary)
         }
         .buttonStyle(PlainButtonStyle())

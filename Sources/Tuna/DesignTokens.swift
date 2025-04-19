@@ -19,5 +19,23 @@ enum Metrics {
 enum Typography {
     static let title = Font.system(size: 11, weight: .medium)
     static let body = Font.system(size: 10)
-    static let caption = Font.system(size: 9)
+    static let caption = Font.system(size: 9, weight: .bold)
+}
+
+// 新增设置侧边栏项的修饰符
+struct SettingsSidebarItemStyle: ViewModifier {
+    let isSelected: Bool
+    
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: 13, weight: .bold))
+            .frame(height: 22)
+            .foregroundColor(isSelected ? Colors.accent : .primary)
+    }
+}
+
+extension View {
+    func sidebarItemStyle(isSelected: Bool) -> some View {
+        self.modifier(SettingsSidebarItemStyle(isSelected: isSelected))
+    }
 } 
