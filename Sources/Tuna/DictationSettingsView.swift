@@ -7,11 +7,12 @@ import AppKit
 struct DictationSettingsView: View {
     @ObservedObject private var dictationManager = DictationManager.shared
     @ObservedObject private var tunaSettings = TunaSettings.shared
-    @State private var apiKey: String = UserDefaults.standard.string(forKey: "dictationApiKey") ?? ""
-    @State private var selectedFormat: String = UserDefaults.standard.string(forKey: "dictationFormat") ?? "txt"
-    @State private var outputDirectory: URL? = UserDefaults.standard.url(forKey: "dictationOutputDirectory")
     
-    private let formats = ["txt", "srt", "vtt", "json"]
+    // 使用 @State 只持有卡片展开状态，其他值使用 tunaSettings
+    @State private var isEngineExpanded = false
+    @State private var isTranscriptionOutputExpanded = false
+    @State private var isApiKeyValid = false
+    
     private let accentColor = Color.green
     
     var body: some View {
@@ -37,67 +38,111 @@ struct DictationSettingsView: View {
                 
                 Divider()
                 
-                // OpenAI API Key
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("OpenAI API Key")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.primary)
-                    
-                    SecureField("API Key", text: $apiKey)
-                        .font(.system(size: 14))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .onChange(of: apiKey) { newValue in
-                            dictationManager.setApiKey(newValue)
+                // Engine 部分 - 使用可展开绑定
+                CollapsibleCard(title: "Engine", isExpanded: $isEngineExpanded) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            SecureField("OpenAI API Key", text: $tunaSettings.apiKey)
+                                .font(.system(size: 14))
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .onChange(of: tunaSettings.apiKey) { newValue in
+                                    validateApiKey(newValue)
+                                }
+                                .onAppear {
+                                    validateApiKey(tunaSettings.apiKey)
+                                }
+                                .accessibilityIdentifier("API Key")
+                            
+                            // API Key 验证状态指示器
+                            if !tunaSettings.apiKey.isEmpty {
+                                Image(systemName: isApiKeyValid ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                                    .foregroundColor(isApiKeyValid ? .green : .red)
+                                    .font(.system(size: 16))
+                                    .help(isApiKeyValid ? "API key is valid" : "Invalid API key format")
+                            }
                         }
-                }
-                
-                // Output Format
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Output Format")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.primary)
-                    
-                    Picker("", selection: $selectedFormat) {
-                        ForEach(formats, id: \.self) { format in
-                            Text(format.uppercased()).tag(format)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .onChange(of: selectedFormat) { newValue in
-                        dictationManager.setOutputFormat(newValue)
-                    }
-                }
-                
-                // Output Directory
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Output Directory")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.primary)
-                    
-                    HStack {
-                        Text(outputDirectory?.lastPathComponent ?? "Desktop")
-                            .font(.system(size: 14))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 8)
-                            .background(Color(NSColor.textBackgroundColor))
-                            .cornerRadius(6)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
-                            )
-                            .focusable(false) // 禁用焦点
                         
-                        Button("Select") {
-                            selectOutputDirectory()
-                        }
-                        .font(.system(size: 13))
-                        .buttonStyle(GreenButtonStyle())
-                        .focusable(false) // 禁用Select按钮的焦点
+                        // API Key 说明文本
+                        Text("Enter your OpenAI API key to enable transcription.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
                     }
+                    .padding(.top, 4)
+                }
+                .id("EngineCard")
+                .onAppear { print("▶️ Engine appear") }
+                .onDisappear { print("◀️ Engine disappear") }
+                .onChange(of: isEngineExpanded) { newValue in
+                    print("💚 Engine state ->", newValue)
+                }
+                
+                // Transcription Output 部分 - 使用可展开绑定
+                CollapsibleCard(title: "Transcription Output", isExpanded: $isTranscriptionOutputExpanded) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // 导出格式选择器
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Format:")
+                                .font(.system(size: 14))
+                                .foregroundColor(.primary)
+                            
+                            Picker("", selection: Binding<TranscriptionExportFormat>(
+                                get: { tunaSettings.exportFormat },
+                                set: { tunaSettings.exportFormat = $0 }
+                            )) {
+                                ForEach(TranscriptionExportFormat.allCases) { format in
+                                    Text(format.displayName).tag(format)
+                                }
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .labelsHidden()
+                            .accessibilityIdentifier("Format")
+                        }
+                        
+                        // 输出目录选择器
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Output Directory:")
+                                .font(.system(size: 14))
+                                .foregroundColor(.primary)
+                            
+                            HStack {
+                                Text(tunaSettings.exportURL?.lastPathComponent ?? "Desktop")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 8)
+                                    .background(Color(NSColor.textBackgroundColor))
+                                    .cornerRadius(6)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                                    )
+                                    .focusable(false)
+                                    .id("OutputDirectoryField")
+                                
+                                Button("Select") {
+                                    selectOutputDirectory()
+                                }
+                                .font(.system(size: 13))
+                                .buttonStyle(GreenButtonStyle())
+                                .focusable(false)
+                                .accessibilityIdentifier("Select Folder")
+                            }
+                        }
+                        
+                        // 自动复制到剪贴板选项
+                        Toggle("Auto-copy transcription to clipboard", isOn: $tunaSettings.autoCopyTranscriptionToClipboard)
+                            .font(.system(size: 14))
+                    }
+                    .padding(.top, 4)
+                }
+                .id("TranscriptionOutputCard")
+                .onAppear { print("▶️ TranscriptionOutput appear") }
+                .onDisappear { print("◀️ TranscriptionOutput disappear") }
+                .onChange(of: isTranscriptionOutputExpanded) { newValue in
+                    print("💚 TranscriptionOutput state ->", newValue)
                 }
                 
                 Spacer()
@@ -124,14 +169,10 @@ struct DictationSettingsView: View {
         panel.level = .modalPanel
         panel.isReleasedWhenClosed = false
         
-        // 确保文件选择器保持活动状态，不会意外关闭
-        panel.treatsFilePackagesAsDirectories = false
-        
         // 查找当前活动的窗口
         var parentWindow: NSWindow?
         for window in NSApplication.shared.windows {
             if window.isVisible && !window.isMiniaturized {
-                print("\u{001B}[36m[DEBUG]\u{001B}[0m 找到窗口: \(window.title), isKey: \(window.isKeyWindow)")
                 if window.isKeyWindow {
                     parentWindow = window
                     break
@@ -151,13 +192,10 @@ struct DictationSettingsView: View {
                     }
                 }
             }
-            print("\u{001B}[36m[DEBUG]\u{001B}[0m 使用备选窗口: \(parentWindow?.title ?? "nil")")
         }
         
         // 使用父窗口显示选择器，确保设置窗口在选择器显示期间保持活动状态
         if let window = parentWindow {
-            print("\u{001B}[32m[UI]\u{001B}[0m 使用父窗口显示文件选择器: \(window.title)")
-            
             // 保存当前窗口级别，稍后恢复
             let originalLevel = window.level
             
@@ -170,8 +208,6 @@ struct DictationSettingsView: View {
             window.makeKeyAndOrderFront(nil) // 确保窗口可见
             
             panel.beginSheetModal(for: window) { response in
-                print("\u{001B}[32m[UI]\u{001B}[0m 文件选择器响应: \(response == .OK ? "确定" : "取消")")
-                
                 // 恢复原来的窗口级别
                 window.level = originalLevel
                 
@@ -181,9 +217,8 @@ struct DictationSettingsView: View {
                 
                 if response == .OK, let url = panel.url {
                     DispatchQueue.main.async {
-                        self.outputDirectory = url
-                        self.dictationManager.setOutputDirectory(url)
-                        print("\u{001B}[32m[设置]\u{001B}[0m 已选择语音识别输出目录: \(url.path)")
+                        // 直接更新 tunaSettings 而不是本地变量
+                        self.tunaSettings.exportURL = url
                         
                         // 确保设置窗口在选择完成后仍然保持打开状态
                         window.makeKeyAndOrderFront(nil)
@@ -202,16 +237,12 @@ struct DictationSettingsView: View {
             }
         } else {
             // 如果找不到任何合适的窗口，则使用标准模态显示
-            print("\u{001B}[33m[警告]\u{001B}[0m 未找到父窗口，使用runModal显示文件选择器")
-            
             let response = panel.runModal()
             
-            print("\u{001B}[32m[UI]\u{001B}[0m 文件选择器响应: \(response == .OK ? "确定" : "取消")")
             if response == .OK, let url = panel.url {
                 DispatchQueue.main.async {
-                    self.outputDirectory = url
-                    self.dictationManager.setOutputDirectory(url)
-                    print("\u{001B}[32m[设置]\u{001B}[0m 已选择语音识别输出目录: \(url.path)")
+                    // 直接更新 tunaSettings 而不是本地变量
+                    self.tunaSettings.exportURL = url
                     
                     // 确保设置窗口在模态操作后重新获得焦点
                     if let window = NSApplication.shared.keyWindow {
@@ -225,6 +256,11 @@ struct DictationSettingsView: View {
                 NotificationCenter.default.post(name: NSNotification.Name("fileSelectionEnded"), object: nil)
             }
         }
+    }
+    
+    private func validateApiKey(_ key: String) {
+        // 简单验证：OpenAI API key 通常是以 "sk-" 开头的字符串
+        isApiKeyValid = key.hasPrefix("sk-") && key.count > 10
     }
 }
 
