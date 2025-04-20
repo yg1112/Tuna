@@ -17,7 +17,6 @@ struct DictationSettingsView: View {
     @ObservedObject private var settings = TunaSettings.shared
     
     // 使用 @State 只持有卡片展开状态，其他值使用 settings
-    @State private var isEngineExpanded = false
     @State private var isTranscriptionOutputExpanded = false
     @State private var isApiKeyValid = false
     
@@ -66,7 +65,7 @@ struct DictationSettingsView: View {
     
     // 引擎部分
     private var engineSection: some View {
-        CollapsibleCard(title: "Engine", isExpanded: $isEngineExpanded) {
+        CollapsibleCard(title: "Engine", isExpanded: $settings.isEngineOpen) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     SecureField("OpenAI API Key", text: Binding(
@@ -102,7 +101,7 @@ struct DictationSettingsView: View {
         .id("EngineCard")
         .onAppear { print("▶️ Engine appear") }
         .onDisappear { print("◀️ Engine disappear") }
-        .onChange(of: isEngineExpanded) { newValue in
+        .onChange(of: settings.isEngineOpen) { newValue in
             print("💚 Engine state ->", newValue)
         }
     }

@@ -19,3 +19,58 @@ context:
     - Sources/Tuna/MenuBarView.swift
     - Sources/Tuna/TabRouter.swift
 snippets_dir: .cursor/snippets 
+
+rules:
+  cursor_context_auto_update:
+    description: "Keep .cursorscratchpad and docs/GPT_CONTEXT.md in sync with source changes"
+    trigger:
+      on_change:
+        - "**/*.swift"
+        - "**/*.py"
+        - "**/*.js"
+        - "**/*.ts"
+        - "**/*.go"
+        - "**/*.rs"
+        - "**/*.java"
+        - Package.*
+        - pyproject.toml
+        - Cargo.toml
+        - requirements*.txt
+        - package.json
+        - .cursor/rules
+    steps:
+      - run: |
+          if [ ! -f tools/update_scratchpad.py ]; then
+            echo "Bootstrapping generic context generator…"
+            mkdir -p tools
+            cat > tools/update_scratchpad.py <<'PY'
+            #!/usr/bin/env python3
+            # (same script body as前版，此处省略…)
+            PY
+            chmod +x tools/update_scratchpad.py
+          fi
+      - run: python tools/update_scratchpad.py
+      - run: |
+          if ! git diff --quiet -- .cursorscratchpad docs/GPT_CONTEXT.md; then
+            git add .cursorscratchpad docs/GPT_CONTEXT.md
+            REPO_PATH=$(git remote get-url origin | sed -E 's#.*github.com[:/](.+/[^/.]+)(\.git)?#\1#')
+            git commit -m "docs: auto‑update project context [Cursor] [gpt-context] ${REPO_PATH}"
+          else
+            echo "Context already up‑to‑date."
+          fi
+      - run: |
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          git push -u origin "${CURRENT_BRANCH}" || echo "🔐 Push skipped (no permission)."
+
+  collapsible_card_expansion:
+    description: "Never hard-code isExpanded = false in CollapsibleCard components"
+    trigger:
+      on_change:
+        - "**/*.swift"
+    steps:
+      - run: |
+          if grep -r "CollapsibleCard.*isExpanded:\s*false" . --include="*.swift"; then
+            echo "⚠️ Found hard-coded isExpanded: false in CollapsibleCard"
+            echo "Please bind to a @Published property instead"
+            exit 1
+          fi 
