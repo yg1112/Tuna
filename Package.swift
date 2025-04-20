@@ -19,8 +19,7 @@ let package = Package(
             dependencies: [],
             path: "Sources/Tuna",
             exclude: [
-                "Scripts",
-                "AudioManager.swift", // Exclude root copy, use Audio/AudioManager.swift
+                "scripts",
             ],
             resources: [
                 .process("Resources"),

@@ -1,22 +1,44 @@
-@objc class AudioManager: NSObject, ObservableObject {
+import SwiftUI
+import Combine
+
+class AudioManager: NSObject, ObservableObject {
+    static let shared = AudioManager()
+    
+    @Published var selectedOutputDevice: AudioDevice?
+    @Published var selectedInputDevice: AudioDevice?
+    @Published var outputDevices: [AudioDevice] = []
+    @Published var inputDevices: [AudioDevice] = []
+    @Published private(set) var inputVolume: Float = 0.0
+    @Published private(set) var outputVolume: Float = 0.0
+    
     @objc dynamic func getInputVolume() -> Float {
         guard let device = selectedInputDevice else { return 0.0 }
-        return getSystemVolumeForDevice(device: device, isInput: true)
+        return device.volume
     }
     
     @objc dynamic func setInputVolume(_ volume: Float) {
         guard let device = selectedInputDevice else { return }
-        setVolumeForDevice(device: device, volume: volume, isInput: true)
+        device.volume = volume
+        self.inputVolume = volume
     }
     
     @objc dynamic func getOutputVolume() -> Float {
         guard let device = selectedOutputDevice else { return 0.0 }
-        return getSystemVolumeForDevice(device: device, isInput: false)
+        return device.volume
     }
     
     @objc dynamic func setOutputVolume(_ volume: Float) {
         guard let device = selectedOutputDevice else { return }
-        setVolumeForDevice(device: device, volume: volume, isInput: false)
+        device.volume = volume
+        self.outputVolume = volume
+    }
+    
+    func setVolume(_ volume: Float, forInput isInput: Bool) {
+        if isInput {
+            self.setInputVolume(volume)
+        } else {
+            self.setOutputVolume(volume)
+        }
     }
     
     private func getSystemVolumeForDevice(device: AudioDevice, isInput: Bool) -> Float {

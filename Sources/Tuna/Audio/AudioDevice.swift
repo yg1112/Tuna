@@ -35,6 +35,7 @@ public struct AudioDevice: Identifiable, Hashable, Codable {
     public let uid: String
     public let hasInput: Bool
     public let hasOutput: Bool
+    public let isInput: Bool
     public var isDefault: Bool = false // 标记设备是否在当前可用列表中
     public var supportsBalanceControl: Bool = false // 是否支持平衡控制
     public var balanceLocked: Bool = false // 是否锁定左右声道平衡
@@ -63,6 +64,7 @@ public struct AudioDevice: Identifiable, Hashable, Codable {
         case uid
         case hasInput
         case hasOutput
+        case isInput
         case supportsBalanceControl
         case balanceLocked
     }
@@ -74,6 +76,7 @@ public struct AudioDevice: Identifiable, Hashable, Codable {
         uid = try container.decode(String.self, forKey: .uid)
         hasInput = try container.decode(Bool.self, forKey: .hasInput)
         hasOutput = try container.decode(Bool.self, forKey: .hasOutput)
+        isInput = try container.decode(Bool.self, forKey: .isInput)
         supportsBalanceControl = try container.decodeIfPresent(
             Bool.self,
             forKey: .supportsBalanceControl
@@ -88,12 +91,14 @@ public struct AudioDevice: Identifiable, Hashable, Codable {
         try container.encode(uid, forKey: .uid)
         try container.encode(hasInput, forKey: .hasInput)
         try container.encode(hasOutput, forKey: .hasOutput)
+        try container.encode(isInput, forKey: .isInput)
         try container.encode(supportsBalanceControl, forKey: .supportsBalanceControl)
         try container.encode(balanceLocked, forKey: .balanceLocked)
     }
 
-    public init?(deviceID: AudioDeviceID) {
+    public init?(deviceID: AudioDeviceID, isInput: Bool = false) {
         self.id = deviceID
+        self.isInput = isInput
 
         // 获取设备名称
         var propertySize = UInt32(MemoryLayout<CFString>.size)

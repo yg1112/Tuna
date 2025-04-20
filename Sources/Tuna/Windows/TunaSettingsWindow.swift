@@ -10,6 +10,9 @@ class TunaSettingsWindow: NSWindow {
     var windowController: NSWindowController?
     private var rootHostingView: NSHostingView<TunaSettingsView>?
     private var settingsView: TunaSettingsView?
+    
+    // UI State
+    private let uiState = UIState()
 
     // 侧边栏宽度
     var sidebarWidth: CGFloat {
@@ -54,10 +57,12 @@ class TunaSettingsWindow: NSWindow {
             rootView: settingsView
                 .environmentObject(TunaSettings.shared)
                 .environmentObject(AudioManager.shared)
+                .environmentObject(uiState)
         )
         
         self.contentView = hostingView
         self.settingsView = settingsView
+        self.rootHostingView = hostingView
     }
 
     override var canBecomeKey: Bool {

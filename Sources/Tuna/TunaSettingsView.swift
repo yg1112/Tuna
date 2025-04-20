@@ -142,17 +142,7 @@ struct TunaSettingsView: View {
     @State private var selectedTab: SettingsTab = .general
     @ObservedObject private var audioManager = AudioManager.shared
     @State private var showingDirectoryPicker = false
-    @State private var isLaunchCardExpanded = false
-    @State private var isShortcutCardExpanded = false
-    @State private var isSmartSwapsCardExpanded = false
-    @State private var isThemeCardExpanded = false
-    @State private var isBetaCardExpanded = false
-    @State private var isAboutCardExpanded = false
-    @State private var isUpdatesCardExpanded = false
-    @State private var isAppearanceCardExpanded = false
-    @State private var isDebugCardExpanded = false
-    @State private var isMagicTransformCardExpanded = false
-    @State private var isAudioDevicesCardExpanded = false
+    @EnvironmentObject private var ui: UIState
 
     private let padding: CGFloat = 16
 

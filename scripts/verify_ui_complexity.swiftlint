@@ -1,0 +1,25 @@
+custom_rules:
+  view_body_complexity:
+    name: "View Body Complexity"
+    regex: 'var\s+body\s*:\s*some\s+View\s*\{(?:[^}]*\{[^}]*\})*[^}]*\}'
+    message: "View.body implementation exceeds 200 lines"
+    severity: error
+    line_length: 200
+    
+  modifier_chain_complexity:
+    name: "Modifier Chain Complexity"
+    regex: '(\.[a-zA-Z]+\([^)]*\)[\s\n]*){9,}'
+    message: "View modifier chain exceeds 8 modifiers"
+    severity: error
+
+excluded:
+  - backup
+  - copy
+  - old
+  - Sources/Tuna/backup
+  - Sources/Tuna/copy
+  - Sources/Tuna/old
+
+opt_in_rules:
+  - view_body_complexity
+  - modifier_chain_complexity 

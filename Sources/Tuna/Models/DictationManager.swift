@@ -30,8 +30,9 @@ extension Notification.Name {
     static let dictationAPIKeyUpdated = Notification.Name("dictationAPIKeyUpdated")
 }
 
-public class DictationManager: ObservableObject, DictationManagerProtocol {
-    public static let shared = DictationManager()
+@MainActor
+final class DictationManager: ObservableObject, DictationManagerProtocol {
+    static let shared = DictationManager()
 
     // 允许替换单例以便测试
     #if DEBUG
@@ -1014,6 +1015,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     }
 
     // 替换原有的finalizeTranscription方法
+    @MainActor
     func finalizeTranscription() {
         // 更新状态
         self.state = .idle
