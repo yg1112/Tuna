@@ -19,12 +19,12 @@ struct ModeSettingsView: View {
 
             // 模式列表
             List {
-                ForEach(modeManager.modes) { mode in
+                ForEach(self.modeManager.modes) { mode in
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(mode.name)
                                 .fontWeight(
-                                    mode.id == modeManager
+                                    mode.id == self.modeManager
                                         .currentModeID ? .bold : .regular
                                 )
 
@@ -33,7 +33,7 @@ struct ModeSettingsView: View {
                                     Image(systemName: "speaker.wave.2")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
-                                    Text(getDeviceName(
+                                    Text(self.getDeviceName(
                                         uid: mode.outputDeviceUID,
                                         isInput: false
                                     ))
@@ -47,7 +47,7 @@ struct ModeSettingsView: View {
                                     Image(systemName: "mic")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
-                                    Text(getDeviceName(
+                                    Text(self.getDeviceName(
                                         uid: mode.inputDeviceUID,
                                         isInput: true
                                     ))
@@ -61,10 +61,10 @@ struct ModeSettingsView: View {
 
                         // 编辑按钮
                         Button(action: {
-                            editingMode = mode
-                            selectedOutputUID = mode.outputDeviceUID
-                            selectedInputUID = mode.inputDeviceUID
-                            newModeName = mode.name
+                            self.editingMode = mode
+                            self.selectedOutputUID = mode.outputDeviceUID
+                            self.selectedInputUID = mode.inputDeviceUID
+                            self.newModeName = mode.name
                         }) {
                             Image(systemName: "pencil")
                                 .foregroundColor(.blue)
@@ -74,7 +74,7 @@ struct ModeSettingsView: View {
 
                         // 删除按钮
                         Button(action: {
-                            modeManager.deleteMode(withID: mode.id)
+                            self.modeManager.deleteMode(withID: mode.id)
                         }) {
                             Image(systemName: "trash")
                                 .foregroundColor(.red)
@@ -84,7 +84,7 @@ struct ModeSettingsView: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        modeManager.currentModeID = mode.id
+                        self.modeManager.currentModeID = mode.id
                     }
                 }
             }
@@ -94,11 +94,11 @@ struct ModeSettingsView: View {
 
             // 添加新模式按钮
             Button(action: {
-                newModeName = ""
-                selectedOutputUID = audioManager.selectedOutputDevice?.uid ?? ""
-                selectedInputUID = audioManager.selectedInputDevice?.uid ?? ""
-                isAddingNewMode = true
-                editingMode = nil
+                self.newModeName = ""
+                self.selectedOutputUID = self.audioManager.selectedOutputDevice?.uid ?? ""
+                self.selectedInputUID = self.audioManager.selectedInputDevice?.uid ?? ""
+                self.isAddingNewMode = true
+                self.editingMode = nil
             }) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
@@ -111,11 +111,11 @@ struct ModeSettingsView: View {
             Spacer()
         }
         .padding(.vertical)
-        .sheet(isPresented: $isAddingNewMode) {
-            modeEditorView(isNew: true)
+        .sheet(isPresented: self.$isAddingNewMode) {
+            self.modeEditorView(isNew: true)
         }
-        .sheet(item: $editingMode) { mode in
-            modeEditorView(isNew: false)
+        .sheet(item: self.$editingMode) { mode in
+            self.modeEditorView(isNew: false)
         }
     }
 
@@ -127,7 +127,7 @@ struct ModeSettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Mode Name")
                     .fontWeight(.medium)
-                TextField("Enter mode name", text: $newModeName)
+                TextField("Enter mode name", text: self.$newModeName)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
             }
             .padding(.horizontal)
@@ -135,21 +135,21 @@ struct ModeSettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Output Device")
                     .fontWeight(.medium)
-                devicePicker(for: false, selection: $selectedOutputUID)
+                self.devicePicker(for: false, selection: self.$selectedOutputUID)
             }
             .padding(.horizontal)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Input Device")
                     .fontWeight(.medium)
-                devicePicker(for: true, selection: $selectedInputUID)
+                self.devicePicker(for: true, selection: self.$selectedInputUID)
             }
             .padding(.horizontal)
 
             HStack {
                 Button("Cancel") {
-                    isAddingNewMode = false
-                    editingMode = nil
+                    self.isAddingNewMode = false
+                    self.editingMode = nil
                 }
                 .keyboardShortcut(.escape)
 
@@ -158,40 +158,40 @@ struct ModeSettingsView: View {
                 Button(isNew ? "Add" : "Save") {
                     if isNew {
                         // 添加新模式
-                        let outputVolume = audioManager.findDevice(
-                            byUID: selectedOutputUID,
+                        let outputVolume = self.audioManager.findDevice(
+                            byUID: self.selectedOutputUID,
                             isInput: false
                         )?.getVolume() ?? 0.5
-                        let inputVolume = audioManager.findDevice(
-                            byUID: selectedInputUID,
+                        let inputVolume = self.audioManager.findDevice(
+                            byUID: self.selectedInputUID,
                             isInput: true
                         )?.getVolume() ?? 0.5
 
-                        let newMode = modeManager.createCustomMode(
-                            name: newModeName,
-                            outputDeviceUID: selectedOutputUID,
-                            inputDeviceUID: selectedInputUID,
+                        let newMode = self.modeManager.createCustomMode(
+                            name: self.newModeName,
+                            outputDeviceUID: self.selectedOutputUID,
+                            inputDeviceUID: self.selectedInputUID,
                             outputVolume: outputVolume,
                             inputVolume: inputVolume
                         )
 
                         // 自动切换到新模式
-                        modeManager.currentModeID = newMode.id
+                        self.modeManager.currentModeID = newMode.id
                     } else if let mode = editingMode {
                         // 更新现有模式
                         var updatedMode = mode
-                        updatedMode.name = newModeName
-                        updatedMode.outputDeviceUID = selectedOutputUID
-                        updatedMode.inputDeviceUID = selectedInputUID
+                        updatedMode.name = self.newModeName
+                        updatedMode.outputDeviceUID = self.selectedOutputUID
+                        updatedMode.inputDeviceUID = self.selectedInputUID
 
-                        modeManager.updateMode(updatedMode)
+                        self.modeManager.updateMode(updatedMode)
                     }
 
-                    isAddingNewMode = false
-                    editingMode = nil
+                    self.isAddingNewMode = false
+                    self.editingMode = nil
                 }
                 .keyboardShortcut(.return)
-                .disabled(newModeName.isEmpty)
+                .disabled(self.newModeName.isEmpty)
             }
             .padding()
         }
@@ -200,8 +200,9 @@ struct ModeSettingsView: View {
     }
 
     private func devicePicker(for isInput: Bool, selection: Binding<String>) -> some View {
-        let devices = isInput ? audioManager.inputDevices : audioManager.outputDevices
-        let historicalDevices = isInput ? audioManager.historicalInputDevices : audioManager
+        let devices = isInput ? self.audioManager.inputDevices : self.audioManager.outputDevices
+        let historicalDevices = isInput ? self.audioManager.historicalInputDevices : self
+            .audioManager
             .historicalOutputDevices
 
         return Picker("", selection: selection) {

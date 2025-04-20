@@ -54,10 +54,10 @@ extension SettingsWindowController: NSWindowDelegate {
         print("\u{001B}[34m[WINDOW]\u{001B}[0m Settings window closing")
         fflush(stdout)
 
-        logger.debug("Settings window closed")
+        self.logger.debug("Settings window closed")
     }
 
     func windowDidBecomeKey(_ notification: Notification) {
-        logger.debug("Settings window became active")
+        self.logger.debug("Settings window became active")
     }
 }

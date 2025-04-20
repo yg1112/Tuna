@@ -26,7 +26,7 @@ struct AboutCardView: View {
                             Rectangle()
                                 .fill(Color.black.opacity(0.05)) // 轻微暗化图片
                         )
-                } else if loadingAttempted {
+                } else if self.loadingAttempted {
                     // 图片加载失败时显示占位符
                     VStack {
                         Image(systemName: "photo")
@@ -155,7 +155,7 @@ struct AboutCardView: View {
         .frame(width: 780, height: 750) // 总宽度相应调整
         .background(Color.white)
         .onAppear {
-            loadImage()
+            self.loadImage()
         }
         // 确保在深色模式下文本保持可读性
         .environment(\.colorScheme, .light)
@@ -165,7 +165,7 @@ struct AboutCardView: View {
     private func loadImage() {
         // 方法1：尝试从应用程序的资源目录加载AboutImage.png
         if let bundlePath = Bundle.main.path(forResource: "AboutImage", ofType: "png") {
-            catImage = NSImage(contentsOfFile: bundlePath)
+            self.catImage = NSImage(contentsOfFile: bundlePath)
             print("从应用资源包加载图片成功：方法1")
             return
         }
@@ -173,7 +173,7 @@ struct AboutCardView: View {
         // 方法2：尝试使用模块资源加载
         #if canImport(SwiftUI)
         if let image = NSImage(named: "AboutImage") {
-            catImage = image
+            self.catImage = image
             print("从命名资源加载图片成功：方法2")
             return
         }
@@ -183,7 +183,7 @@ struct AboutCardView: View {
         let bundleURL = Bundle.main.bundleURL
         let resourceURL = bundleURL.appendingPathComponent("Contents/Resources/AboutImage.png")
         if let image = NSImage(contentsOf: resourceURL) {
-            catImage = image
+            self.catImage = image
             print("从项目资源目录加载图片成功：方法3 - \(resourceURL.path)")
             return
         }
@@ -193,13 +193,13 @@ struct AboutCardView: View {
         let sourcesResourceURL = currentDirectoryURL
             .appendingPathComponent("Sources/Tuna/Resources/AboutImage.png")
         if let image = NSImage(contentsOf: sourcesResourceURL) {
-            catImage = image
+            self.catImage = image
             print("从Sources目录加载图片成功：方法4 - \(sourcesResourceURL.path)")
             return
         }
 
         print("无法加载图片，已尝试所有可能的路径")
-        loadingAttempted = true
+        self.loadingAttempted = true
     }
 }
 

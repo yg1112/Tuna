@@ -32,44 +32,44 @@ class KeyboardShortcutManager {
     private var currentDictationKeyCombo: KeyCombo?
 
     private init() {
-        logger.debug("KeyboardShortcutManager initialized")
+        self.logger.debug("KeyboardShortcutManager initialized")
 
         // 监听设置变更
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleDictationShortcutSettingsChanged),
+            selector: #selector(self.handleDictationShortcutSettingsChanged),
             name: Notification.Name.dictationShortcutSettingsChanged,
             object: nil
         )
 
         // 初始化快捷键
-        setupDictationShortcut()
+        self.setupDictationShortcut()
 
         // 添加全局监听 - 作为辅助快捷键方案
-        setupGlobalMonitor()
+        self.setupGlobalMonitor()
     }
 
     // MARK: - Public Methods
 
     func setupDictationShortcut() {
         // 卸载现有的快捷键
-        unregisterDictationShortcut()
+        self.unregisterDictationShortcut()
 
         // 如果功能被禁用，不注册新的快捷键
-        guard settings.enableDictationShortcut else {
-            logger.debug("Dictation shortcut disabled, not registering")
+        guard self.settings.enableDictationShortcut else {
+            self.logger.debug("Dictation shortcut disabled, not registering")
             return
         }
 
         // 解析快捷键组合
         if let keyCombo = parseKeyCombo(settings.dictationShortcutKeyCombo) {
-            registerDictationShortcut(keyCombo)
-            logger
-                .notice("registered \(settings.dictationShortcutKeyCombo, privacy: .public)")
+            self.registerDictationShortcut(keyCombo)
+            self.logger
+                .notice("registered \(self.settings.dictationShortcutKeyCombo, privacy: .public)")
         } else {
-            logger
+            self.logger
                 .error(
-                    "Failed to parse key combo: \(settings.dictationShortcutKeyCombo, privacy: .public)"
+                    "Failed to parse key combo: \(self.settings.dictationShortcutKeyCombo, privacy: .public)"
                 )
         }
     }
@@ -96,7 +96,7 @@ class KeyboardShortcutManager {
                 case "ctrl", "control", "⌃":
                     modifiers |= UInt32(1 << 12) // controlKey
                 default:
-                    logger.warning("Unknown modifier: \(component, privacy: .public)")
+                    self.logger.warning("Unknown modifier: \(component, privacy: .public)")
             }
         }
 
@@ -154,7 +154,7 @@ class KeyboardShortcutManager {
                 case ".", ">": keyCode = 47
                 case "`", "~": keyCode = 50
                 default:
-                    logger.warning("Unsupported key: \(char, privacy: .public)")
+                    self.logger.warning("Unsupported key: \(char, privacy: .public)")
                     return nil
             }
         } else {
@@ -193,7 +193,7 @@ class KeyboardShortcutManager {
                 case "f12":
                     keyCode = 111
                 default:
-                    logger.warning("Unsupported key: \(lastComponent, privacy: .public)")
+                    self.logger.warning("Unsupported key: \(lastComponent, privacy: .public)")
                     return nil
             }
         }
@@ -202,7 +202,7 @@ class KeyboardShortcutManager {
     }
 
     private func registerDictationShortcut(_ keyCombo: KeyCombo) {
-        logger
+        self.logger
             .debug(
                 "Registering dictation shortcut: keyCode=\(keyCombo.keyCode), modifiers=\(keyCombo.modifiers)"
             )
@@ -212,7 +212,7 @@ class KeyboardShortcutManager {
         let accessEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary)
 
         if !accessEnabled {
-            logger.error("⚠️ 辅助功能权限未授予或被拒绝，快捷键无法正常工作")
+            self.logger.error("⚠️ 辅助功能权限未授予或被拒绝，快捷键无法正常工作")
             print("🔴 [Shortcut] 辅助功能权限被拒绝，快捷键将无法工作")
 
             // 显示提示窗口，指导用户开启权限
@@ -258,7 +258,7 @@ class KeyboardShortcutManager {
             return
         }
 
-        logger.notice("✅ 辅助功能权限已授予，正在注册快捷键...")
+        self.logger.notice("✅ 辅助功能权限已授予，正在注册快捷键...")
         print("🟢 [Shortcut] 辅助功能权限已授予，开始注册快捷键")
 
         // 创建事件处理器
@@ -298,11 +298,11 @@ class KeyboardShortcutManager {
             1,
             &eventType,
             nil,
-            &dictationEventHandler
+            &self.dictationEventHandler
         )
 
         if status != noErr {
-            logger.error("Failed to install event handler: \(status)")
+            self.logger.error("Failed to install event handler: \(status)")
             return
         }
 
@@ -322,62 +322,62 @@ class KeyboardShortcutManager {
         )
 
         if registerStatus != noErr {
-            logger.error("Failed to register hotkey: \(registerStatus)")
+            self.logger.error("Failed to register hotkey: \(registerStatus)")
             return
         }
 
-        currentDictationKeyCombo = keyCombo
-        logger.notice("✅ 成功注册快捷键: \(settings.dictationShortcutKeyCombo)")
-        print("🔶 [Shortcut] 快捷键\(settings.dictationShortcutKeyCombo)注册成功")
+        self.currentDictationKeyCombo = keyCombo
+        self.logger.notice("✅ 成功注册快捷键: \(self.settings.dictationShortcutKeyCombo)")
+        print("🔶 [Shortcut] 快捷键\(self.settings.dictationShortcutKeyCombo)注册成功")
     }
 
     private func unregisterDictationShortcut() {
         // 卸载事件处理器
         if let handler = dictationEventHandler {
             RemoveEventHandler(handler)
-            dictationEventHandler = nil
-            logger.debug("Unregistered dictation shortcut event handler")
+            self.dictationEventHandler = nil
+            self.logger.debug("Unregistered dictation shortcut event handler")
         }
 
-        currentDictationKeyCombo = nil
+        self.currentDictationKeyCombo = nil
     }
 
     func handleDictationShortcutPressed() {
         // 确认功能已启用
-        guard settings.enableDictationShortcut else {
-            logger.warning("Dictation shortcut triggered but feature is disabled")
+        guard self.settings.enableDictationShortcut else {
+            self.logger.warning("Dictation shortcut triggered but feature is disabled")
             return
         }
 
-        logger.notice("🎯 快捷键触发: \(settings.dictationShortcutKeyCombo)")
-        print("🔶 [Shortcut] 快捷键触发: \(settings.dictationShortcutKeyCombo)")
+        self.logger.notice("🎯 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
+        print("🔶 [Shortcut] 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
 
         // 使用TabRouter来跟踪当前状态，即使我们不显示完整UI
         TabRouter.switchTo("dictation")
-        logger.notice("✅ 已使用TabRouter切换到听写页面")
+        self.logger.notice("✅ 已使用TabRouter切换到听写页面")
         print("✅ [Shortcut] 已使用TabRouter切换到听写页面")
 
         // A. UI 处理 - 根据设置决定是否显示UI
-        if settings.showDictationPageOnShortcut {
+        if self.settings.showDictationPageOnShortcut {
             // 使用简化版的QuickDictationWindow而不是完整的主窗口
             QuickDictationWindow.shared.show()
-            logger.notice("🖼 已显示快速听写窗口")
+            self.logger.notice("🖼 已显示快速听写窗口")
             print("🖼 [Shortcut] 已显示快速听写窗口")
         } else {
             // 不显示UI，只记录日志
-            logger.notice("👻 静默录音模式 (showDictationPageOnShortcut=false)")
+            self.logger.notice("👻 静默录音模式 (showDictationPageOnShortcut=false)")
             print("🔷 [Shortcut] 静默录音模式 (不显示Dictation页面)")
         }
 
         // B. 业务逻辑 - 切换录音状态
         DictationManager.shared.toggle()
-        logger.notice("🎙 已调用 DictationManager.toggle()")
+        self.logger.notice("🎙 已调用 DictationManager.toggle()")
         print("🎙 [Shortcut] 已调用 DictationManager.toggle()")
     }
 
     @objc private func handleDictationShortcutSettingsChanged() {
-        logger.debug("Dictation shortcut settings changed, updating...")
-        setupDictationShortcut()
+        self.logger.debug("Dictation shortcut settings changed, updating...")
+        self.setupDictationShortcut()
     }
 
     private func setupGlobalMonitor() {
@@ -402,7 +402,7 @@ class KeyboardShortcutManager {
         }
 
         print("🟢 [Shortcut] 已添加全局键盘监听，可直接捕获Command+U")
-        logger.notice("✅ 已添加全局键盘监听")
+        self.logger.notice("✅ 已添加全局键盘监听")
     }
 
     deinit {

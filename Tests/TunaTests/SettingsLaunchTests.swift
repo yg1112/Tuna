@@ -73,11 +73,11 @@ class MenuBarElements {
     }
 
     var tunaIcon: XCUIElement {
-        app.statusItems["Tuna Audio Controls"].firstMatch
+        self.app.statusItems["Tuna Audio Controls"].firstMatch
     }
 
     var settings: XCUIElement {
-        app.buttons["偏好设置"].firstMatch
+        self.app.buttons["偏好设置"].firstMatch
     }
 }
 

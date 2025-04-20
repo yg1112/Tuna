@@ -30,7 +30,7 @@ struct SettingsSidebarItemStyle: ViewModifier {
         content
             .font(.system(size: 13, weight: .bold))
             .frame(height: 22)
-            .foregroundColor(isSelected ? Colors.accent : .primary)
+            .foregroundColor(self.isSelected ? Colors.accent : .primary)
     }
 }
 

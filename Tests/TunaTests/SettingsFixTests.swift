@@ -14,11 +14,13 @@ class SettingsUIState: ObservableObject {
 class SettingsFixTests: XCTestCase {
     override func setUp() {
         super.setUp()
-        // 确保在每个测试开始前重置设置
-        UserDefaults.standard.removeObject(forKey: "theme")
-        UserDefaults.standard.removeObject(forKey: "dictationFormat")
-        UserDefaults.standard.removeObject(forKey: "dictationOutputDirectory")
-        UserDefaults.standard.removeObject(forKey: "whisperAPIKey")
+        UserDefaultsHelper.resetAllSettings()
+        TunaSettings.shared.loadDefaults()
+    }
+    
+    override func tearDown() {
+        UserDefaultsHelper.resetAllSettings()
+        super.tearDown()
     }
 
     // MARK: - CollapsibleCard Tests
@@ -129,6 +131,26 @@ class SettingsFixTests: XCTestCase {
 
         // Clean up
         NotificationCenter.default.removeObserver(observer)
+    }
+
+    func testDictationFormatPersistence() {
+        // Test default value
+        XCTAssertEqual(TunaSettings.shared.transcriptionFormat, "txt")
+        
+        // Test setting a new value
+        TunaSettings.shared.transcriptionFormat = "json"
+        XCTAssertEqual(TunaSettings.shared.transcriptionFormat, "json")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: "dictationFormat"), "json")
+    }
+    
+    func testThemePersistence() {
+        // Test default value
+        XCTAssertEqual(TunaSettings.shared.theme, "system")
+        
+        // Test setting a new value
+        TunaSettings.shared.theme = "dark"
+        XCTAssertEqual(TunaSettings.shared.theme, "dark")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: "theme"), "dark")
     }
 }
 

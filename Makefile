@@ -1,9 +1,12 @@
-.PHONY: bootstrap lint snapshot test clean all watch-ci branch-hygiene
+.PHONY: bootstrap lint snapshot test clean all watch-ci branch-hygiene format
 
 all: bootstrap test
 
 bootstrap:
 	@echo "📦 bootstrap" && ./Scripts/ci-setup.sh && ./Scripts/patch-tcc-db.sh
+
+format:
+	@echo "🎨 format" && swiftformat .
 
 lint:
 	@echo "🧹 lint" && swiftformat --config .swiftformat .

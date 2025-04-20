@@ -27,20 +27,23 @@ struct DictationSettingsView: View {
         ScrollView {
             VStack(spacing: 20) {
                 // Launch at Login 部分
-                launchAtLoginSection
+                self.launchAtLoginSection
 
                 Divider()
 
                 // Engine 部分
-                engineSection
+                self.engineSection
 
                 // Transcription Output 部分
-                transcriptionOutputSection
+                self.transcriptionOutputSection
+
+                // Magic Transform 部分
+                self.magicTransformSection
 
                 Spacer()
             }
             .padding(20)
-            .accentColor(accentColor) // 设置整个视图的强调色
+            .accentColor(self.accentColor) // 设置整个视图的强调色
         }
     }
 
@@ -55,8 +58,8 @@ struct DictationSettingsView: View {
 
             // 使用CustomToggleStyle确保绿色显示
             Toggle("", isOn: Binding(
-                get: { settings.launchAtLogin },
-                set: { settings.launchAtLogin = $0 }
+                get: { self.settings.launchAtLogin },
+                set: { self.settings.launchAtLogin = $0 }
             ))
             .toggleStyle(GreenToggleStyle())
             .labelsHidden()
@@ -66,32 +69,32 @@ struct DictationSettingsView: View {
 
     // 引擎部分
     private var engineSection: some View {
-        CollapsibleCard(title: "Engine", isExpanded: $settings.isEngineOpen) {
+        CollapsibleCard(title: "Engine", isExpanded: self.$settings.isEngineOpen, collapsible: false) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     SecureField("OpenAI API Key", text: Binding(
-                        get: { settings.whisperAPIKey },
-                        set: { settings.whisperAPIKey = $0 }
+                        get: { self.settings.whisperAPIKey },
+                        set: { self.settings.whisperAPIKey = $0 }
                     ))
                     .font(.system(size: 14))
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: settings.whisperAPIKey) { _ in
-                        validateApiKey(settings.whisperAPIKey)
+                    .onChange(of: self.settings.whisperAPIKey) { _ in
+                        self.validateApiKey(self.settings.whisperAPIKey)
                     }
                     .onAppear {
-                        validateApiKey(settings.whisperAPIKey)
+                        self.validateApiKey(self.settings.whisperAPIKey)
                     }
                     .accessibilityIdentifier("API Key")
 
                     // API Key 验证状态指示器
-                    if !settings.whisperAPIKey.isEmpty {
+                    if !self.settings.whisperAPIKey.isEmpty {
                         Image(
-                            systemName: isApiKeyValid ? "checkmark.circle.fill" :
+                            systemName: self.isApiKeyValid ? "checkmark.circle.fill" :
                                 "exclamationmark.circle.fill"
                         )
-                        .foregroundColor(isApiKeyValid ? .green : .red)
+                        .foregroundColor(self.isApiKeyValid ? .green : .red)
                         .font(.system(size: 16))
-                        .help(isApiKeyValid ? "API key is valid" : "Invalid API key format")
+                        .help(self.isApiKeyValid ? "API key is valid" : "Invalid API key format")
                     }
                 }
 
@@ -105,7 +108,7 @@ struct DictationSettingsView: View {
         .id("EngineCard")
         .onAppear { print("▶️ Engine appear") }
         .onDisappear { print("◀️ Engine disappear") }
-        .onChange(of: settings.isEngineOpen) { newValue in
+        .onChange(of: self.settings.isEngineOpen) { newValue in
             print("💚 Engine state ->", newValue)
         }
     }
@@ -114,19 +117,20 @@ struct DictationSettingsView: View {
     private var transcriptionOutputSection: some View {
         CollapsibleCard(
             title: "Transcription Output",
-            isExpanded: $isTranscriptionOutputExpanded
+            isExpanded: self.$settings.isTranscriptionOutputOpen,
+            collapsible: false
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 // 导出格式选择器
-                formatSelector
+                self.formatSelector
 
                 // 输出目录选择器
-                outputDirectorySelector
+                self.outputDirectorySelector
 
                 // 自动复制到剪贴板选项
                 Toggle("Auto-copy transcription to clipboard", isOn: Binding(
-                    get: { settings.autoCopyTranscriptionToClipboard },
-                    set: { settings.autoCopyTranscriptionToClipboard = $0 }
+                    get: { self.settings.autoCopyTranscriptionToClipboard },
+                    set: { self.settings.autoCopyTranscriptionToClipboard = $0 }
                 ))
                 .font(.system(size: 14))
             }
@@ -135,7 +139,7 @@ struct DictationSettingsView: View {
         .id("TranscriptionOutputCard")
         .onAppear { print("▶️ TranscriptionOutput appear") }
         .onDisappear { print("◀️ TranscriptionOutput disappear") }
-        .onChange(of: isTranscriptionOutputExpanded) { newValue in
+        .onChange(of: self.settings.isTranscriptionOutputOpen) { newValue in
             print("💚 TranscriptionOutput state ->", newValue)
         }
     }
@@ -169,7 +173,7 @@ struct DictationSettingsView: View {
                 .foregroundColor(.primary)
 
             HStack {
-                Text(dictationManager.outputDirectory?.lastPathComponent ?? "Desktop")
+                Text(self.dictationManager.outputDirectory?.lastPathComponent ?? "Desktop")
                     .font(.system(size: 14))
                     .foregroundColor(.primary)
                     .lineLimit(1)
@@ -187,7 +191,7 @@ struct DictationSettingsView: View {
                     .id("OutputDirectoryField")
 
                 Button("Select") {
-                    selectOutputDirectory()
+                    self.selectOutputDirectory()
                 }
                 .font(.system(size: 13))
                 .buttonStyle(GreenButtonStyle())
@@ -266,7 +270,7 @@ struct DictationSettingsView: View {
                 if response == .OK, let url = panel.url {
                     DispatchQueue.main.async {
                         // 更新DictationManager而不是本地变量
-                        dictationManager.setOutputDirectory(url)
+                        self.dictationManager.setOutputDirectory(url)
 
                         // 确保设置窗口在选择完成后仍然保持打开状态
                         window.makeKeyAndOrderFront(nil)
@@ -296,7 +300,7 @@ struct DictationSettingsView: View {
             if response == .OK, let url = panel.url {
                 DispatchQueue.main.async {
                     // 更新DictationManager而不是本地变量
-                    dictationManager.setOutputDirectory(url)
+                    self.dictationManager.setOutputDirectory(url)
 
                     // 确保设置窗口在模态操作后重新获得焦点
                     if let window = NSApplication.shared.keyWindow {
@@ -310,7 +314,22 @@ struct DictationSettingsView: View {
     // 验证API密钥的格式
     private func validateApiKey(_ key: String) {
         // 简单的格式验证 - OpenAI API密钥通常以"sk-"开头并且较长
-        isApiKeyValid = key.hasPrefix("sk-") && key.count > 10
+        self.isApiKeyValid = key.hasPrefix("sk-") && key.count > 10
+    }
+
+    // Magic Transform 部分
+    private var magicTransformSection: some View {
+        CollapsibleCard(
+            title: "Magic Transform",
+            isExpanded: .constant(true),
+            collapsible: false
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle("Enable text transformation", isOn: self.$settings.magicEnabled)
+                    .font(.system(size: 14))
+            }
+        }
+        .id("MagicTransformCard")
     }
 }
 

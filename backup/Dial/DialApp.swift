@@ -7,7 +7,7 @@ struct DialApp: App {
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
-                .environmentObject(audioManager)
+                .environmentObject(self.audioManager)
         } label: {
             Image(systemName: "infinity")
                 .font(.title2.bold())

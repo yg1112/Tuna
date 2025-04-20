@@ -12,28 +12,28 @@ class AudioBuddyAppDelegate: NSObject, ObservableObject {
         super.init()
         print("\u{001B}[34m[APP]\u{001B}[0m Audio manager initializing")
         fflush(stdout)
-        setupModeVolumeSync()
+        self.setupModeVolumeSync()
         print("\u{001B}[32m[AUDIO]\u{001B}[0m Volume sync setup complete")
         fflush(stdout)
     }
 
     private func setupModeVolumeSync() {
         // When volume changes, update current mode's volume settings
-        audioManager.$outputVolume
+        self.audioManager.$outputVolume
             .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 self?.modeManager.updateCurrentModeVolumes()
             }
-            .store(in: &cancellables)
+            .store(in: &self.cancellables)
 
-        audioManager.$inputVolume
+        self.audioManager.$inputVolume
             .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 self?.modeManager.updateCurrentModeVolumes()
             }
-            .store(in: &cancellables)
+            .store(in: &self.cancellables)
 
-        logger.info("Volume sync manager configured")
+        self.logger.info("Volume sync manager configured")
     }
 }
 

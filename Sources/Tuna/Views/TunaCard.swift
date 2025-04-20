@@ -26,10 +26,10 @@ struct TunaCard: ViewModifier {
             )
             // 暗模式下添加阴影
             .shadow(
-                color: colorScheme == .dark ? .black.opacity(0.6) : .black.opacity(0.1),
-                radius: colorScheme == .dark ? 6 : 4,
+                color: self.colorScheme == .dark ? .black.opacity(0.6) : .black.opacity(0.1),
+                radius: self.colorScheme == .dark ? 6 : 4,
                 x: 0,
-                y: colorScheme == .dark ? 2 : 1
+                y: self.colorScheme == .dark ? 2 : 1
             )
     }
 }

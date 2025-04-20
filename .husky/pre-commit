@@ -4,14 +4,36 @@
 
 # 运行格式化检查
 if command -v swiftformat >/dev/null 2>&1; then
-  swiftformat --config .swiftformat .
+  echo "🧹 Running SwiftFormat..."
+  if ! swiftformat --config .swiftformat . --lint; then
+    echo "❌ SwiftFormat lint failed"
+    exit 1
+  fi
   git add -u
+fi
+
+# 运行构建检查
+echo "🏗 Running swift build..."
+if ! swift build --quiet; then
+  echo "⛔️ Build failed"
+  exit 1
 fi
 
 # 检测GitHub令牌泄漏
 if git diff --cached -G'ghp_[A-Za-z0-9]{36}' | grep -q 'ghp_'; then
-  echo "❌ Detected GitHub token in staged diff. Commit aborted."; exit 1;
+  echo "❌ Detected GitHub token in staged diff. Commit aborted."
+  exit 1
 fi
 
 # 成功通过所有检查
-exit 0 
+echo "✅ All pre-commit checks passed"
+exit 0
+
+# Run SwiftFormat linting
+swiftformat . --lint || exit 1
+
+# Run YAML linting
+yamllint .cursorscratchpad || exit 1
+
+# Run Swift build
+swift build --quiet || exit 1 

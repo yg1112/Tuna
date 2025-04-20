@@ -13,7 +13,7 @@ final class ShortcutFieldEditor: NSTextView {
     override func keyDown(with e: NSEvent) {
         print("🖊 keyDown", e.keyCode)
         switch e.keyCode {
-            case 51: owner?.update("") // ⌫
+            case 51: self.owner?.update("") // ⌫
             case 53: window?.makeFirstResponder(nil) // ESC
             default: super.keyDown(with: e)
         }
@@ -23,7 +23,7 @@ final class ShortcutFieldEditor: NSTextView {
         let m = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard !m.isEmpty else { return false }
         print("🖊 combo", e.characters ?? "")
-        owner?.update(Self.fmt(e))
+        self.owner?.update(Self.fmt(e))
         return true
     }
 
@@ -53,7 +53,7 @@ final class ShortcutField: NSTextField {
 
     func update(_ s: String) {
         stringValue = s
-        onChange(s)
+        self.onChange(s)
         print("🔄 value ->", s)
     }
 
@@ -68,7 +68,7 @@ final class ShortcutField: NSTextField {
     // Provide our own field editor
     func fieldEditor(for object: Any?) -> NSText? {
         print("🔧 fieldEditor requested for object:", object as Any)
-        return fe
+        return self.fe
     }
 }
 
@@ -88,10 +88,10 @@ struct ShortcutTextField: NSViewRepresentable {
         field.backgroundColor = NSColor.textBackgroundColor
         field.focusRingType = .none
         field.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-        field.placeholderString = placeholder
-        field.stringValue = keyCombo
+        field.placeholderString = self.placeholder
+        field.stringValue = self.keyCombo
         field.onChange = { value in
-            keyCombo = value
+            self.keyCombo = value
         }
 
         field.wantsLayer = true
@@ -103,8 +103,8 @@ struct ShortcutTextField: NSViewRepresentable {
     }
 
     func updateNSView(_ field: ShortcutField, context: Context) {
-        if field.stringValue != keyCombo {
-            field.stringValue = keyCombo
+        if field.stringValue != self.keyCombo {
+            field.stringValue = self.keyCombo
         }
     }
 }

@@ -8,7 +8,7 @@ struct AudioDevice: Identifiable, Hashable {
     let hasOutput: Bool
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(self.id)
     }
 
     static func == (lhs: AudioDevice, rhs: AudioDevice) -> Bool {

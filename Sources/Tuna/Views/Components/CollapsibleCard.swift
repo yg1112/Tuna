@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // @module: SettingsUI
@@ -6,78 +7,63 @@ import SwiftUI
 // @depends_on: DesignTokens.swift
 
 struct CollapsibleCard<Content: View>: View {
-    var title: String
+    let title: String
     @Binding var isExpanded: Bool
-    var content: () -> Content
+    let content: () -> Content
+    let collapsible: Bool
 
-    // Constructor with Binding
-    init(title: String, isExpanded: Binding<Bool>, @ViewBuilder content: @escaping () -> Content) {
+    init(title: String, isExpanded: Binding<Bool>, collapsible: Bool = true, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
-        _isExpanded = isExpanded
+        self._isExpanded = isExpanded
         self.content = content
-    }
-
-    // Backward compatibility with static isExpanded value
-    init(title: String, isExpanded: Bool = true, @ViewBuilder content: @escaping () -> Content) {
-        self.title = title
-        _isExpanded = .constant(isExpanded)
-        self.content = content
+        self.collapsible = collapsible
     }
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
-            content()
-                .padding(.top, 6)
-        } label: {
-            Button(action: {
-                print("🔵 \(title) tapped") // 调试日志
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isExpanded.toggle()
-                }
-            }) {
-                HStack {
-                    Text(title)
-                        .font(Typography.title)
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text(self.title)
+                    .font(.headline)
+                Spacer()
+                if collapsible {
+                    Image(systemName: self.isExpanded ? "chevron.up" : "chevron.down")
                         .foregroundColor(.secondary)
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if collapsible {
+                    withAnimation {
+                        self.isExpanded.toggle()
+                    }
+                }
+            }
+            .accessibilityIdentifier("\(self.title)Toggle")
+
+            if !collapsible || self.isExpanded {
+                self.content()
+                    .padding(.top, 8)
+                    .transition(.opacity)
+            }
         }
-        .padding(Metrics.cardPad)
-        .background(Colors.cardBg)
-        .allowsHitTesting(true) // 明确允许点击
-        .cornerRadius(Metrics.cardR)
-        .overlay(
-            RoundedRectangle(cornerRadius: Metrics.cardR)
-                .stroke(Color(.separatorColor), lineWidth: 0.5)
-                .allowsHitTesting(false)
-        )
-        .overlay(
-            Rectangle().fill(Color.green.opacity(0.85))
-                .frame(width: 3)
-                .opacity(isExpanded ? 1 : 0)
-                .allowsHitTesting(false)
-                .animation(.easeInOut(duration: 0.15), value: isExpanded),
-            alignment: .leading
-        )
+        .padding(.horizontal)
+        .background(Color(NSColor.windowBackgroundColor))
+        .cornerRadius(8)
     }
 }
 
 struct CollapsibleCard_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
-            CollapsibleCard(title: "Expanded Card", isExpanded: .constant(true)) {
-                Text("Card content goes here")
+            CollapsibleCard(title: "Non-collapsible Card", isExpanded: .constant(true), collapsible: false) {
+                Text("This content is always visible")
                     .font(Typography.body)
                     .padding(.top, 4)
             }
 
-            CollapsibleCard(title: "Collapsed Card", isExpanded: .constant(false)) {
-                Text("This content is hidden")
+            CollapsibleCard(title: "Collapsible Card", isExpanded: .constant(false)) {
+                Text("This content can be hidden")
                     .font(Typography.body)
                     .padding(.top, 4)
             }

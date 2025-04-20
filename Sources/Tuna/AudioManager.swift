@@ -123,12 +123,12 @@ class AudioManager: ObservableObject {
         print("===== 初始化 AudioManager =====")
 
         // 首先获取设备信息和音量，确保音量初始值的准确性
-        loadHistoricalDevices() // 先加载历史设备
-        setupDeviceListeners() // 设置监听器
-        updateDevices() // 更新当前设备列表
+        self.loadHistoricalDevices() // 先加载历史设备
+        self.setupDeviceListeners() // 设置监听器
+        self.updateDevices() // 更新当前设备列表
 
         // 强制使用系统API初始化音量值 (关键步骤)
-        initialSystemVolumeSync()
+        self.initialSystemVolumeSync()
 
         // 应用默认设备设置 - 确保在所有设备加载完成后应用设置
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -146,7 +146,7 @@ class AudioManager: ObservableObject {
         }
 
         // 设置系统级音量监听器
-        setupSystemAudioVolumeListener()
+        self.setupSystemAudioVolumeListener()
     }
 
     // 设置设备监听器
@@ -294,8 +294,8 @@ class AudioManager: ObservableObject {
     }
 
     private func updateDeviceList() {
-        let currentOutputDevices = getAudioDevices(scope: .output)
-        let currentInputDevices = getAudioDevices(scope: .input)
+        let currentOutputDevices = self.getAudioDevices(scope: .output)
+        let currentInputDevices = self.getAudioDevices(scope: .input)
 
         // Update current devices
         DispatchQueue.main.async {
@@ -318,8 +318,8 @@ class AudioManager: ObservableObject {
     }
 
     private func saveHistoricalDevices() {
-        let historicalOutputData = try? JSONEncoder().encode(historicalOutputDevices)
-        let historicalInputData = try? JSONEncoder().encode(historicalInputDevices)
+        let historicalOutputData = try? JSONEncoder().encode(self.historicalOutputDevices)
+        let historicalInputData = try? JSONEncoder().encode(self.historicalInputDevices)
 
         UserDefaults.standard.set(historicalOutputData, forKey: "historicalOutputDevices")
         UserDefaults.standard.set(historicalInputData, forKey: "historicalInputDevices")
@@ -329,13 +329,13 @@ class AudioManager: ObservableObject {
         if let outputData = UserDefaults.standard.data(forKey: "historicalOutputDevices"),
            let outputDevices = try? JSONDecoder().decode([AudioDevice].self, from: outputData)
         {
-            historicalOutputDevices = outputDevices
+            self.historicalOutputDevices = outputDevices
         }
 
         if let inputData = UserDefaults.standard.data(forKey: "historicalInputDevices"),
            let inputDevices = try? JSONDecoder().decode([AudioDevice].self, from: inputData)
         {
-            historicalInputDevices = inputDevices
+            self.historicalInputDevices = inputDevices
         }
     }
 
@@ -343,14 +343,14 @@ class AudioManager: ObservableObject {
         print("\u{001B}[34m[初始化]\u{001B}[0m 正在检查默认设备设置")
 
         // 使用已保存的默认设备设置
-        let defaultOutputUID = settings.defaultOutputDeviceUID
-        let defaultInputUID = settings.defaultInputDeviceUID
+        let defaultOutputUID = self.settings.defaultOutputDeviceUID
+        let defaultInputUID = self.settings.defaultInputDeviceUID
 
         if !defaultOutputUID.isEmpty {
             // 尝试在输出设备中查找匹配的设备
             if let device = outputDevices.first(where: { $0.uid == defaultOutputUID }) {
                 print("\u{001B}[32m[设备]\u{001B}[0m 应用默认输出设备: \(device.name)")
-                setDefaultOutputDevice(device)
+                self.setDefaultOutputDevice(device)
             } else {
                 print("\u{001B}[33m[警告]\u{001B}[0m 默认输出设备未找到: \(defaultOutputUID)")
             }
@@ -360,7 +360,7 @@ class AudioManager: ObservableObject {
             // 尝试在输入设备中查找匹配的设备
             if let device = inputDevices.first(where: { $0.uid == defaultInputUID }) {
                 print("\u{001B}[32m[设备]\u{001B}[0m 应用默认输入设备: \(device.name)")
-                setDefaultInputDevice(device)
+                self.setDefaultInputDevice(device)
             } else {
                 print("\u{001B}[33m[警告]\u{001B}[0m 默认输入设备未找到: \(defaultInputUID)")
             }
@@ -406,8 +406,8 @@ class AudioManager: ObservableObject {
         )
 
         // Get all devices using existing method
-        let currentOutputDevices = getAudioDevices(scope: .output)
-        let currentInputDevices = getAudioDevices(scope: .input)
+        let currentOutputDevices = self.getAudioDevices(scope: .output)
+        let currentInputDevices = self.getAudioDevices(scope: .input)
 
         // Find selected devices
         let newOutputDevice = currentOutputDevices.first { $0.id == defaultOutputID }
@@ -415,11 +415,11 @@ class AudioManager: ObservableObject {
 
         // Update volumes from selected devices
         if let outputDevice = newOutputDevice {
-            outputVolume = outputDevice.volume
+            self.outputVolume = outputDevice.volume
         }
 
         if let inputDevice = newInputDevice {
-            inputVolume = inputDevice.volume
+            self.inputVolume = inputDevice.volume
         }
 
         DispatchQueue.main.async {
@@ -490,37 +490,37 @@ class AudioManager: ObservableObject {
             // Remove volume listener from current device
             if forInput {
                 if let currentDevice = selectedInputDevice {
-                    removeVolumeListenerForDevice(currentDevice, isInput: true)
+                    self.removeVolumeListenerForDevice(currentDevice, isInput: true)
                 }
-                selectedInputDevice = device
-                userSelectedInputUID = device.uid
+                self.selectedInputDevice = device
+                self.userSelectedInputUID = device.uid
 
                 // Get and update device volume
                 let newVolume = device.getVolume()
-                inputVolume = newVolume
+                self.inputVolume = newVolume
                 print(
-                    "\u{001B}[32m[VOLUME]\u{001B}[0m Input device volume: \(Int(inputVolume * 100))%"
+                    "\u{001B}[32m[VOLUME]\u{001B}[0m Input device volume: \(Int(self.inputVolume * 100))%"
                 )
             } else {
                 if let currentDevice = selectedOutputDevice {
-                    removeVolumeListenerForDevice(currentDevice, isInput: false)
+                    self.removeVolumeListenerForDevice(currentDevice, isInput: false)
                 }
-                selectedOutputDevice = device
-                userSelectedOutputUID = device.uid
+                self.selectedOutputDevice = device
+                self.userSelectedOutputUID = device.uid
 
                 // Get and update device volume
                 let newVolume = device.getVolume()
-                outputVolume = newVolume
+                self.outputVolume = newVolume
                 print(
-                    "\u{001B}[32m[VOLUME]\u{001B}[0m Output device volume: \(Int(outputVolume * 100))%"
+                    "\u{001B}[32m[VOLUME]\u{001B}[0m Output device volume: \(Int(self.outputVolume * 100))%"
                 )
             }
 
             // Set up volume listener for new device
-            setupVolumeListenerForDevice(device, isInput: forInput)
+            self.setupVolumeListenerForDevice(device, isInput: forInput)
 
             // Save device selection
-            saveDeviceSelection()
+            self.saveDeviceSelection()
         } else {
             print(
                 "\u{001B}[31m[ERROR]\u{001B}[0m Could not set default \(forInput ? "input" : "output") device: \(status)"
@@ -594,7 +594,7 @@ class AudioManager: ObservableObject {
 
     private func setupVolumeListeners() {
         // 移除旧的监听器
-        removeVolumeListeners()
+        self.removeVolumeListeners()
 
         // 设置输入设备的音量监听器
         if let device = selectedInputDevice {
@@ -634,8 +634,8 @@ class AudioManager: ObservableObject {
             let selfPtr = Unmanaged.passUnretained(self).toOpaque()
 
             // 保存回调函数引用
-            let inputCallback: AudioObjectPropertyListenerProc = inputVolumeChanged
-            inputVolumeListenerID = inputCallback
+            let inputCallback: AudioObjectPropertyListenerProc = self.inputVolumeChanged
+            self.inputVolumeListenerID = inputCallback
 
             // 为每个地址设置监听器
             for address in addresses {
@@ -693,8 +693,8 @@ class AudioManager: ObservableObject {
             let selfPtr = Unmanaged.passUnretained(self).toOpaque()
 
             // 保存回调函数引用
-            let outputCallback: AudioObjectPropertyListenerProc = outputVolumeChanged
-            outputVolumeListenerID = outputCallback
+            let outputCallback: AudioObjectPropertyListenerProc = self.outputVolumeChanged
+            self.outputVolumeListenerID = outputCallback
 
             // 为每个地址设置监听器
             for address in addresses {
@@ -757,7 +757,7 @@ class AudioManager: ObservableObject {
                 Swift.print("移除输入设备音量标量监听器")
             }
 
-            inputVolumeListenerID = nil
+            self.inputVolumeListenerID = nil
         }
 
         // 移除输出设备音量监听器
@@ -801,7 +801,7 @@ class AudioManager: ObservableObject {
                 Swift.print("移除输出设备音量标量监听器")
             }
 
-            outputVolumeListenerID = nil
+            self.outputVolumeListenerID = nil
         }
     }
 
@@ -810,20 +810,20 @@ class AudioManager: ObservableObject {
         print("\u{001B}[34m[初始化]\u{001B}[0m 设置系统音量监听器")
 
         // 移除现有的监听器
-        removeVolumeListener()
+        self.removeVolumeListener()
 
         // 获取当前设备
-        let inputDevice = selectedInputDevice
-        let outputDevice = selectedOutputDevice
+        let inputDevice = self.selectedInputDevice
+        let outputDevice = self.selectedOutputDevice
 
         // 为输入设备设置监听器
         if let device = inputDevice {
-            setupVolumeListenerForDevice(device, isInput: true)
+            self.setupVolumeListenerForDevice(device, isInput: true)
         }
 
         // 为输出设备设置监听器
         if let device = outputDevice {
-            setupVolumeListenerForDevice(device, isInput: false)
+            self.setupVolumeListenerForDevice(device, isInput: false)
         }
     }
 
@@ -864,7 +864,7 @@ class AudioManager: ObservableObject {
         let status = AudioObjectAddPropertyListener(
             device.id,
             &mutableAddress,
-            volumeListenerProc,
+            self.volumeListenerProc,
             Unmanaged.passUnretained(self).toOpaque()
         )
 
@@ -881,12 +881,12 @@ class AudioManager: ObservableObject {
     private func removeVolumeListener() {
         // 为输入设备移除监听器
         if let device = selectedInputDevice {
-            removeVolumeListenerForDevice(device, isInput: true)
+            self.removeVolumeListenerForDevice(device, isInput: true)
         }
 
         // 为输出设备移除监听器
         if let device = selectedOutputDevice {
-            removeVolumeListenerForDevice(device, isInput: false)
+            self.removeVolumeListenerForDevice(device, isInput: false)
         }
     }
 
@@ -922,7 +922,7 @@ class AudioManager: ObservableObject {
         let status = AudioObjectRemovePropertyListener(
             device.id,
             &mutableAddress,
-            volumeListenerProc,
+            self.volumeListenerProc,
             Unmanaged.passUnretained(self).toOpaque()
         )
 
@@ -1009,36 +1009,36 @@ class AudioManager: ObservableObject {
         print("启动音量轮询定时器")
 
         // 停止可能正在运行的定时器
-        volumePollingTimer?.invalidate()
-        volumePollingTimer = nil
+        self.volumePollingTimer?.invalidate()
+        self.volumePollingTimer = nil
 
         // 记录初始音量值
         if let outputDevice = selectedOutputDevice {
-            lastBluetoothOutputVolume = outputDevice.getVolume()
-            print("初始输出设备音量: \(lastBluetoothOutputVolume)")
+            self.lastBluetoothOutputVolume = outputDevice.getVolume()
+            print("初始输出设备音量: \(self.lastBluetoothOutputVolume)")
         }
 
         if let inputDevice = selectedInputDevice {
-            lastBluetoothInputVolume = inputDevice.getVolume()
-            print("初始输入设备音量: \(lastBluetoothInputVolume)")
+            self.lastBluetoothInputVolume = inputDevice.getVolume()
+            print("初始输入设备音量: \(self.lastBluetoothInputVolume)")
         }
 
         // 创建新的轮询定时器，每0.5秒检查一次
-        volumePollingTimer = Timer
+        self.volumePollingTimer = Timer
             .scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
                 guard let self else { return }
-                checkDeviceVolumeChanges()
+                self.checkDeviceVolumeChanges()
             }
 
-        isPollingForVolumeChanges = true
+        self.isPollingForVolumeChanges = true
     }
 
     // 停止音量轮询
     private func stopVolumePollingTimer() {
         print("停止音量轮询定时器")
-        volumePollingTimer?.invalidate()
-        volumePollingTimer = nil
-        isPollingForVolumeChanges = false
+        self.volumePollingTimer?.invalidate()
+        self.volumePollingTimer = nil
+        self.isPollingForVolumeChanges = false
     }
 
     // 检查所有设备音量变化
@@ -1048,16 +1048,16 @@ class AudioManager: ObservableObject {
             let currentVolume = outputDevice.getVolume()
 
             // 如果音量有显著变化 (避免更新循环)
-            if abs(currentVolume - lastBluetoothOutputVolume) > 0.001,
-               abs(currentVolume - outputVolume) > 0.001
+            if abs(currentVolume - self.lastBluetoothOutputVolume) > 0.001,
+               abs(currentVolume - self.outputVolume) > 0.001
             {
                 print(
-                    "检测到输出设备 \(outputDevice.name) 音量变化: \(lastBluetoothOutputVolume) -> \(currentVolume)"
+                    "检测到输出设备 \(outputDevice.name) 音量变化: \(self.lastBluetoothOutputVolume) -> \(currentVolume)"
                 )
                 DispatchQueue.main.async {
                     self.outputVolume = currentVolume
                 }
-                lastBluetoothOutputVolume = currentVolume
+                self.lastBluetoothOutputVolume = currentVolume
             }
         }
 
@@ -1066,16 +1066,16 @@ class AudioManager: ObservableObject {
             let currentVolume = inputDevice.getVolume()
 
             // 如果音量有显著变化
-            if abs(currentVolume - lastBluetoothInputVolume) > 0.001,
-               abs(currentVolume - inputVolume) > 0.001
+            if abs(currentVolume - self.lastBluetoothInputVolume) > 0.001,
+               abs(currentVolume - self.inputVolume) > 0.001
             {
                 print(
-                    "检测到输入设备 \(inputDevice.name) 音量变化: \(lastBluetoothInputVolume) -> \(currentVolume)"
+                    "检测到输入设备 \(inputDevice.name) 音量变化: \(self.lastBluetoothInputVolume) -> \(currentVolume)"
                 )
                 DispatchQueue.main.async {
                     self.inputVolume = currentVolume
                 }
-                lastBluetoothInputVolume = currentVolume
+                self.lastBluetoothInputVolume = currentVolume
             }
         }
     }
@@ -1085,31 +1085,31 @@ class AudioManager: ObservableObject {
         Swift.print("执行最终音量同步尝试")
 
         // 对于蓝牙设备，使用专用的同步方法
-        let isBluetoothOutput = selectedOutputDevice?.uid.lowercased()
+        let isBluetoothOutput = self.selectedOutputDevice?.uid.lowercased()
             .contains("bluetooth") ?? false
-        let isBluetoothInput = selectedInputDevice?.uid.lowercased()
+        let isBluetoothInput = self.selectedInputDevice?.uid.lowercased()
             .contains("bluetooth") ?? false
 
         // 对蓝牙设备使用直接查询方法
         if isBluetoothOutput || isBluetoothInput {
-            forceBluetoothVolumeSync(highPriority: true)
+            self.forceBluetoothVolumeSync(highPriority: true)
         }
 
         // 对于非蓝牙设备，使用常规更新方法
-        if !isBluetoothOutput, selectedOutputDevice != nil {
+        if !isBluetoothOutput, self.selectedOutputDevice != nil {
             Swift.print("最终同步: 更新普通输出设备音量")
             if let device = selectedOutputDevice {
-                let volume = directSystemVolumeQuery(device: device, isInput: false)
+                let volume = self.directSystemVolumeQuery(device: device, isInput: false)
                 DispatchQueue.main.async {
                     self.outputVolume = volume
                 }
             }
         }
 
-        if !isBluetoothInput, selectedInputDevice != nil {
+        if !isBluetoothInput, self.selectedInputDevice != nil {
             Swift.print("最终同步: 更新普通输入设备音量")
             if let device = selectedInputDevice {
-                let volume = directSystemVolumeQuery(device: device, isInput: true)
+                let volume = self.directSystemVolumeQuery(device: device, isInput: true)
                 DispatchQueue.main.async {
                     self.inputVolume = volume
                 }
@@ -1117,7 +1117,7 @@ class AudioManager: ObservableObject {
         }
 
         // 记录音量值以便后续对比
-        Swift.print("最终同步完成 - 输出音量: \(outputVolume), 输入音量: \(inputVolume)")
+        Swift.print("最终同步完成 - 输出音量: \(self.outputVolume), 输入音量: \(self.inputVolume)")
     }
 
     // 强制更新设备音量 - 确保会更新TUNA中的音量值
@@ -1128,11 +1128,11 @@ class AudioManager: ObservableObject {
             Swift.print("获取输出设备 \(outputDevice.name) 的当前音量")
 
             // 使用直接查询获取更准确的音量值
-            let newVolume = directSystemVolumeQuery(device: outputDevice, isInput: false)
+            let newVolume = self.directSystemVolumeQuery(device: outputDevice, isInput: false)
 
             // 无条件更新音量值
-            Swift.print("输出设备音量已更新: \(outputVolume) -> \(newVolume)")
-            lastBluetoothOutputVolume = newVolume
+            Swift.print("输出设备音量已更新: \(self.outputVolume) -> \(newVolume)")
+            self.lastBluetoothOutputVolume = newVolume
 
             DispatchQueue.main.async {
                 self.outputVolume = newVolume
@@ -1143,11 +1143,11 @@ class AudioManager: ObservableObject {
             Swift.print("获取输入设备 \(inputDevice.name) 的当前音量")
 
             // 使用直接查询获取更准确的音量值
-            let newVolume = directSystemVolumeQuery(device: inputDevice, isInput: true)
+            let newVolume = self.directSystemVolumeQuery(device: inputDevice, isInput: true)
 
             // 无条件更新音量值
-            Swift.print("输入设备音量已更新: \(inputVolume) -> \(newVolume)")
-            lastBluetoothInputVolume = newVolume
+            Swift.print("输入设备音量已更新: \(self.inputVolume) -> \(newVolume)")
+            self.lastBluetoothInputVolume = newVolume
 
             DispatchQueue.main.async {
                 self.inputVolume = newVolume
@@ -1159,11 +1159,11 @@ class AudioManager: ObservableObject {
         Swift.print("正在更新当前选中的设备...")
 
         // 在更新设备之前移除旧的音量监听器
-        removeVolumeListeners()
+        self.removeVolumeListeners()
 
         // 保存当前设备UID，用于后续比较
-        let previousOutputUID = selectedOutputDevice?.uid
-        let previousInputUID = selectedInputDevice?.uid
+        let previousOutputUID = self.selectedOutputDevice?.uid
+        let previousInputUID = self.selectedInputDevice?.uid
 
         // 获取当前默认输出设备
         var outputDeviceID: AudioDeviceID = 0
@@ -1187,34 +1187,36 @@ class AudioManager: ObservableObject {
 
         if outputStatus == noErr {
             // 查找匹配该ID的输出设备
-            let matchingDevice = outputDevices.first { $0.id == outputDeviceID }
+            let matchingDevice = self.outputDevices.first { $0.id == outputDeviceID }
 
             if let outputDevice = matchingDevice {
                 Swift.print("当前默认输出设备: \(outputDevice.name) [ID: \(outputDevice.id)]")
 
-                if userSelectedOutputUID == nil || outputDevice.uid == userSelectedOutputUID {
-                    if selectedOutputDevice == nil || selectedOutputDevice!
+                if self.userSelectedOutputUID == nil || outputDevice.uid == self
+                    .userSelectedOutputUID
+                {
+                    if self.selectedOutputDevice == nil || self.selectedOutputDevice!
                         .id != outputDevice.id
                     {
                         outputChanged = true
-                        selectedOutputDevice = outputDevice
+                        self.selectedOutputDevice = outputDevice
                         Swift.print("已选择输出设备: \(outputDevice.name)")
 
                         // 获取输出设备音量
-                        let newVolume = directSystemVolumeQuery(
+                        let newVolume = self.directSystemVolumeQuery(
                             device: outputDevice,
                             isInput: false
                         )
 
                         // 检查音量是否与先前的显著不同，如果是，更新显示
-                        if abs(outputVolume - newVolume) > 0.01 {
-                            Swift.print("输出设备音量更新: \(outputVolume) -> \(newVolume)")
-                            outputVolume = newVolume
+                        if abs(self.outputVolume - newVolume) > 0.01 {
+                            Swift.print("输出设备音量更新: \(self.outputVolume) -> \(newVolume)")
+                            self.outputVolume = newVolume
                         }
 
                         // 保存蓝牙设备的音量
                         if outputDevice.uid.lowercased().contains("bluetooth") {
-                            lastBluetoothOutputVolume = newVolume
+                            self.lastBluetoothOutputVolume = newVolume
                         }
                     }
                 }
@@ -1242,34 +1244,36 @@ class AudioManager: ObservableObject {
 
         if inputStatus == noErr {
             // 查找匹配该ID的输入设备
-            let matchingDevice = inputDevices.first { $0.id == inputDeviceID }
+            let matchingDevice = self.inputDevices.first { $0.id == inputDeviceID }
 
             if let inputDevice = matchingDevice {
                 Swift.print("当前默认输入设备: \(inputDevice.name) [ID: \(inputDevice.id)]")
 
-                if userSelectedInputUID == nil || inputDevice.uid == userSelectedInputUID {
-                    if selectedInputDevice == nil || selectedInputDevice!
+                if self.userSelectedInputUID == nil || inputDevice.uid == self
+                    .userSelectedInputUID
+                {
+                    if self.selectedInputDevice == nil || self.selectedInputDevice!
                         .id != inputDevice.id
                     {
                         inputChanged = true
-                        selectedInputDevice = inputDevice
+                        self.selectedInputDevice = inputDevice
                         Swift.print("已选择输入设备: \(inputDevice.name)")
 
                         // 获取输入设备音量
-                        let newVolume = directSystemVolumeQuery(
+                        let newVolume = self.directSystemVolumeQuery(
                             device: inputDevice,
                             isInput: true
                         )
 
                         // 检查音量是否与先前的显著不同，如果是，更新显示
-                        if abs(inputVolume - newVolume) > 0.01 {
-                            Swift.print("输入设备音量更新: \(inputVolume) -> \(newVolume)")
-                            inputVolume = newVolume
+                        if abs(self.inputVolume - newVolume) > 0.01 {
+                            Swift.print("输入设备音量更新: \(self.inputVolume) -> \(newVolume)")
+                            self.inputVolume = newVolume
                         }
 
                         // 保存蓝牙设备的音量
                         if inputDevice.uid.lowercased().contains("bluetooth") {
-                            lastBluetoothInputVolume = newVolume
+                            self.lastBluetoothInputVolume = newVolume
                         }
                     }
                 }
@@ -1282,12 +1286,13 @@ class AudioManager: ObservableObject {
 
         // 特殊处理：当输入或输出设备发生变化，且涉及到蓝牙设备
         if inputChanged || outputChanged,
-           selectedInputDevice != nil || selectedOutputDevice != nil
+           self.selectedInputDevice != nil || self.selectedOutputDevice != nil
         {
             // 检查是否为同一蓝牙设备用于输入和输出
-            let sameBluetoothDevice = selectedInputDevice != nil && selectedOutputDevice != nil &&
-                selectedInputDevice!.uid == selectedOutputDevice!.uid &&
-                selectedInputDevice!.uid.lowercased().contains("bluetooth")
+            let sameBluetoothDevice = self.selectedInputDevice != nil && self
+                .selectedOutputDevice != nil &&
+                self.selectedInputDevice!.uid == self.selectedOutputDevice!.uid &&
+                self.selectedInputDevice!.uid.lowercased().contains("bluetooth")
 
             Swift
                 .print(
@@ -1298,7 +1303,7 @@ class AudioManager: ObservableObject {
                 Swift.print("检测到同一蓝牙设备用于输入和输出，确保音量设置保持独立")
 
                 // 如果输入设备变化了，确保输出设备音量不受影响
-                if inputChanged, previousInputUID != selectedInputDevice?.uid {
+                if inputChanged, previousInputUID != self.selectedInputDevice?.uid {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         let correctOutputVolume = self.directSystemVolumeQuery(
                             device: self.selectedOutputDevice!,
@@ -1314,7 +1319,7 @@ class AudioManager: ObservableObject {
                 }
 
                 // 如果输出设备变化了，确保输入设备音量不受影响
-                if outputChanged, previousOutputUID != selectedOutputDevice?.uid {
+                if outputChanged, previousOutputUID != self.selectedOutputDevice?.uid {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         let correctInputVolume = self.directSystemVolumeQuery(
                             device: self.selectedInputDevice!,
@@ -1330,8 +1335,8 @@ class AudioManager: ObservableObject {
             }
 
             // 蓝牙设备特殊处理：如果更换为蓝牙设备，使用更精确的音量同步
-            if inputChanged, selectedInputDevice != nil,
-               selectedInputDevice!.uid.lowercased()
+            if inputChanged, self.selectedInputDevice != nil,
+               self.selectedInputDevice!.uid.lowercased()
                    .contains("bluetooth")
             {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -1339,7 +1344,7 @@ class AudioManager: ObservableObject {
                 }
             }
 
-            if outputChanged, selectedOutputDevice != nil, selectedOutputDevice!.uid
+            if outputChanged, self.selectedOutputDevice != nil, self.selectedOutputDevice!.uid
                 .lowercased().contains("bluetooth")
             {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -1352,7 +1357,7 @@ class AudioManager: ObservableObject {
         }
 
         // 设置新的音量监听器
-        setupVolumeListeners()
+        self.setupVolumeListeners()
     }
 
     private func getDeviceVolume(device: AudioDevice, isInput: Bool) -> Float {
@@ -1432,11 +1437,11 @@ class AudioManager: ObservableObject {
     }
 
     func selectInputDevice(_ device: AudioDevice) {
-        setDefaultDevice(device, forInput: true)
+        self.setDefaultDevice(device, forInput: true)
     }
 
     func selectOutputDevice(_ device: AudioDevice) {
-        setDefaultDevice(device, forInput: false)
+        self.setDefaultDevice(device, forInput: false)
     }
 
     // 新增：获取更准确的系统音量值
@@ -1448,14 +1453,14 @@ class AudioManager: ObservableObject {
             if let device = AudioDevice(deviceID: deviceID) {
                 Swift.print("系统默认输出设备: \(device.name) (ID: \(deviceID))")
                 // 尝试使用多种方法获取音量
-                let volume = getSystemVolumeForDevice(device: device, isInput: false)
-                outputVolume = volume
-                lastBluetoothOutputVolume = volume
+                let volume = self.getSystemVolumeForDevice(device: device, isInput: false)
+                self.outputVolume = volume
+                self.lastBluetoothOutputVolume = volume
                 Swift.print("获取到默认输出设备音量: \(volume)")
 
                 // 设置设备引用
-                if selectedOutputDevice == nil || selectedOutputDevice!.id != deviceID {
-                    selectedOutputDevice = device
+                if self.selectedOutputDevice == nil || self.selectedOutputDevice!.id != deviceID {
+                    self.selectedOutputDevice = device
                 }
             }
         }
@@ -1465,14 +1470,14 @@ class AudioManager: ObservableObject {
             if let device = AudioDevice(deviceID: deviceID) {
                 Swift.print("系统默认输入设备: \(device.name) (ID: \(deviceID))")
                 // 尝试使用多种方法获取音量
-                let volume = getSystemVolumeForDevice(device: device, isInput: true)
-                inputVolume = volume
-                lastBluetoothInputVolume = volume
+                let volume = self.getSystemVolumeForDevice(device: device, isInput: true)
+                self.inputVolume = volume
+                self.lastBluetoothInputVolume = volume
                 Swift.print("获取到默认输入设备音量: \(volume)")
 
                 // 设置设备引用
-                if selectedInputDevice == nil || selectedInputDevice!.id != deviceID {
-                    selectedInputDevice = device
+                if self.selectedInputDevice == nil || self.selectedInputDevice!.id != deviceID {
+                    self.selectedInputDevice = device
                 }
             }
         }
@@ -1631,13 +1636,13 @@ class AudioManager: ObservableObject {
             Swift.print("强制同步蓝牙输出设备音量" + (highPriority ? " (高优先级)" : ""))
 
             // 直接查询设备的当前系统音量 (绕过缓存)
-            let systemVolume = directSystemVolumeQuery(device: device, isInput: false)
+            let systemVolume = self.directSystemVolumeQuery(device: device, isInput: false)
 
             // 高优先级时无条件更新，或音量差异超过阈值时更新
-            let shouldUpdate = highPriority || abs(systemVolume - outputVolume) > 0.01
+            let shouldUpdate = highPriority || abs(systemVolume - self.outputVolume) > 0.01
 
             if shouldUpdate {
-                Swift.print("更新蓝牙输出设备音量: \(outputVolume) -> \(systemVolume)")
+                Swift.print("更新蓝牙输出设备音量: \(self.outputVolume) -> \(systemVolume)")
                 DispatchQueue.main.async {
                     self.outputVolume = systemVolume
                     self.lastBluetoothOutputVolume = systemVolume
@@ -1650,13 +1655,13 @@ class AudioManager: ObservableObject {
             Swift.print("强制同步蓝牙输入设备音量" + (highPriority ? " (高优先级)" : ""))
 
             // 直接查询设备的当前系统音量 (绕过缓存)
-            let systemVolume = directSystemVolumeQuery(device: device, isInput: true)
+            let systemVolume = self.directSystemVolumeQuery(device: device, isInput: true)
 
             // 高优先级时无条件更新，或音量差异超过阈值时更新
-            let shouldUpdate = highPriority || abs(systemVolume - inputVolume) > 0.01
+            let shouldUpdate = highPriority || abs(systemVolume - self.inputVolume) > 0.01
 
             if shouldUpdate {
-                Swift.print("更新蓝牙输入设备音量: \(inputVolume) -> \(systemVolume)")
+                Swift.print("更新蓝牙输入设备音量: \(self.inputVolume) -> \(systemVolume)")
                 DispatchQueue.main.async {
                     self.inputVolume = systemVolume
                     self.lastBluetoothInputVolume = systemVolume
@@ -1670,7 +1675,7 @@ class AudioManager: ObservableObject {
         print("\u{001B}[34m[初始化]\u{001B}[0m 同步系统音量到应用")
 
         // 强制更新默认设备列表，确保设备信息是最新的
-        updateDefaultDevices()
+        self.updateDefaultDevices()
 
         // 同步输出设备音量
         if let device = selectedOutputDevice {
@@ -1678,7 +1683,7 @@ class AudioManager: ObservableObject {
             let isBluetooth = device.uid.lowercased().contains("bluetooth")
 
             // 使用直接系统查询获取最准确的音量
-            let volume = directSystemVolumeQuery(device: device, isInput: false)
+            let volume = self.directSystemVolumeQuery(device: device, isInput: false)
 
             // 确保在主线程更新UI相关属性
             DispatchQueue.main.async {
@@ -1691,7 +1696,7 @@ class AudioManager: ObservableObject {
             // 特别针对蓝牙设备，额外的处理
             if isBluetooth {
                 // 记录为轮询比较基准值
-                lastBluetoothOutputVolume = volume
+                self.lastBluetoothOutputVolume = volume
 
                 // 短延迟后再次强制同步蓝牙设备
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
@@ -1700,16 +1705,16 @@ class AudioManager: ObservableObject {
                           currentDevice.id == device.id else { return }
 
                     // 再次获取系统音量，以确保准确性
-                    let updatedVolume = directSystemVolumeQuery(
+                    let updatedVolume = self.directSystemVolumeQuery(
                         device: currentDevice,
                         isInput: false
                     )
-                    if abs(updatedVolume - outputVolume) > 0.01 {
+                    if abs(updatedVolume - self.outputVolume) > 0.01 {
                         print(
-                            "\u{001B}[32m[蓝牙同步]\u{001B}[0m 修正蓝牙输出设备 '\(currentDevice.name)' 初始音量: \(Int(outputVolume * 100))% -> \(Int(updatedVolume * 100))%"
+                            "\u{001B}[32m[蓝牙同步]\u{001B}[0m 修正蓝牙输出设备 '\(currentDevice.name)' 初始音量: \(Int(self.outputVolume * 100))% -> \(Int(updatedVolume * 100))%"
                         )
-                        outputVolume = updatedVolume
-                        lastBluetoothOutputVolume = updatedVolume
+                        self.outputVolume = updatedVolume
+                        self.lastBluetoothOutputVolume = updatedVolume
                     }
                 }
             }
@@ -1721,7 +1726,7 @@ class AudioManager: ObservableObject {
             let isBluetooth = device.uid.lowercased().contains("bluetooth")
 
             // 使用直接系统查询获取最准确的音量
-            let volume = directSystemVolumeQuery(device: device, isInput: true)
+            let volume = self.directSystemVolumeQuery(device: device, isInput: true)
 
             // 确保在主线程更新UI相关属性
             DispatchQueue.main.async {
@@ -1734,7 +1739,7 @@ class AudioManager: ObservableObject {
             // 特别针对蓝牙设备，额外的处理
             if isBluetooth {
                 // 记录为轮询比较基准值
-                lastBluetoothInputVolume = volume
+                self.lastBluetoothInputVolume = volume
 
                 // 短延迟后再次强制同步蓝牙设备
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
@@ -1743,16 +1748,16 @@ class AudioManager: ObservableObject {
                           currentDevice.id == device.id else { return }
 
                     // 再次获取系统音量，以确保准确性
-                    let updatedVolume = directSystemVolumeQuery(
+                    let updatedVolume = self.directSystemVolumeQuery(
                         device: currentDevice,
                         isInput: true
                     )
-                    if abs(updatedVolume - inputVolume) > 0.01 {
+                    if abs(updatedVolume - self.inputVolume) > 0.01 {
                         print(
-                            "\u{001B}[32m[蓝牙同步]\u{001B}[0m 修正蓝牙输入设备 '\(currentDevice.name)' 初始音量: \(Int(inputVolume * 100))% -> \(Int(updatedVolume * 100))%"
+                            "\u{001B}[32m[蓝牙同步]\u{001B}[0m 修正蓝牙输入设备 '\(currentDevice.name)' 初始音量: \(Int(self.inputVolume * 100))% -> \(Int(updatedVolume * 100))%"
                         )
-                        inputVolume = updatedVolume
-                        lastBluetoothInputVolume = updatedVolume
+                        self.inputVolume = updatedVolume
+                        self.lastBluetoothInputVolume = updatedVolume
                     }
                 }
             }
@@ -1764,37 +1769,37 @@ class AudioManager: ObservableObject {
             guard let self else { return }
 
             // 特别处理蓝牙设备
-            forceBluetoothVolumeSync(highPriority: true)
+            self.forceBluetoothVolumeSync(highPriority: true)
 
             // 第二次延迟1秒
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                 guard let self else { return }
 
                 // 再次强制同步蓝牙设备
-                forceBluetoothVolumeSync(highPriority: true)
+                self.forceBluetoothVolumeSync(highPriority: true)
 
                 // 第三次延迟2秒
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                     guard let self else { return }
 
                     // 最后一次强制同步，确保蓝牙设备音量完全同步
-                    forceBluetoothVolumeSync(highPriority: true)
+                    self.forceBluetoothVolumeSync(highPriority: true)
 
                     // 启动音量轮询（如果有蓝牙设备）
                     if (
-                        selectedOutputDevice?.uid.lowercased()
+                        self.selectedOutputDevice?.uid.lowercased()
                             .contains("bluetooth") == true
                     ) ||
-                        (selectedInputDevice?.uid.lowercased().contains("bluetooth") == true)
+                        (self.selectedInputDevice?.uid.lowercased().contains("bluetooth") == true)
                     {
-                        startVolumePollingTimer()
+                        self.startVolumePollingTimer()
                     }
                 }
             }
         }
 
         // 添加音量轮询兜底机制
-        setupVolumePollingFallback()
+        self.setupVolumePollingFallback()
     }
 
     // 添加新的音量轮询兜底机制
@@ -1802,28 +1807,28 @@ class AudioManager: ObservableObject {
         print("\u{001B}[34m[初始化]\u{001B}[0m 设置音量轮询兜底机制")
 
         // 停止可能已存在的定时器
-        volumePollingTimer?.invalidate()
+        self.volumePollingTimer?.invalidate()
 
         // 创建新的定时器，每1秒检查一次系统音量
-        volumePollingTimer = Timer
+        self.volumePollingTimer = Timer
             .scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
                 guard let self else { return }
 
                 // 检查输出设备
                 if let device = selectedOutputDevice {
                     let sysVol = device.getVolume()
-                    if abs(sysVol - outputVolume) > 0.01 {
-                        print("🔁 [Poll] 检测到系统输出音量变化: \(outputVolume) -> \(sysVol)")
-                        outputVolume = sysVol
+                    if abs(sysVol - self.outputVolume) > 0.01 {
+                        print("🔁 [Poll] 检测到系统输出音量变化: \(self.outputVolume) -> \(sysVol)")
+                        self.outputVolume = sysVol
                     }
                 }
 
                 // 检查输入设备
                 if let device = selectedInputDevice {
                     let sysVol = device.getVolume()
-                    if abs(sysVol - inputVolume) > 0.01 {
-                        print("🔁 [Poll] 检测到系统输入音量变化: \(inputVolume) -> \(sysVol)")
-                        inputVolume = sysVol
+                    if abs(sysVol - self.inputVolume) > 0.01 {
+                        print("🔁 [Poll] 检测到系统输入音量变化: \(self.inputVolume) -> \(sysVol)")
+                        self.inputVolume = sysVol
                     }
                 }
             }
@@ -1933,18 +1938,18 @@ class AudioManager: ObservableObject {
 
     // 添加锁定/解锁平衡的方法
     func toggleOutputBalanceLock() {
-        isOutputBalanceLocked.toggle()
-        print("输出设备平衡锁定状态: \(isOutputBalanceLocked)")
+        self.isOutputBalanceLocked.toggle()
+        print("输出设备平衡锁定状态: \(self.isOutputBalanceLocked)")
 
-        if isOutputBalanceLocked, let device = selectedOutputDevice {
-            lockedOutputBalance = device.getBalance()
-            print("已锁定输出设备平衡值: \(lockedOutputBalance)")
+        if self.isOutputBalanceLocked, let device = selectedOutputDevice {
+            self.lockedOutputBalance = device.getBalance()
+            print("已锁定输出设备平衡值: \(self.lockedOutputBalance)")
         }
     }
 
     // 修改确保平衡锁定功能，只对支持平衡控制的设备生效
     private func maintainLockedBalance() {
-        if isOutputBalanceLocked, let device = selectedOutputDevice {
+        if self.isOutputBalanceLocked, let device = selectedOutputDevice {
             // 如果设备不支持平衡控制，不执行平衡锁定维护
             if !device.supportsBalanceControl {
                 print("设备不支持平衡控制，不需要平衡锁定维护")
@@ -1952,23 +1957,23 @@ class AudioManager: ObservableObject {
             }
 
             let currentBalance = device.getBalance()
-            if abs(currentBalance - lockedOutputBalance) > 0.01 {
-                print("检测到输出设备平衡漂移，正在恢复锁定的平衡值: \(lockedOutputBalance)")
+            if abs(currentBalance - self.lockedOutputBalance) > 0.01 {
+                print("检测到输出设备平衡漂移，正在恢复锁定的平衡值: \(self.lockedOutputBalance)")
 
                 // 使用当前音量和锁定的平衡值设置左右声道音量
-                let currentVolume = outputVolume
+                let currentVolume = self.outputVolume
                 let success = device.setVolumeWithLockedBalance(
                     currentVolume,
-                    balance: lockedOutputBalance
+                    balance: self.lockedOutputBalance
                 )
 
                 if success {
-                    print("成功恢复平衡值: \(lockedOutputBalance)")
-                    outputBalance = lockedOutputBalance
+                    print("成功恢复平衡值: \(self.lockedOutputBalance)")
+                    self.outputBalance = self.lockedOutputBalance
                 } else {
                     // 如果特殊方法失败，尝试直接设置平衡
-                    if device.setBalance(lockedOutputBalance) {
-                        outputBalance = lockedOutputBalance
+                    if device.setBalance(self.lockedOutputBalance) {
+                        self.outputBalance = self.lockedOutputBalance
                     }
                 }
             }
@@ -1986,7 +1991,7 @@ class AudioManager: ObservableObject {
         }
 
         // 保存当前音量和平衡值
-        let initialVolume = outputVolume
+        let initialVolume = self.outputVolume
         let initialBalance = outputDevice.getBalance()
 
         print("\u{001B}[34m[测试信息]\u{001B}[0m 当前输出设备: \(outputDevice.name)")
@@ -1995,7 +2000,7 @@ class AudioManager: ObservableObject {
         )
 
         // 尝试修改音量和平衡，然后检查是否保持锁定
-        setVolumeForDevice(
+        self.setVolumeForDevice(
             device: outputDevice,
             volume: min(0.8, initialVolume + 0.1),
             isInput: false
@@ -2014,7 +2019,7 @@ class AudioManager: ObservableObject {
 
     // 根据 UID 查找音频设备
     func findDevice(byUID uid: String, isInput: Bool) -> AudioDevice? {
-        let devices = isInput ? inputDevices : outputDevices
+        let devices = isInput ? self.inputDevices : self.outputDevices
 
         // 首先从当前可用设备中查找
         if let device = devices.first(where: { $0.uid == uid }) {
@@ -2022,7 +2027,7 @@ class AudioManager: ObservableObject {
         }
 
         // 如果当前设备中没有找到，从历史设备中查找
-        let historicalDevices = isInput ? historicalInputDevices : historicalOutputDevices
+        let historicalDevices = isInput ? self.historicalInputDevices : self.historicalOutputDevices
         return historicalDevices.first(where: { $0.uid == uid })
     }
 
@@ -2061,9 +2066,9 @@ class AudioManager: ObservableObject {
             print("\u{001B}[31m[错误]\u{001B}[0m 无法设置设备 '\(device.name)' 的音量: \(status)")
         } else {
             if isInput {
-                inputVolume = volume
+                self.inputVolume = volume
             } else {
-                outputVolume = volume
+                self.outputVolume = volume
             }
         }
     }
@@ -2093,7 +2098,7 @@ class AudioManager: ObservableObject {
 
         if outputStatus == noErr, outputDeviceID != 0 {
             if let device = AudioDevice(deviceID: outputDeviceID) {
-                let previousDevice = selectedOutputDevice
+                let previousDevice = self.selectedOutputDevice
 
                 // 只在设备变化时更新
                 if previousDevice?.id != device.id {
@@ -2101,15 +2106,15 @@ class AudioManager: ObservableObject {
 
                     // 如果原来的设备有音量监听器，先移除
                     if let oldDevice = previousDevice {
-                        removeVolumeListenerForDevice(oldDevice, isInput: false)
+                        self.removeVolumeListenerForDevice(oldDevice, isInput: false)
                     }
 
                     // 更新设备并获取音量
-                    selectedOutputDevice = device
-                    outputVolume = device.getVolume()
+                    self.selectedOutputDevice = device
+                    self.outputVolume = device.getVolume()
 
                     // 为新设备设置音量监听器
-                    setupVolumeListenerForDevice(device, isInput: false)
+                    self.setupVolumeListenerForDevice(device, isInput: false)
                 }
             }
         }
@@ -2135,7 +2140,7 @@ class AudioManager: ObservableObject {
 
         if inputStatus == noErr, inputDeviceID != 0 {
             if let device = AudioDevice(deviceID: inputDeviceID) {
-                let previousDevice = selectedInputDevice
+                let previousDevice = self.selectedInputDevice
 
                 // 只在设备变化时更新
                 if previousDevice?.id != device.id {
@@ -2143,15 +2148,15 @@ class AudioManager: ObservableObject {
 
                     // 如果原来的设备有音量监听器，先移除
                     if let oldDevice = previousDevice {
-                        removeVolumeListenerForDevice(oldDevice, isInput: true)
+                        self.removeVolumeListenerForDevice(oldDevice, isInput: true)
                     }
 
                     // 更新设备并获取音量
-                    selectedInputDevice = device
-                    inputVolume = device.getVolume()
+                    self.selectedInputDevice = device
+                    self.inputVolume = device.getVolume()
 
                     // 为新设备设置音量监听器
-                    setupVolumeListenerForDevice(device, isInput: true)
+                    self.setupVolumeListenerForDevice(device, isInput: true)
                 }
             }
         }
@@ -2167,14 +2172,14 @@ class AudioManager: ObservableObject {
             let deviceVolume = device.getVolume()
 
             if isInput {
-                if abs(inputVolume - deviceVolume) > 0.01 {
+                if abs(self.inputVolume - deviceVolume) > 0.01 {
                     print("\u{001B}[32m[蓝牙同步]\u{001B}[0m 更新输入设备音量: \(Int(deviceVolume * 100))%")
-                    inputVolume = deviceVolume
+                    self.inputVolume = deviceVolume
                 }
             } else {
-                if abs(outputVolume - deviceVolume) > 0.01 {
+                if abs(self.outputVolume - deviceVolume) > 0.01 {
                     print("\u{001B}[32m[蓝牙同步]\u{001B}[0m 更新输出设备音量: \(Int(deviceVolume * 100))%")
-                    outputVolume = deviceVolume
+                    self.outputVolume = deviceVolume
                 }
             }
         }
@@ -2183,7 +2188,7 @@ class AudioManager: ObservableObject {
     // 设置默认输出设备
     public func setDefaultOutputDevice(_ device: AudioDevice) {
         // 如果已经是当前设备，则避免重复设置
-        if selectedOutputDevice?.id == device.id {
+        if self.selectedOutputDevice?.id == device.id {
             return
         }
 
@@ -2205,12 +2210,12 @@ class AudioManager: ObservableObject {
 
         if status == noErr {
             print("[DEVICE] Successfully set default output device: \(device.name)")
-            selectedOutputDevice = device
+            self.selectedOutputDevice = device
             // 保存为用户选择的设备
-            userSelectedOutputUID = device.uid
+            self.userSelectedOutputUID = device.uid
             // 同时保存到设置中，避免直接使用settings.defaultOutputDeviceUID触发循环
-            if settings.defaultOutputDeviceUID != device.uid {
-                settings.defaultOutputDeviceUID = device.uid
+            if self.settings.defaultOutputDeviceUID != device.uid {
+                self.settings.defaultOutputDeviceUID = device.uid
             }
         } else {
             print("[ERROR] Failed to set default output device: \(status)")
@@ -2220,7 +2225,7 @@ class AudioManager: ObservableObject {
     // 设置默认输入设备
     public func setDefaultInputDevice(_ device: AudioDevice) {
         // 如果已经是当前设备，则避免重复设置
-        if selectedInputDevice?.id == device.id {
+        if self.selectedInputDevice?.id == device.id {
             return
         }
 
@@ -2242,12 +2247,12 @@ class AudioManager: ObservableObject {
 
         if status == noErr {
             print("[DEVICE] Successfully set default input device: \(device.name)")
-            selectedInputDevice = device
+            self.selectedInputDevice = device
             // 保存为用户选择的设备
-            userSelectedInputUID = device.uid
+            self.userSelectedInputUID = device.uid
             // 同时保存到设置中，避免直接使用settings.defaultInputDeviceUID触发循环
-            if settings.defaultInputDeviceUID != device.uid {
-                settings.defaultInputDeviceUID = device.uid
+            if self.settings.defaultInputDeviceUID != device.uid {
+                self.settings.defaultInputDeviceUID = device.uid
             }
         } else {
             print("[ERROR] Failed to set default input device: \(status)")
@@ -2271,7 +2276,7 @@ class AudioManager: ObservableObject {
             // 查找匹配的输出设备
             if let outputDevice = outputDevices.first(where: { $0.uid == preferredOutputUID }) {
                 print("\u{001B}[32m[Smart Swaps]\u{001B}[0m 应用首选输出设备: \(outputDevice.name)")
-                setDefaultOutputDevice(outputDevice)
+                self.setDefaultOutputDevice(outputDevice)
             } else {
                 print("\u{001B}[33m[Smart Swaps]\u{001B}[0m 首选输出设备未找到或不可用: \(preferredOutputUID)")
             }
@@ -2283,7 +2288,7 @@ class AudioManager: ObservableObject {
             // 查找匹配的输入设备
             if let inputDevice = inputDevices.first(where: { $0.uid == preferredInputUID }) {
                 print("\u{001B}[32m[Smart Swaps]\u{001B}[0m 应用首选输入设备: \(inputDevice.name)")
-                setDefaultInputDevice(inputDevice)
+                self.setDefaultInputDevice(inputDevice)
             } else {
                 print("\u{001B}[33m[Smart Swaps]\u{001B}[0m 首选输入设备未找到或不可用: \(preferredInputUID)")
             }

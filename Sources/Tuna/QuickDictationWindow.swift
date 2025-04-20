@@ -39,20 +39,20 @@ class QuickDictationWindow {
         window.contentView = hostingView
 
         // 创建窗口控制器
-        windowController = NSWindowController(window: window)
+        self.windowController = NSWindowController(window: window)
 
         // 显示窗口
-        windowController?.showWindow(nil)
+        self.windowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
 
-        logger.notice("QuickDictation窗口已显示")
+        self.logger.notice("QuickDictation窗口已显示")
     }
 
     // 关闭窗口
     func close() {
-        windowController?.close()
-        windowController = nil
-        logger.notice("QuickDictation窗口已关闭")
+        self.windowController?.close()
+        self.windowController = nil
+        self.logger.notice("QuickDictation窗口已关闭")
     }
 
     // 检查窗口是否可见
@@ -63,10 +63,10 @@ class QuickDictationWindow {
 
     // 切换窗口的可见性
     func toggle() {
-        if isVisible {
-            close()
+        if self.isVisible {
+            self.close()
         } else {
-            show()
+            self.show()
         }
     }
 }

@@ -17,12 +17,12 @@ class TunaSettingsWindow {
 
     // 获取当前窗口的 frame
     var frame: NSRect {
-        windowController?.window?.frame ?? NSRect(x: 0, y: 0, width: 600, height: 300)
+        self.windowController?.window?.frame ?? NSRect(x: 0, y: 0, width: 600, height: 300)
     }
 
     // 获取内容视图
     var contentView: NSView? {
-        windowController?.window?.contentView
+        self.windowController?.window?.contentView
     }
 
     // 初始化方法改为内部可见，以便测试可以创建实例
@@ -57,7 +57,7 @@ class TunaSettingsWindow {
         let settingsView = TunaSettingsView()
         let hostingView = NSHostingView(rootView: settingsView)
         window.contentView = hostingView
-        rootHostingView = hostingView
+        self.rootHostingView = hostingView
 
         // 创建窗口控制器并存储引用
         windowController = NSWindowController(window: window)
@@ -74,7 +74,7 @@ class TunaSettingsWindow {
 
     /// 隐藏设置窗口
     func hide() {
-        windowController?.window?.orderOut(nil)
+        self.windowController?.window?.orderOut(nil)
     }
 
     /// 切换到指定的标签页
@@ -100,7 +100,7 @@ class TunaSettingsWindow {
         }
 
         // 确保窗口显示
-        show()
+        self.show()
     }
 
     /// 调整窗口高度以适应内容

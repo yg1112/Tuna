@@ -1,6 +1,9 @@
 # Tuna.app code formatting rules
 # See https://github.com/nicklockwood/SwiftFormat for documentation
 
+# Swift版本
+--swiftversion 5.10
+
 # 格式选项
 --allman false               # 使用 K&R 风格大括号（不使用 Allman 风格）
 --indent 4                   # 使用 4 个空格缩进
@@ -8,6 +11,10 @@
 --wraparguments before-first # 函数参数包装样式
 --wrapparameters before-first # 参数包装样式
 --wrapcollections before-first # 集合包装样式
+
+# Self 规则
+--self insert              # 自动插入 self
+--selfrequired true       # 要求显式使用 self
 
 # 规则启用/禁用
 --disable blankLinesAroundMark
@@ -29,4 +36,8 @@
 --semicolons inline          # 保持行内分号
 
 # 排除规则
---exclude vendor,Pods,Generated 
+--exclude vendor,Pods,Generated
+
+# 新增规则
+--rules explicitSelf
+--insertSelf true 

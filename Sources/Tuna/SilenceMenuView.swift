@@ -7,30 +7,30 @@ struct SilenceButton: View {
     let isActive: Bool
 
     var body: some View {
-        Button(action: action) {
+        Button(action: self.action) {
             ZStack {
                 Circle()
                     .fill(
-                        isActive ? Color(red: 0.3, green: 0.9, blue: 0.7) : Color.gray
+                        self.isActive ? Color(red: 0.3, green: 0.9, blue: 0.7) : Color.gray
                             .opacity(0.6)
                     )
                     .frame(width: 36, height: 36)
 
-                Image(systemName: isActive ? "waveform.slash" : "waveform")
+                Image(systemName: self.isActive ? "waveform.slash" : "waveform")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
             }
         }
         .buttonStyle(PlainButtonStyle())
         .onHover { hovering in
-            isHovering = hovering
+            self.isHovering = hovering
         }
         .shadow(
-            color: isActive ? Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5) : Color
+            color: self.isActive ? Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5) : Color
                 .clear,
             radius: 3
         )
-        .help(isActive ? "Disable Muted Mode" : "Enable Muted Mode")
+        .help(self.isActive ? "Disable Muted Mode" : "Enable Muted Mode")
     }
 }
 
@@ -51,10 +51,10 @@ struct SilenceMenuView: View {
 
                 Spacer()
 
-                if isExpanded {
+                if self.isExpanded {
                     Button(action: {
                         withAnimation {
-                            isExpanded.toggle()
+                            self.isExpanded.toggle()
                         }
                     }) {
                         Image(systemName: "chevron.down")
@@ -67,18 +67,18 @@ struct SilenceMenuView: View {
             .padding(.horizontal, 12)
             .padding(.top, 10)
 
-            if isExpanded {
+            if self.isExpanded {
                 VStack(spacing: 10) {
                     HStack(spacing: 10) {
                         // Status indicator
                         Circle()
                             .fill(
-                                isActive ? Color(red: 0.3, green: 0.9, blue: 0.7) : Color.gray
+                                self.isActive ? Color(red: 0.3, green: 0.9, blue: 0.7) : Color.gray
                                     .opacity(0.6)
                             )
                             .frame(width: 8, height: 8)
 
-                        Text(isActive ? "Muted Mode Active" : "Muted Mode Disabled")
+                        Text(self.isActive ? "Muted Mode Active" : "Muted Mode Disabled")
                             .foregroundColor(.white)
                             .font(.system(size: 13))
 
@@ -88,7 +88,7 @@ struct SilenceMenuView: View {
 
                     // Description text
                     Text(
-                        isActive ?
+                        self.isActive ?
                             "Your microphone is currently muted system-wide. Unmute to restore normal operation." :
                             "Enable muted mode to prevent microphone usage by all applications."
                     )
@@ -111,16 +111,16 @@ struct SilenceMenuView: View {
                         Spacer()
 
                         SilenceButton(action: {
-                            isActive.toggle()
+                            self.isActive.toggle()
                             // TODO: Implement actual muting functionality
-                        }, isActive: isActive)
+                        }, isActive: self.isActive)
                     }
                     .padding(.horizontal, 12)
 
                     // Settings button
                     HStack {
                         Button(action: {
-                            showingSettings.toggle()
+                            self.showingSettings.toggle()
                             // TODO: Implement settings view
                         }) {
                             HStack {
@@ -134,7 +134,7 @@ struct SilenceMenuView: View {
                             .padding(.vertical, 6)
                             .padding(.horizontal, 12)
                             .background(
-                                showingSettings ? Color.white.opacity(0.2) : Color
+                                self.showingSettings ? Color.white.opacity(0.2) : Color
                                     .clear
                             )
                             .cornerRadius(6)
@@ -145,7 +145,7 @@ struct SilenceMenuView: View {
 
                         // Devices button
                         Button(action: {
-                            showingDevices.toggle()
+                            self.showingDevices.toggle()
                             // TODO: Implement devices list
                         }) {
                             HStack {
@@ -159,7 +159,7 @@ struct SilenceMenuView: View {
                             .padding(.vertical, 6)
                             .padding(.horizontal, 12)
                             .background(
-                                showingDevices ? Color.white.opacity(0.2) : Color
+                                self.showingDevices ? Color.white.opacity(0.2) : Color
                                     .clear
                             )
                             .cornerRadius(6)
@@ -175,20 +175,20 @@ struct SilenceMenuView: View {
                 .padding(.bottom, 8)
             } else {
                 HStack {
-                    Text(isActive ? "Muted Mode Active" : "Muted Mode Disabled")
+                    Text(self.isActive ? "Muted Mode Active" : "Muted Mode Disabled")
                         .foregroundColor(.white)
                         .font(.system(size: 13))
 
                     Spacer()
 
                     SilenceButton(action: {
-                        isActive.toggle()
+                        self.isActive.toggle()
                         // TODO: Implement actual muting functionality
-                    }, isActive: isActive)
+                    }, isActive: self.isActive)
 
                     Button(action: {
                         withAnimation {
-                            isExpanded.toggle()
+                            self.isExpanded.toggle()
                         }
                     }) {
                         Image(systemName: "chevron.right")
@@ -204,7 +204,7 @@ struct SilenceMenuView: View {
         .background(Color.black.opacity(0.7))
         .cornerRadius(10)
         .onHover { hovering in
-            isHovering = hovering
+            self.isHovering = hovering
         }
     }
 }

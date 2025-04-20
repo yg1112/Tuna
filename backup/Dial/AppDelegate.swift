@@ -10,7 +10,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         // 创建状态栏图标
-        statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        self.statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusBarItem.button {
             // 设置图标
@@ -20,7 +20,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             )
 
             // 创建菜单视图
-            let menuView = MenuBarView().environmentObject(audioManager)
+            let menuView = MenuBarView().environmentObject(self.audioManager)
             let hostingView = NSHostingView(rootView: menuView)
             hostingView.frame = NSRect(x: 0, y: 0, width: 260, height: 400)
 
@@ -31,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             popover.contentViewController = NSHostingController(rootView: menuView)
 
             // 点击事件处理
-            button.action = #selector(togglePopover(_:))
+            button.action = #selector(self.togglePopover(_:))
             button.target = self
 
             // 存储 popover
@@ -45,9 +45,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func togglePopover(_ sender: AnyObject?) {
         if let popover {
             if popover.isShown {
-                closePopover(sender: sender)
+                self.closePopover(sender: sender)
             } else {
-                showPopover(sender: sender)
+                self.showPopover(sender: sender)
             }
         }
     }

@@ -10,7 +10,7 @@ class MainWindowManager: NSObject {
 
     // 获取主窗口
     var mainWindow: NSWindow? {
-        windowController?.window
+        self.windowController?.window
     }
 
     // 显示主窗口
@@ -19,12 +19,12 @@ class MainWindowManager: NSObject {
         if let window = mainWindow {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
-            logger.notice("显示现有主窗口")
+            self.logger.notice("显示现有主窗口")
             return
         }
 
         // 否则创建新窗口
-        createAndShowMainWindow()
+        self.createAndShowMainWindow()
     }
 
     // 创建并显示主窗口
@@ -51,13 +51,13 @@ class MainWindowManager: NSObject {
         window.contentView = hostingController.view
 
         // 创建窗口控制器并显示窗口
-        windowController = NSWindowController(window: window)
-        windowController?.showWindow(nil)
+        self.windowController = NSWindowController(window: window)
+        self.windowController?.showWindow(nil)
 
         // 确保应用处于活动状态并窗口显示在前
         NSApp.activate(ignoringOtherApps: true)
 
-        logger.notice("已创建并显示主窗口")
+        self.logger.notice("已创建并显示主窗口")
     }
 }
 
@@ -75,7 +75,7 @@ struct MainWindowView: View {
                 Spacer()
 
                 Button(action: {
-                    router.current = "devices"
+                    self.router.current = "devices"
                 }) {
                     VStack {
                         Image(systemName: "speaker.wave.2.fill")
@@ -86,16 +86,16 @@ struct MainWindowView: View {
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
                     .background(
-                        router.current == "devices" ? Color.blue.opacity(0.6) : Color
+                        self.router.current == "devices" ? Color.blue.opacity(0.6) : Color
                             .clear
                     )
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .foregroundColor(router.current == "devices" ? .white : .secondary)
+                .foregroundColor(self.router.current == "devices" ? .white : .secondary)
 
                 Button(action: {
-                    router.current = "dictation"
+                    self.router.current = "dictation"
                 }) {
                     VStack {
                         Image(systemName: "waveform")
@@ -106,16 +106,16 @@ struct MainWindowView: View {
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
                     .background(
-                        router.current == "dictation" ? Color.blue.opacity(0.6) : Color
+                        self.router.current == "dictation" ? Color.blue.opacity(0.6) : Color
                             .clear
                     )
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .foregroundColor(router.current == "dictation" ? .white : .secondary)
+                .foregroundColor(self.router.current == "dictation" ? .white : .secondary)
 
                 Button(action: {
-                    router.current = "settings"
+                    self.router.current = "settings"
                 }) {
                     VStack {
                         Image(systemName: "gear")
@@ -126,13 +126,13 @@ struct MainWindowView: View {
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
                     .background(
-                        router.current == "settings" ? Color.blue.opacity(0.6) : Color
+                        self.router.current == "settings" ? Color.blue.opacity(0.6) : Color
                             .clear
                     )
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .foregroundColor(router.current == "settings" ? .white : .secondary)
+                .foregroundColor(self.router.current == "settings" ? .white : .secondary)
 
                 Spacer()
             }
@@ -142,19 +142,19 @@ struct MainWindowView: View {
             // 内容区域
             ZStack {
                 // 设备管理标签
-                if router.current == "devices" {
+                if self.router.current == "devices" {
                     ScrollView {
                         VStack(spacing: 16) {
                             // 输出设备卡片
                             OutputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
+                                audioManager: self.audioManager,
+                                settings: self.settings
                             )
 
                             // 输入设备卡片
                             InputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
+                                audioManager: self.audioManager,
+                                settings: self.settings
                             )
                         }
                         .padding()
@@ -162,13 +162,13 @@ struct MainWindowView: View {
                 }
 
                 // 听写标签
-                if router.current == "dictation" {
+                if self.router.current == "dictation" {
                     DictationView()
-                        .environmentObject(dictationManager)
+                        .environmentObject(self.dictationManager)
                 }
 
                 // 设置标签
-                if router.current == "settings" {
+                if self.router.current == "settings" {
                     TunaSettingsView()
                 }
             }
@@ -181,7 +181,7 @@ struct MainWindowView: View {
         .onAppear {
             // 记录窗口出现
             Logger(subsystem: "ai.tuna", category: "MainWindow")
-                .notice("MainWindow appeared with router.current == \(router.current)")
+                .notice("MainWindow appeared with router.current == \(self.router.current)")
         }
     }
 }
