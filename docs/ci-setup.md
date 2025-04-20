@@ -51,6 +51,40 @@ make bootstrap && make test
 7. 运行单元测试
 8. 上传测试结果
 
+## 🔒 Secrets
+
+项目CI自动化过程中需要使用GitHub个人访问令牌(PAT)，请遵循以下安全实践：
+
+### 本地使用
+
+在本地使用CI监控工具时，请通过环境变量临时导出令牌：
+
+```bash
+# 仅在当前shell中设置令牌
+export GITHUB_TOKEN=ghp_your_token_here
+
+# 使用完成后务必清除
+unset GITHUB_TOKEN
+```
+
+### 仓库设置
+
+对于GitHub Actions工作流，请将令牌设置为仓库密钥：
+
+1. 导航到 GitHub 仓库 → Settings → Secrets → Actions
+2. 点击 "New repository secret"
+3. 名称设为 `GITHUB_TOKEN`
+4. 值填入个人访问令牌
+5. 点击 "Add secret" 保存
+
+### 安全警告
+
+- ⚠️ **禁止**将令牌直接提交到仓库中
+- ⚠️ **禁止**将令牌硬编码到任何脚本或配置文件中
+- ⚠️ **禁止**在公共场合分享令牌
+- ✅ 仓库已配置pre-commit钩子自动检测并阻止令牌提交
+- ✅ 可以将令牌保存在单独的`.token`文件中（已添加到.gitignore）
+
 ## 自动化 CI 监控
 
 项目包含自动监控和合并PR的工具。要使用此功能：
