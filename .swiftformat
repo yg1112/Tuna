@@ -15,7 +15,7 @@
 --disable specifiers          # 不删除冗余访问控制说明符
 
 # 命名规则
---enumnamespaces structured  # 使用结构化命名空间
+--enumnamespaces structs-only  # 使用结构化命名空间
 
 # 禁用文件头规则，使用项目特定注释
 --header ignore

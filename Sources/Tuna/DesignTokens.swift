@@ -25,7 +25,7 @@ enum Typography {
 // 设置侧边栏项的修饰符
 struct SettingsSidebarItemStyle: ViewModifier {
     let isSelected: Bool
-    
+
     func body(content: Content) -> some View {
         content
             .font(.system(size: 13, weight: .bold))
@@ -36,6 +36,6 @@ struct SettingsSidebarItemStyle: ViewModifier {
 
 extension View {
     func sidebarItemStyle(isSelected: Bool) -> some View {
-        self.modifier(SettingsSidebarItemStyle(isSelected: isSelected))
+        modifier(SettingsSidebarItemStyle(isSelected: isSelected))
     }
-} 
+}

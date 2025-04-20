@@ -16,10 +16,17 @@ struct AudioMode: Identifiable, Codable, Equatable {
     var inputVolume: Float
     /// Whether this is an automatic mode
     var isAutomatic: Bool
-    
+
     /// Create a new audio mode
-    init(id: String = UUID().uuidString, name: String, outputDeviceUID: String, inputDeviceUID: String, 
-         outputVolume: Float = 0.5, inputVolume: Float = 0.5, isAutomatic: Bool = false) {
+    init(
+        id: String = UUID().uuidString,
+        name: String,
+        outputDeviceUID: String,
+        inputDeviceUID: String,
+        outputVolume: Float = 0.5,
+        inputVolume: Float = 0.5,
+        isAutomatic: Bool = false
+    ) {
         self.id = id
         self.name = name
         self.outputDeviceUID = outputDeviceUID
@@ -28,8 +35,8 @@ struct AudioMode: Identifiable, Codable, Equatable {
         self.inputVolume = inputVolume
         self.isAutomatic = isAutomatic
     }
-    
+
     static func == (lhs: AudioMode, rhs: AudioMode) -> Bool {
-        return lhs.id == rhs.id
+        lhs.id == rhs.id
     }
-} 
+}

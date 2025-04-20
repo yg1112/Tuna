@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 // @module: SettingsUI
 // @created_by_cursor: yes
@@ -9,16 +9,16 @@ import AppKit
 // ---------- Field‑Editor ----------
 final class ShortcutFieldEditor: NSTextView {
     weak var owner: ShortcutField?
-    
+
     override func keyDown(with e: NSEvent) {
         print("🖊 keyDown", e.keyCode)
         switch e.keyCode {
-        case 51: owner?.update("")               // ⌫
-        case 53: window?.makeFirstResponder(nil) // ESC
-        default: super.keyDown(with: e)
+            case 51: owner?.update("") // ⌫
+            case 53: window?.makeFirstResponder(nil) // ESC
+            default: super.keyDown(with: e)
         }
     }
-    
+
     override func performKeyEquivalent(with e: NSEvent) -> Bool {
         let m = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard !m.isEmpty else { return false }
@@ -26,22 +26,22 @@ final class ShortcutFieldEditor: NSTextView {
         owner?.update(Self.fmt(e))
         return true
     }
-    
+
     private static func fmt(_ e: NSEvent) -> String {
         var p: [String] = []; let f = e.modifierFlags
-        if f.contains(.command)  { p.append("cmd")  }
-        if f.contains(.option)   { p.append("opt")  }
-        if f.contains(.control)  { p.append("ctrl") }
-        if f.contains(.shift)    { p.append("shift")}
+        if f.contains(.command) { p.append("cmd") }
+        if f.contains(.option) { p.append("opt") }
+        if f.contains(.control) { p.append("ctrl") }
+        if f.contains(.shift) { p.append("shift") }
         if let c = e.charactersIgnoringModifiers?.lowercased(), !c.isEmpty { p.append(c) }
-        return p.joined(separator:"+")
+        return p.joined(separator: "+")
     }
 }
 
 // ---------- NSTextField ----------
 final class ShortcutField: NSTextField {
     var onChange: (String) -> Void = { _ in }
-    
+
     private lazy var fe: ShortcutFieldEditor = {
         let v = ShortcutFieldEditor()
         v.isFieldEditor = true
@@ -50,13 +50,13 @@ final class ShortcutField: NSTextField {
         v.font = font
         return v
     }()
-    
-    func update(_ s: String) { 
+
+    func update(_ s: String) {
         stringValue = s
         onChange(s)
         print("🔄 value ->", s)
     }
-    
+
     override func becomeFirstResponder() -> Bool {
         guard let win = window else { return super.becomeFirstResponder() }
         print("👑 firstResponder before =", win.firstResponder as Any)
@@ -64,7 +64,7 @@ final class ShortcutField: NSTextField {
         window?.fieldEditor(true, for: self)
         return super.becomeFirstResponder()
     }
-    
+
     // Provide our own field editor
     func fieldEditor(for object: Any?) -> NSText? {
         print("🔧 fieldEditor requested for object:", object as Any)
@@ -76,12 +76,12 @@ final class ShortcutField: NSTextField {
 struct ShortcutTextField: NSViewRepresentable {
     @Binding var keyCombo: String
     var placeholder: String
-    
+
     init(keyCombo: Binding<String>, placeholder: String = "Click to set shortcut") {
-        self._keyCombo = keyCombo
+        _keyCombo = keyCombo
         self.placeholder = placeholder
     }
-    
+
     func makeNSView(context: Context) -> ShortcutField {
         let field = ShortcutField()
         field.isBordered = true
@@ -93,15 +93,15 @@ struct ShortcutTextField: NSViewRepresentable {
         field.onChange = { value in
             keyCombo = value
         }
-        
+
         field.wantsLayer = true
         field.layer?.cornerRadius = 4
         field.layer?.borderWidth = 1
         field.layer?.borderColor = NSColor.separatorColor.cgColor
-        
+
         return field
     }
-    
+
     func updateNSView(_ field: ShortcutField, context: Context) {
         if field.stringValue != keyCombo {
             field.stringValue = keyCombo
@@ -124,10 +124,10 @@ struct ShortcutTextField_Previews: PreviewProvider {
         VStack(spacing: 20) {
             ShortcutTextField(keyCombo: .constant("cmd+u"))
                 .frame(width: 200)
-            
+
             ShortcutTextField(keyCombo: .constant(""), placeholder: "Enter shortcut...")
                 .frame(width: 200)
         }
         .padding()
     }
-} 
+}

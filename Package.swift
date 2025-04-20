@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "Tuna",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v13),
     ],
     products: [
-        .executable(name: "Tuna", targets: ["Tuna"])
+        .executable(name: "Tuna", targets: ["Tuna"]),
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.13.0"),
-        .package(url: "https://github.com/nalexn/ViewInspector.git", from: "0.9.8")
+        .package(url: "https://github.com/nalexn/ViewInspector.git", from: "0.9.8"),
     ],
     targets: [
         .executableTarget(
@@ -19,10 +19,10 @@ let package = Package(
             dependencies: [],
             path: "Sources/Tuna",
             resources: [
-                .process("Resources")
+                .process("Resources"),
             ],
             swiftSettings: [
-                .define("NEW_SETTINGS_UI")
+                .define("NEW_SETTINGS_UI"),
             ]
         ),
         .testTarget(
@@ -30,19 +30,19 @@ let package = Package(
             dependencies: [
                 "Tuna",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
-                .product(name: "ViewInspector", package: "ViewInspector")
+                .product(name: "ViewInspector", package: "ViewInspector"),
             ],
             path: "Tests/TunaTests",
             resources: [
-                .process("__Snapshots__")
+                .process("__Snapshots__"),
             ]
         ),
         .testTarget(
-            name: "MenuBarPopoverTests", 
+            name: "MenuBarPopoverTests",
             dependencies: [
-                "Tuna"
+                "Tuna",
             ],
             path: "Tests/MenuBarPopoverTests"
-        )
+        ),
     ]
-) 
+)

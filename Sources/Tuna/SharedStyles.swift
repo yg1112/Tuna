@@ -8,10 +8,13 @@ struct GreenButtonStyle: ButtonStyle {
             .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(configuration.isPressed ? Color.green.opacity(0.6) : Color.green.opacity(0.8))
+                    .fill(
+                        configuration.isPressed ? Color.green.opacity(0.6) : Color.green
+                            .opacity(0.8)
+                    )
             )
             .foregroundColor(.white)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
-} 
+}

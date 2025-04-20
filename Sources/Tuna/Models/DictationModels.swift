@@ -13,9 +13,9 @@ public protocol DictationManagerProtocol: ObservableObject {
     var state: DictationState { get set }
     var progressMessage: String { get set }
     var transcribedText: String { get set }
-    
+
     func startRecording()
     func pauseRecording()
     func stopRecording()
     func getDocumentsDirectory() -> URL
-} 
+}
