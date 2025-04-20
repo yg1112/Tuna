@@ -54,7 +54,8 @@ class KeyboardShortcutManager {
         if let keyCombo = parseKeyCombo(settings.dictationShortcutKeyCombo) {
             registerDictationShortcut(keyCombo)
         } else {
-            logger.error("Failed to parse key combo: \(settings.dictationShortcutKeyCombo)")
+            logger
+                .error("Failed to parse key combo: \(settings.dictationShortcutKeyCombo)")
         }
     }
 

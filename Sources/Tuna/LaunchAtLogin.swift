@@ -31,7 +31,8 @@ enum LaunchAtLogin {
                 print("\u{001B}[32m[SUCCESS]\u{001B}[0m App removed from login items")
             } catch {
                 print("\u{001B}[31m[ERROR]\u{001B}[0m Cannot remove from login items: \(error)")
-                logger.error("Failed to disable launch at login: \(error.localizedDescription)")
+                logger
+                    .error("Failed to disable launch at login: \(error.localizedDescription)")
             }
             fflush(stdout)
         }

@@ -1087,7 +1087,8 @@ class AudioManager: ObservableObject {
         // 对于蓝牙设备，使用专用的同步方法
         let isBluetoothOutput = selectedOutputDevice?.uid.lowercased()
             .contains("bluetooth") ?? false
-        let isBluetoothInput = selectedInputDevice?.uid.lowercased().contains("bluetooth") ?? false
+        let isBluetoothInput = selectedInputDevice?.uid.lowercased()
+            .contains("bluetooth") ?? false
 
         // 对蓝牙设备使用直接查询方法
         if isBluetoothOutput || isBluetoothInput {
@@ -1192,7 +1193,9 @@ class AudioManager: ObservableObject {
                 Swift.print("当前默认输出设备: \(outputDevice.name) [ID: \(outputDevice.id)]")
 
                 if userSelectedOutputUID == nil || outputDevice.uid == userSelectedOutputUID {
-                    if selectedOutputDevice == nil || selectedOutputDevice!.id != outputDevice.id {
+                    if selectedOutputDevice == nil || selectedOutputDevice!
+                        .id != outputDevice.id
+                    {
                         outputChanged = true
                         selectedOutputDevice = outputDevice
                         Swift.print("已选择输出设备: \(outputDevice.name)")
@@ -1245,13 +1248,18 @@ class AudioManager: ObservableObject {
                 Swift.print("当前默认输入设备: \(inputDevice.name) [ID: \(inputDevice.id)]")
 
                 if userSelectedInputUID == nil || inputDevice.uid == userSelectedInputUID {
-                    if selectedInputDevice == nil || selectedInputDevice!.id != inputDevice.id {
+                    if selectedInputDevice == nil || selectedInputDevice!
+                        .id != inputDevice.id
+                    {
                         inputChanged = true
                         selectedInputDevice = inputDevice
                         Swift.print("已选择输入设备: \(inputDevice.name)")
 
                         // 获取输入设备音量
-                        let newVolume = directSystemVolumeQuery(device: inputDevice, isInput: true)
+                        let newVolume = directSystemVolumeQuery(
+                            device: inputDevice,
+                            isInput: true
+                        )
 
                         // 检查音量是否与先前的显著不同，如果是，更新显示
                         if abs(inputVolume - newVolume) > 0.01 {
@@ -1322,8 +1330,9 @@ class AudioManager: ObservableObject {
             }
 
             // 蓝牙设备特殊处理：如果更换为蓝牙设备，使用更精确的音量同步
-            if inputChanged, selectedInputDevice != nil, selectedInputDevice!.uid.lowercased()
-                .contains("bluetooth")
+            if inputChanged, selectedInputDevice != nil,
+               selectedInputDevice!.uid.lowercased()
+                   .contains("bluetooth")
             {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     self.syncBluetoothDeviceVolume(device: self.selectedInputDevice!, isInput: true)

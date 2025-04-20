@@ -90,7 +90,10 @@ class StatsStore: ObservableObject {
         }
 
         // 更新最后使用日期为今天
-        userDefaults.set(ISO8601DateFormatter().string(from: today), forKey: "stats_lastUsedDate")
+        userDefaults.set(
+            ISO8601DateFormatter().string(from: today),
+            forKey: "stats_lastUsedDate"
+        )
     }
 
     /// 增加Smart Swaps计数

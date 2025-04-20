@@ -85,7 +85,10 @@ struct MainWindowView: View {
                     }
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
-                    .background(router.current == "devices" ? Color.blue.opacity(0.6) : Color.clear)
+                    .background(
+                        router.current == "devices" ? Color.blue.opacity(0.6) : Color
+                            .clear
+                    )
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -143,10 +146,16 @@ struct MainWindowView: View {
                     ScrollView {
                         VStack(spacing: 16) {
                             // 输出设备卡片
-                            OutputDeviceCard(audioManager: audioManager, settings: settings)
+                            OutputDeviceCard(
+                                audioManager: audioManager,
+                                settings: settings
+                            )
 
                             // 输入设备卡片
-                            InputDeviceCard(audioManager: audioManager, settings: settings)
+                            InputDeviceCard(
+                                audioManager: audioManager,
+                                settings: settings
+                            )
                         }
                         .padding()
                     }

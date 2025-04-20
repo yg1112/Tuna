@@ -327,7 +327,10 @@ struct TunaSettingsView: View {
                             .font(Typography.body)
                             .frame(width: 60, alignment: .leading)
 
-                        Picker("Output device", selection: $settings.preferredOutputDeviceUID) {
+                        Picker(
+                            "Output device",
+                            selection: $settings.preferredOutputDeviceUID
+                        ) {
                             ForEach(audioManager.outputDevices, id: \.uid) { device in
                                 Text(device.name).tag(device.uid)
                             }
