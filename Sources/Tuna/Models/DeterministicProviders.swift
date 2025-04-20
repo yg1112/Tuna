@@ -20,10 +20,10 @@ struct StaticNowProvider: NowProvider {
     let fixedDate: Date
 
     init(_ date: Date) {
-        fixedDate = date
+        self.fixedDate = date
     }
 
-    var now: Date { fixedDate }
+    var now: Date { self.fixedDate }
 }
 
 /// Extension for testing convenience
@@ -50,10 +50,10 @@ struct StaticUUIDProvider: UUIDProvider {
     let fixedUUID: UUID
 
     init(_ uuid: UUID) {
-        fixedUUID = uuid
+        self.fixedUUID = uuid
     }
 
-    func uuid() -> UUID { fixedUUID }
+    func uuid() -> UUID { self.fixedUUID }
 }
 
 /// Extension for testing convenience

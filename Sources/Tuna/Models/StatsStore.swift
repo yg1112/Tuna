@@ -18,16 +18,16 @@ class StatsStore: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     private init() {
-        loadStats()
-        setupObservers()
-        checkAndUpdateDailyStreak()
+        self.loadStats()
+        self.setupObservers()
+        self.checkAndUpdateDailyStreak()
     }
 
     /// 从UserDefaults加载统计数据
     private func loadStats() {
-        consecutiveDays = userDefaults.integer(forKey: "stats_consecutiveDays")
-        wordsFreed = userDefaults.integer(forKey: "stats_wordsFreed")
-        smartSwaps = userDefaults.integer(forKey: "stats_smartSwaps")
+        self.consecutiveDays = self.userDefaults.integer(forKey: "stats_consecutiveDays")
+        self.wordsFreed = self.userDefaults.integer(forKey: "stats_wordsFreed")
+        self.smartSwaps = self.userDefaults.integer(forKey: "stats_smartSwaps")
     }
 
     /// 设置相关事件的观察者
@@ -42,7 +42,7 @@ class StatsStore: ObservableObject {
                     self?.incrementSmartSwaps()
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &self.cancellables)
 
         // 监听文字转录完成事件
         NotificationCenter.default.publisher(for: NSNotification.Name("dictationFinished"))
@@ -53,7 +53,7 @@ class StatsStore: ObservableObject {
                     self?.incrementWordsFreed(by: wordCount)
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &self.cancellables)
     }
 
     /// 检查并更新每日连续使用统计
@@ -75,22 +75,22 @@ class StatsStore: ObservableObject {
             // 如果是昨天使用的，增加连续天数
             let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
             if calendar.isDate(lastUsedDay, inSameDayAs: yesterday) {
-                consecutiveDays += 1
-                userDefaults.set(consecutiveDays, forKey: "stats_consecutiveDays")
+                self.consecutiveDays += 1
+                self.userDefaults.set(self.consecutiveDays, forKey: "stats_consecutiveDays")
             }
             // 如果超过一天没用，重置连续天数为1
             else if !calendar.isDate(lastUsedDay, inSameDayAs: today) {
-                consecutiveDays = 1
-                userDefaults.set(consecutiveDays, forKey: "stats_consecutiveDays")
+                self.consecutiveDays = 1
+                self.userDefaults.set(self.consecutiveDays, forKey: "stats_consecutiveDays")
             }
         } else {
             // 首次使用，设置为1天
-            consecutiveDays = 1
-            userDefaults.set(consecutiveDays, forKey: "stats_consecutiveDays")
+            self.consecutiveDays = 1
+            self.userDefaults.set(self.consecutiveDays, forKey: "stats_consecutiveDays")
         }
 
         // 更新最后使用日期为今天
-        userDefaults.set(
+        self.userDefaults.set(
             ISO8601DateFormatter().string(from: today),
             forKey: "stats_lastUsedDate"
         )
@@ -98,14 +98,14 @@ class StatsStore: ObservableObject {
 
     /// 增加Smart Swaps计数
     func incrementSmartSwaps() {
-        smartSwaps += 1
-        userDefaults.set(smartSwaps, forKey: "stats_smartSwaps")
+        self.smartSwaps += 1
+        self.userDefaults.set(self.smartSwaps, forKey: "stats_smartSwaps")
     }
 
     /// 增加解放的单词数
     func incrementWordsFreed(by count: Int = 1) {
-        wordsFreed += count
-        userDefaults.set(wordsFreed, forKey: "stats_wordsFreed")
+        self.wordsFreed += count
+        self.userDefaults.set(self.wordsFreed, forKey: "stats_wordsFreed")
     }
 
     /// 创建一个预览实例

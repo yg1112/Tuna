@@ -9,7 +9,7 @@ class MockURLProtocol: URLProtocol {
 
     // 重置所有模拟数据
     static func reset() {
-        mockResponses = [:]
+        self.mockResponses = [:]
     }
 
     // 注册模拟响应
@@ -25,7 +25,7 @@ class MockURLProtocol: URLProtocol {
             httpVersion: nil,
             headerFields: nil
         )!
-        mockResponses[url] = (data, response, error)
+        self.mockResponses[url] = (data, response, error)
     }
 
     // 判断是否可以处理请求
@@ -81,10 +81,10 @@ class MagicTransformServiceMockTests: XCTestCase {
         // 配置测试会话
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
-        session = URLSession(configuration: configuration)
+        self.session = URLSession(configuration: configuration)
 
         // 初始化服务，使用模拟会话
-        service = MagicTransformService(session: session)
+        self.service = MagicTransformService(session: self.session)
 
         // 设置API密钥
         TunaSettings.shared.dictationApiKey = "test_api_key"
@@ -92,8 +92,8 @@ class MagicTransformServiceMockTests: XCTestCase {
 
     override func tearDown() {
         MockURLProtocol.reset()
-        session = nil
-        service = nil
+        self.session = nil
+        self.service = nil
         super.tearDown()
     }
 
@@ -122,7 +122,7 @@ class MagicTransformServiceMockTests: XCTestCase {
         let responseData = responseJSON.data(using: .utf8)!
 
         // 注册模拟响应
-        MockURLProtocol.registerMockResponse(for: apiURL, data: responseData, statusCode: 200)
+        MockURLProtocol.registerMockResponse(for: self.apiURL, data: responseData, statusCode: 200)
 
         // 执行转换
         let template = PromptTemplate(id: .concise, system: "Test system prompt")
@@ -148,12 +148,12 @@ class MagicTransformServiceMockTests: XCTestCase {
         let errorData = errorJSON.data(using: .utf8)!
 
         // 注册模拟响应
-        MockURLProtocol.registerMockResponse(for: apiURL, data: errorData, statusCode: 401)
+        MockURLProtocol.registerMockResponse(for: self.apiURL, data: errorData, statusCode: 401)
 
         // 执行转换并捕获错误
         do {
             let template = PromptTemplate(id: .concise, system: "Test system prompt")
-            _ = try await service.transform("Test input", template: template)
+            _ = try await self.service.transform("Test input", template: template)
             XCTFail("应该抛出错误")
         } catch {
             // 验证错误
@@ -174,12 +174,12 @@ class MagicTransformServiceMockTests: XCTestCase {
         )
 
         // 注册错误响应
-        MockURLProtocol.registerMockResponse(for: apiURL, data: Data(), error: networkError)
+        MockURLProtocol.registerMockResponse(for: self.apiURL, data: Data(), error: networkError)
 
         // 执行转换并捕获错误
         do {
             let template = PromptTemplate(id: .concise, system: "Test system prompt")
-            _ = try await service.transform("Test input", template: template)
+            _ = try await self.service.transform("Test input", template: template)
             XCTFail("应该抛出错误")
         } catch {
             // 验证错误是网络错误
@@ -203,7 +203,7 @@ class MagicTransformServiceMockTests: XCTestCase {
         // 执行转换并捕获错误
         do {
             let template = PromptTemplate(id: .concise, system: "Test system prompt")
-            _ = try await service.transform("Test input", template: template)
+            _ = try await self.service.transform("Test input", template: template)
             XCTFail("应该抛出错误")
         } catch {
             // 验证错误

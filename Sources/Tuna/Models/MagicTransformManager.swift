@@ -11,8 +11,8 @@ final class MagicTransformManager: ObservableObject {
         let style = TunaSettings.shared.magicPreset
         let tpl = PromptTemplate.library[style]!
         let polished = try? await MagicTransformService.transform(raw, template: tpl)
-        lastResult = polished ?? raw
+        self.lastResult = polished ?? raw
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(lastResult, forType: .string)
+        NSPasteboard.general.setString(self.lastResult, forType: .string)
     }
 }

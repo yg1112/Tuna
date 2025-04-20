@@ -12,11 +12,11 @@ struct StatPill: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            Text("\(value)")
+            Text("\(self.value)")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(TunaTheme.textPri)
 
-            Text(label)
+            Text(self.label)
                 .font(.system(size: 11))
                 .foregroundColor(TunaTheme.textSec)
         }
@@ -34,9 +34,9 @@ struct StatsRibbonView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            StatPill(value: store.consecutiveDays, label: "days in")
-            StatPill(value: store.wordsFreed, label: "words freed")
-            StatPill(value: store.smartSwaps, label: "smart swaps")
+            StatPill(value: self.store.consecutiveDays, label: "days in")
+            StatPill(value: self.store.wordsFreed, label: "words freed")
+            StatPill(value: self.store.smartSwaps, label: "smart swaps")
         }
         .padding(.vertical, 2)
     }

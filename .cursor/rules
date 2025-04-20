@@ -20,6 +20,10 @@ context:
     - Sources/Tuna/TabRouter.swift
 snippets_dir: .cursor/snippets
 
+# 添加新规则
+require_explicit_self = true
+run_make_format_on_write = true
+
 rules:
   cursor_context_auto_update:
     description: "Keep .cursorscratchpad and docs/GPT_CONTEXT.md in sync with source changes"
@@ -95,4 +99,25 @@ rules:
             echo "⚠️ Snapshot resources missing in Package.swift"
             echo "Add resources: [.process(\"__Snapshots__\")] to the testTarget configuration"
             exit 1
-          fi 
+          fi
+
+  explicit_self_check:
+    description: "Enforce explicit self in closures"
+    trigger:
+      on_change:
+        - "**/*.swift"
+    steps:
+      - run: |
+          if ! swiftformat --config .swiftformat . --lint; then
+            echo "⚠️ Found implicit self usage in closures"
+            echo "Please run 'make format' to fix"
+            exit 1
+          fi
+
+  format_on_write:
+    description: "Run SwiftFormat on file writes"
+    trigger:
+      on_write:
+        - "**/*.swift"
+    steps:
+      - run: make format 

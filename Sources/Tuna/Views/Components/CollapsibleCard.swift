@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // @module: SettingsUI
@@ -6,64 +7,45 @@ import SwiftUI
 // @depends_on: DesignTokens.swift
 
 struct CollapsibleCard<Content: View>: View {
-    var title: String
+    let title: String
     @Binding var isExpanded: Bool
-    var content: () -> Content
+    let content: () -> Content
 
-    // Constructor with Binding
     init(title: String, isExpanded: Binding<Bool>, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
-        _isExpanded = isExpanded
-        self.content = content
-    }
-
-    // Backward compatibility with static isExpanded value
-    init(title: String, isExpanded: Bool = true, @ViewBuilder content: @escaping () -> Content) {
-        self.title = title
-        _isExpanded = .constant(isExpanded)
+        self._isExpanded = isExpanded
         self.content = content
     }
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
-            content()
-                .padding(.top, 6)
-        } label: {
+        VStack(alignment: .leading, spacing: 0) {
             Button(action: {
-                print("🔵 \(title) tapped") // 调试日志
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isExpanded.toggle()
+                withAnimation {
+                    self.isExpanded.toggle()
                 }
             }) {
                 HStack {
-                    Text(title)
-                        .font(Typography.title)
-                        .foregroundColor(.primary)
+                    Text(self.title)
+                        .font(.headline)
                     Spacer()
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    Image(systemName: self.isExpanded ? "chevron.up" : "chevron.down")
                         .foregroundColor(.secondary)
                 }
+                .padding(.vertical, 12)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PlainButtonStyle())
+            .accessibilityIdentifier("\(self.title)Toggle")
+
+            if self.isExpanded {
+                self.content()
+                    .padding(.top, 8)
+                    .transition(.opacity)
+            }
         }
-        .padding(Metrics.cardPad)
-        .background(Colors.cardBg)
-        .allowsHitTesting(true) // 明确允许点击
-        .cornerRadius(Metrics.cardR)
-        .overlay(
-            RoundedRectangle(cornerRadius: Metrics.cardR)
-                .stroke(Color(.separatorColor), lineWidth: 0.5)
-                .allowsHitTesting(false)
-        )
-        .overlay(
-            Rectangle().fill(Color.green.opacity(0.85))
-                .frame(width: 3)
-                .opacity(isExpanded ? 1 : 0)
-                .allowsHitTesting(false)
-                .animation(.easeInOut(duration: 0.15), value: isExpanded),
-            alignment: .leading
-        )
+        .padding(.horizontal)
+        .background(Color(NSColor.windowBackgroundColor))
+        .cornerRadius(8)
     }
 }
 

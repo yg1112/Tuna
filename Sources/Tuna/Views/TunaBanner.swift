@@ -45,12 +45,12 @@ struct TunaBanner: View {
         VStack {
             HStack(spacing: 12) {
                 // 图标
-                Image(systemName: type.iconName)
+                Image(systemName: self.type.iconName)
                     .font(.system(size: 18))
-                    .foregroundColor(type.color)
+                    .foregroundColor(self.type.color)
 
                 // 消息文本
-                Text(message)
+                Text(self.message)
                     .font(.system(size: 14))
                     .foregroundColor(Color.white)
                     .multilineTextAlignment(.leading)
@@ -64,10 +64,10 @@ struct TunaBanner: View {
                     }) {
                         Text(actionLabel)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(type.color)
+                            .foregroundColor(self.type.color)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(type.color.opacity(0.2))
+                            .background(self.type.color.opacity(0.2))
                             .cornerRadius(4)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -76,7 +76,7 @@ struct TunaBanner: View {
                 // 关闭按钮
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.3)) {
-                        isPresented = false
+                        self.isPresented = false
                     }
                 }) {
                     Image(systemName: "xmark")
@@ -91,20 +91,20 @@ struct TunaBanner: View {
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(type.color.opacity(0.3), lineWidth: 1)
+                    .stroke(self.type.color.opacity(0.3), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-            .offset(y: offset)
+            .offset(y: self.offset)
             .onAppear {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                    offset = 0
+                    self.offset = 0
                 }
 
                 // 设置自动关闭计时器（5秒）
                 DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                    if isPresented {
+                    if self.isPresented {
                         withAnimation {
-                            isPresented = false
+                            self.isPresented = false
                         }
                     }
                 }

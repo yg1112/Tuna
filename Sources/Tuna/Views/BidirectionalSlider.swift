@@ -20,21 +20,21 @@ struct BidirectionalSlider: View {
             // 主布局容器
             ZStack(alignment: .center) {
                 // 背景轨道 - 确保可见
-                RoundedRectangle(cornerRadius: trackHeight / 2)
-                    .fill(accentColor.opacity(0.3))
-                    .frame(height: trackHeight)
+                RoundedRectangle(cornerRadius: self.trackHeight / 2)
+                    .fill(self.accentColor.opacity(0.3))
+                    .frame(height: self.trackHeight)
 
                 // 高亮轨道
-                let thumbPosition = ((value - minValue) / (maxValue - minValue)) *
+                let thumbPosition = ((value - self.minValue) / (self.maxValue - self.minValue)) *
                     geometry.size
                     .width
 
                 // 滑块按钮 - 使用更大、更明显的样式
                 Circle()
                     .fill(Color.white)
-                    .frame(width: thumbSize, height: thumbSize)
+                    .frame(width: self.thumbSize, height: self.thumbSize)
                     .shadow(color: Color.black.opacity(0.3), radius: 2)
-                    .overlay(Circle().stroke(accentColor, lineWidth: 1.5))
+                    .overlay(Circle().stroke(self.accentColor, lineWidth: 1.5))
                     .position(x: thumbPosition, y: geometry.size.height / 2)
                     .gesture(
                         DragGesture(minimumDistance: 0)
@@ -42,7 +42,8 @@ struct BidirectionalSlider: View {
                                 // 直接从拖动位置计算值
                                 let newX = min(max(0, gesture.location.x), geometry.size.width)
                                 let percentage = newX / geometry.size.width
-                                value = minValue + (maxValue - minValue) * percentage
+                                self.value = self
+                                    .minValue + (self.maxValue - self.minValue) * percentage
                             }
                     )
             }
@@ -60,8 +61,8 @@ struct BidirectionalSlider_Previews: PreviewProvider {
 
             var body: some View {
                 VStack {
-                    Text("Value: \(String(format: "%.1f", value))")
-                    BidirectionalSlider(value: $value)
+                    Text("Value: \(String(format: "%.1f", self.value))")
+                    BidirectionalSlider(value: self.$value)
                         .frame(height: 100)
                         .padding()
                 }

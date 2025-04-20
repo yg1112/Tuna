@@ -13,8 +13,8 @@ class AudioManager: ObservableObject {
     @Published var outputVolume: Float = 1.0
 
     init() {
-        updateDeviceList()
-        setupDeviceChangeListener()
+        self.updateDeviceList()
+        self.setupDeviceChangeListener()
     }
 
     func updateDeviceList() {
@@ -98,11 +98,11 @@ class AudioManager: ObservableObject {
         }
 
         // Check for input/output capabilities
-        let hasInput = hasDeviceCapability(
+        let hasInput = self.hasDeviceCapability(
             deviceID: deviceID,
             scope: kAudioObjectPropertyScopeInput
         )
-        let hasOutput = hasDeviceCapability(
+        let hasOutput = self.hasDeviceCapability(
             deviceID: deviceID,
             scope: kAudioObjectPropertyScopeOutput
         )
@@ -315,7 +315,7 @@ class AudioManager: ObservableObject {
         )
 
         if status == noErr {
-            selectedInputDevice = inputDevices.first { $0.id == inputDeviceID }
+            self.selectedInputDevice = self.inputDevices.first { $0.id == inputDeviceID }
         }
 
         // Get default output device
@@ -331,19 +331,19 @@ class AudioManager: ObservableObject {
         )
 
         if status == noErr {
-            selectedOutputDevice = outputDevices.first { $0.id == outputDeviceID }
+            self.selectedOutputDevice = self.outputDevices.first { $0.id == outputDeviceID }
         }
 
         // Update volumes after device selection
-        inputVolume = getVolume(forInput: true)
-        outputVolume = getVolume(forInput: false)
+        self.inputVolume = self.getVolume(forInput: true)
+        self.outputVolume = self.getVolume(forInput: false)
     }
 
     func selectInputDevice(_ device: AudioDevice) {
-        setDefaultDevice(device, forInput: true)
+        self.setDefaultDevice(device, forInput: true)
     }
 
     func selectOutputDevice(_ device: AudioDevice) {
-        setDefaultDevice(device, forInput: false)
+        self.setDefaultDevice(device, forInput: false)
     }
 }

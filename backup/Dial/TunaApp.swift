@@ -8,7 +8,7 @@ struct TunaApp: App {
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
-                .environmentObject(audioManager)
+                .environmentObject(self.audioManager)
         } label: {
             Image(systemName: "fish")
                 .symbolRenderingMode(.hierarchical)

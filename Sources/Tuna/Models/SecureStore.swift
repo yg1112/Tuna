@@ -29,7 +29,7 @@ enum SecureStore {
         // 创建一个查询以检查项目是否已存在
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
+            kSecAttrService as String: self.service,
             kSecAttrAccount as String: key,
         ]
 
@@ -40,7 +40,7 @@ enum SecureStore {
         let valueData = value.data(using: .utf8)!
         let attributes: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
+            kSecAttrService as String: self.service,
             kSecAttrAccount as String: key,
             kSecValueData as String: valueData,
         ]
@@ -59,7 +59,7 @@ enum SecureStore {
     static func load(key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
+            kSecAttrService as String: self.service,
             kSecAttrAccount as String: key,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
@@ -83,7 +83,7 @@ enum SecureStore {
     static func delete(key: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
+            kSecAttrService as String: self.service,
             kSecAttrAccount as String: key,
         ]
 

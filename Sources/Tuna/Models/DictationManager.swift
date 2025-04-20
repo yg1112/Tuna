@@ -42,14 +42,14 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
 
     // 用于测试的重置方法
     public func reset() {
-        state = .idle
-        progressMessage = ""
-        transcribedText = ""
-        isRecording = false
-        isPaused = false
-        breathingAnimation = false
-        recordingParts = []
-        processedSegments = []
+        self.state = .idle
+        self.progressMessage = ""
+        self.transcribedText = ""
+        self.isRecording = false
+        self.isPaused = false
+        self.breathingAnimation = false
+        self.recordingParts = []
+        self.processedSegments = []
     }
     #endif
 
@@ -64,7 +64,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     // 状态和消息
     @Published public var state: DictationState = .idle {
         didSet {
-            if oldValue != state {
+            if oldValue != self.state {
                 // 发送状态变更通知
                 DispatchQueue.main.async {
                     NotificationCenter.default.post(
@@ -75,22 +75,22 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 }
 
                 // 根据状态自动更新UI状态变量
-                switch state {
+                switch self.state {
                     case .recording:
-                        isRecording = true
-                        isPaused = false
+                        self.isRecording = true
+                        self.isPaused = false
                     case .paused:
-                        isRecording = true
-                        isPaused = true
+                        self.isRecording = true
+                        self.isPaused = true
                     case .idle, .error, .processing:
-                        isRecording = false
-                        isPaused = false
+                        self.isRecording = false
+                        self.isPaused = false
                 }
 
                 // 记录状态变更
-                logger
+                self.logger
                     .debug(
-                        "Dictation state changed from \(String(describing: oldValue)) to \(String(describing: state))"
+                        "Dictation state changed from \(String(describing: oldValue)) to \(String(describing: self.state))"
                     )
             }
         }
@@ -124,94 +124,94 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         self.nowProvider = nowProvider
         self.uuidProvider = uuidProvider
 
-        logger.debug("DictationManager initialized")
+        self.logger.debug("DictationManager initialized")
 
         // 创建临时目录用于处理音频文件
-        tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(
+        self.tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(
             "tuna_dictation",
             isDirectory: true
         )
 
         do {
             try FileManager.default.createDirectory(
-                at: tempDirectory!,
+                at: self.tempDirectory!,
                 withIntermediateDirectories: true
             )
         } catch {
-            logger.error("Failed to create temp directory: \(error.localizedDescription)")
+            self.logger.error("Failed to create temp directory: \(error.localizedDescription)")
         }
 
-        setupRecordingSession()
+        self.setupRecordingSession()
     }
 
     // MARK: - Public Methods
 
     // 添加toggle方法，根据当前状态切换录音状态
     public func toggle() {
-        switch state {
+        switch self.state {
             case .idle:
-                startRecording()
+                self.startRecording()
             case .recording:
-                stopRecording()
+                self.stopRecording()
             case .paused:
-                resumeRecording()
+                self.resumeRecording()
             case .processing, .error:
                 // 这些状态下不做任何操作
-                logger.warning("Toggle called while in processing or error state - ignored")
+                self.logger.warning("Toggle called while in processing or error state - ignored")
         }
     }
 
     public func resumeRecording() {
-        if state == .paused {
-            continueRecording()
+        if self.state == .paused {
+            self.continueRecording()
         }
     }
 
     public func startRecording() {
-        logger.notice("开始录音...")
+        self.logger.notice("开始录音...")
 
         // 如果已经在录音，直接返回
-        if isRecording {
-            logger.notice("已经在录音中，忽略请求")
+        if self.isRecording {
+            self.logger.notice("已经在录音中，忽略请求")
             return
         }
 
         // 设置状态消息
-        progressMessage = "准备录音..."
-        print("🎙 DictationManager.startRecording() 被调用，当前状态: \(state)")
+        self.progressMessage = "准备录音..."
+        print("🎙 DictationManager.startRecording() 被调用，当前状态: \(self.state)")
 
         // 确保音频会话已设置
-        setupRecordingSession()
+        self.setupRecordingSession()
 
         // 实际启动录音逻辑
-        continueRecording()
+        self.continueRecording()
     }
 
     private func continueRecording() {
         Logger(subsystem: "ai.tuna", category: "Shortcut")
             .notice("[R] startRecording() actually called")
-        sendDebugNotification(message: "开始执行录音流程")
+        self.sendDebugNotification(message: "开始执行录音流程")
 
         // 确保我们处于正确的状态
-        guard state == .idle || state == .paused else {
-            logger.warning("Cannot start recording - wrong state")
-            sendDebugNotification(message: "无法开始录音 - 状态错误: \(state)")
+        guard self.state == .idle || self.state == .paused else {
+            self.logger.warning("Cannot start recording - wrong state")
+            self.sendDebugNotification(message: "无法开始录音 - 状态错误: \(self.state)")
             return
         }
 
         // 如果处于暂停状态，创建新的录音片段
-        if state == .paused, audioRecorder != nil {
+        if self.state == .paused, self.audioRecorder != nil {
             // 保存已有的audioRecorder用于清理
-            let oldRecorder = audioRecorder
+            let oldRecorder = self.audioRecorder
 
             // 创建新的录音文件
             let fileName = "dictation_\(nowProvider.now.timeIntervalSince1970).wav"
-            recordingURL = tempDirectory?.appendingPathComponent(fileName)
+            recordingURL = self.tempDirectory?.appendingPathComponent(fileName)
 
             guard let recordingURL else {
-                logger.error("Failed to create recording URL")
-                progressMessage = "⚠️ 无法创建录音文件"
-                onStartFailure?()
+                self.logger.error("Failed to create recording URL")
+                self.progressMessage = "⚠️ 无法创建录音文件"
+                self.onStartFailure?()
                 return
             }
 
@@ -227,12 +227,12 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             ]
 
             do {
-                audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
-                audioRecorder?.delegate = nil
-                audioRecorder?.record()
+                self.audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
+                self.audioRecorder?.delegate = nil
+                self.audioRecorder?.record()
 
                 // 添加到录音部分列表
-                recordingParts.append(recordingURL)
+                self.recordingParts.append(recordingURL)
 
                 // 停止并释放旧的录音器
                 oldRecorder?.stop()
@@ -248,36 +248,36 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                     self.transcribedText = current
                 }
 
-                logger.debug("Created new recording segment at \(recordingURL.path)")
-                logger.notice("state -> recording (continue)")
+                self.logger.debug("Created new recording segment at \(recordingURL.path)")
+                self.logger.notice("state -> recording (continue)")
             } catch {
-                logger.error("Failed to continue recording: \(error.localizedDescription)")
-                progressMessage = "⚠️ 录音失败: \(error.localizedDescription)"
+                self.logger.error("Failed to continue recording: \(error.localizedDescription)")
+                self.progressMessage = "⚠️ 录音失败: \(error.localizedDescription)"
 
                 // 恢复旧的录音器状态
-                audioRecorder = oldRecorder
-                onStartFailure?()
+                self.audioRecorder = oldRecorder
+                self.onStartFailure?()
             }
 
             return
         }
 
         // 如果不是从暂停状态继续，则清除已有的转录内容并开始新录音
-        if state == .idle {
+        if self.state == .idle {
             // 清除转录文本以开始新录音
-            transcribedText = ""
-            recordingParts = []
-            processedSegments = [] // 重置已处理片段记录
+            self.transcribedText = ""
+            self.recordingParts = []
+            self.processedSegments = [] // 重置已处理片段记录
         }
 
         // 创建新的录音文件
         let fileName = "dictation_\(nowProvider.now.timeIntervalSince1970).wav"
-        recordingURL = tempDirectory?.appendingPathComponent(fileName)
+        recordingURL = self.tempDirectory?.appendingPathComponent(fileName)
 
         guard let recordingURL else {
-            logger.error("Failed to create recording URL")
-            progressMessage = "⚠️ 无法创建录音文件"
-            onStartFailure?()
+            self.logger.error("Failed to create recording URL")
+            self.progressMessage = "⚠️ 无法创建录音文件"
+            self.onStartFailure?()
             return
         }
 
@@ -293,27 +293,27 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         ]
 
         do {
-            audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
-            audioRecorder?.delegate = nil
-            audioRecorder?.record()
+            self.audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
+            self.audioRecorder?.delegate = nil
+            self.audioRecorder?.record()
 
             // 添加到录音部分列表
-            recordingParts.append(recordingURL)
+            self.recordingParts.append(recordingURL)
 
-            state = .recording
-            progressMessage = "🎙 正在录音..."
-            logger.debug("Started new recording at \(recordingURL.path)")
-            logger.notice("state -> recording (new)")
+            self.state = .recording
+            self.progressMessage = "🎙 正在录音..."
+            self.logger.debug("Started new recording at \(recordingURL.path)")
+            self.logger.notice("state -> recording (new)")
         } catch {
-            logger.error("Failed to start recording: \(error.localizedDescription)")
-            progressMessage = "⚠️ 录音失败: \(error.localizedDescription)"
-            onStartFailure?()
+            self.logger.error("Failed to start recording: \(error.localizedDescription)")
+            self.progressMessage = "⚠️ 录音失败: \(error.localizedDescription)"
+            self.onStartFailure?()
         }
     }
 
     public func pauseRecording() {
-        guard state == .recording, let audioRecorder else {
-            logger.warning("Cannot pause - not recording or recorder is nil")
+        guard self.state == .recording, let audioRecorder else {
+            self.logger.warning("Cannot pause - not recording or recorder is nil")
             return
         }
 
@@ -324,9 +324,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self else { return }
 
-            state = .paused
-            progressMessage = "Recording paused, processing..."
-            logger.debug("Recording paused, preparing to transcribe current segment")
+            self.state = .paused
+            self.progressMessage = "Recording paused, processing..."
+            self.logger.debug("Recording paused, preparing to transcribe current segment")
 
             // 获取当前录音文件并转录
             if let currentRecordingURL = recordingURL,
@@ -338,81 +338,81 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                         .attributesOfItem(atPath: currentRecordingURL.path)
                     if let fileSize = fileAttributes[.size] as? Int {
                         let fileSizeKB = Double(fileSize) / 1024.0
-                        logger.debug("Recording file size when paused: \(fileSizeKB) KB")
+                        self.logger.debug("Recording file size when paused: \(fileSizeKB) KB")
 
                         if fileSize < 500 { // 少于500字节可能不是有效音频
-                            progressMessage =
+                            self.progressMessage =
                                 "Recording paused (segment too short to transcribe)"
-                            logger
+                            self.logger
                                 .warning("Recording segment too short, skipping transcription")
                             return
                         }
                     }
                 } catch {
-                    logger.error("Cannot get file attributes: \(error.localizedDescription)")
+                    self.logger.error("Cannot get file attributes: \(error.localizedDescription)")
                 }
 
                 // 临时保存当前URL以便继续录音
-                let currentURL = recordingURL
+                let currentURL = self.recordingURL
 
                 // 转录当前片段
-                transcribeCurrentSegment(currentURL!)
+                self.transcribeCurrentSegment(currentURL!)
             }
         }
     }
 
     public func stopRecording() {
-        guard state == .recording || state == .paused, let audioRecorder else {
-            logger.warning("Cannot stop - not recording/paused or recorder is nil")
+        guard self.state == .recording || self.state == .paused, let audioRecorder else {
+            self.logger.warning("Cannot stop - not recording/paused or recorder is nil")
             return
         }
 
         audioRecorder.stop()
-        state = .processing
+        self.state = .processing
 
         // 检查是否所有片段都已处理
-        let unprocessedParts = recordingParts.filter { !self.processedSegments.contains($0) }
+        let unprocessedParts = self.recordingParts.filter { !self.processedSegments.contains($0) }
 
         if unprocessedParts.isEmpty {
-            logger.debug("Recording stopped - all segments already transcribed")
-            progressMessage = "Processing complete, all content transcribed"
-            finalizeTranscription()
+            self.logger.debug("Recording stopped - all segments already transcribed")
+            self.progressMessage = "Processing complete, all content transcribed"
+            self.finalizeTranscription()
 
             // 清理
-            recordingParts = []
+            self.recordingParts = []
             self.audioRecorder = nil
             return
         }
 
-        progressMessage = "Processing recording..."
-        logger
+        self.progressMessage = "Processing recording..."
+        self.logger
             .debug(
-                "Recording stopped, processing started (with \(unprocessedParts.count) unprocessed segments)"
+                "Processing \(unprocessedParts.count) untranscribed segments, out of \(self.recordingParts.count) total segments"
             )
 
         // 处理录音
-        processRecordings()
+        self.processRecordings()
     }
 
     public func setOutputDirectory(_ url: URL) {
-        tunaSettings.transcriptionOutputDirectory = url
-        logger.debug("Set output directory to \(url.path)")
+        self.tunaSettings.transcriptionOutputDirectory = url
+        self.logger.debug("Set output directory to \(url.path)")
     }
 
     public func setOutputFormat(_ format: String) {
-        tunaSettings.transcriptionFormat = format
-        logger.debug("Set output format to \(format)")
+        self.tunaSettings.transcriptionFormat = format
+        self.logger.debug("Set output format to \(format)")
     }
 
     public func setApiKey(_ key: String) {
         // 保存密钥到Keychain
         do {
             try SecureStore.save(key: SecureStore.defaultAccount, value: key)
-            logger.debug("API key updated and securely stored in Keychain")
+            self.logger.debug("API key updated and securely stored in Keychain")
             // 刷新UI状态
             NotificationCenter.default.post(name: .dictationAPIKeyUpdated, object: nil)
         } catch {
-            logger.error("Failed to save API key to Keychain: \(error.localizedDescription)")
+            self.logger.error("Failed to save API key to Keychain: \(error.localizedDescription)")
         }
 
         // 保持UserDefaults的向后兼容性，但只存储一个空字符串表示API密钥已设置
@@ -425,7 +425,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     }
 
     public func getDocumentsDirectory() -> URL {
-        tunaSettings.transcriptionOutputDirectory ?? FileManager.default.urls(
+        self.tunaSettings.transcriptionOutputDirectory ?? FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
         )[0]
@@ -433,19 +433,19 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
 
     // 添加获取当前转录内容的方法，用于在用户编辑后比较差异
     public func getPreviousTranscription() -> String? {
-        transcribedText
+        self.transcribedText
     }
 
     // MARK: - 获取当前设置
 
     // 获取当前输出格式
     public var outputFormat: String {
-        tunaSettings.transcriptionFormat
+        self.tunaSettings.transcriptionFormat
     }
 
     // 获取当前输出目录
     public var outputDirectory: URL? {
-        tunaSettings.transcriptionOutputDirectory
+        self.tunaSettings.transcriptionOutputDirectory
     }
 
     // MARK: - Private Methods
@@ -486,50 +486,50 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             }
         } else {
             // 旧版macOS默认有权限
-            logger.debug("macOS 10.14以下版本无法检查麦克风权限，默认继续")
+            self.logger.debug("macOS 10.14以下版本无法检查麦克风权限，默认继续")
         }
         #endif
     }
 
     private func processRecordings() {
-        guard !recordingParts.isEmpty else {
-            state = .idle
-            progressMessage = "No recording files"
-            logger.warning("No recordings to process")
+        guard !self.recordingParts.isEmpty else {
+            self.state = .idle
+            self.progressMessage = "No recording files"
+            self.logger.warning("No recordings to process")
             return
         }
 
         // 过滤出未处理的片段
-        let unprocessedParts = recordingParts.filter { !self.processedSegments.contains($0) }
+        let unprocessedParts = self.recordingParts.filter { !self.processedSegments.contains($0) }
 
         if unprocessedParts.isEmpty {
             // 所有片段都已转录，直接完成
-            logger.debug("All segments already transcribed, skipping duplicate processing")
-            finalizeTranscription()
+            self.logger.debug("All segments already transcribed, skipping duplicate processing")
+            self.finalizeTranscription()
 
             // 清理
-            recordingParts = []
-            audioRecorder = nil
+            self.recordingParts = []
+            self.audioRecorder = nil
             return
         }
 
-        logger
+        self.logger
             .debug(
-                "Processing \(unprocessedParts.count) untranscribed segments, out of \(recordingParts.count) total segments"
+                "Processing \(unprocessedParts.count) untranscribed segments, out of \(self.recordingParts.count) total segments"
             )
-        progressMessage = "Processing new recording parts..."
+        self.progressMessage = "Processing new recording parts..."
 
         // 如果只有一个未处理的片段，直接使用它
         if unprocessedParts.count == 1, let audioURL = unprocessedParts.first {
-            transcribeAudio(audioURL)
+            self.transcribeAudio(audioURL)
             return
         }
 
         // 使用递归函数处理未转录的片段
-        transcribeSegmentsSequentially(
+        self.transcribeSegmentsSequentially(
             unprocessedParts,
             currentIndex: 0,
-            accumulator: transcribedText
+            accumulator: self.transcribedText
         )
     }
 
@@ -542,12 +542,12 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         // 基础情况：所有片段都已处理
         if currentIndex >= segments.count {
             // 全部处理完成，更新状态
-            transcribedText = accumulator
-            finalizeTranscription()
+            self.transcribedText = accumulator
+            self.finalizeTranscription()
 
             // 清理
-            recordingParts = []
-            audioRecorder = nil
+            self.recordingParts = []
+            self.audioRecorder = nil
             return
         }
 
@@ -555,9 +555,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         let currentSegment = segments[currentIndex]
 
         // 如果该片段已经被处理过，直接跳到下一个
-        if processedSegments.contains(currentSegment) {
-            logger.debug("片段已处理过，跳过: \(currentSegment.path)")
-            transcribeSegmentsSequentially(
+        if self.processedSegments.contains(currentSegment) {
+            self.logger.debug("片段已处理过，跳过: \(currentSegment.path)")
+            self.transcribeSegmentsSequentially(
                 segments,
                 currentIndex: currentIndex + 1,
                 accumulator: accumulator
@@ -565,14 +565,14 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
 
-        progressMessage = "Transcribing segment \(currentIndex + 1)/\(segments.count)..."
-        logger
+        self.progressMessage = "Transcribing segment \(currentIndex + 1)/\(segments.count)..."
+        self.logger
             .debug(
                 "Transcribing segment \(currentIndex + 1)/\(segments.count): \(currentSegment.path)"
             )
 
         // 转录当前片段
-        callWhisperAPI(audioURL: currentSegment) { [weak self] result in
+        self.callWhisperAPI(audioURL: currentSegment) { [weak self] result in
             guard let self else { return }
 
             DispatchQueue.main.async {
@@ -614,10 +614,10 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
 
     private func transcribeAudio(_ audioURL: URL) {
         // 检查API密钥是否存在
-        guard !apiKey.isEmpty else {
-            state = .idle
-            progressMessage = "Please set API key in settings"
-            logger.error("API key not set")
+        guard !self.apiKey.isEmpty else {
+            self.state = .idle
+            self.progressMessage = "Please set API key in settings"
+            self.logger.error("API key not set")
 
             // 发送通知，表示缺少API密钥
             DispatchQueue.main.async {
@@ -630,29 +630,29 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         }
 
         // 如果已经处理过此文件，跳过重复转录
-        if processedSegments.contains(audioURL) {
-            logger.debug("文件已转录过，跳过: \(audioURL.path)")
-            finalizeTranscription()
+        if self.processedSegments.contains(audioURL) {
+            self.logger.debug("文件已转录过，跳过: \(audioURL.path)")
+            self.finalizeTranscription()
 
             // 清理
-            recordingParts = []
-            audioRecorder = nil
+            self.recordingParts = []
+            self.audioRecorder = nil
             return
         }
 
-        progressMessage = "Transcribing audio..."
-        logger.debug("Transcribing audio from \(audioURL.path)")
+        self.progressMessage = "Transcribing audio..."
+        self.logger.debug("Transcribing audio from \(audioURL.path)")
 
         // 检查音频文件是否可读
         guard FileManager.default.fileExists(atPath: audioURL.path) else {
-            state = .idle
-            progressMessage = "Cannot read audio file"
-            logger.error("Failed to read audio file")
+            self.state = .idle
+            self.progressMessage = "Cannot read audio file"
+            self.logger.error("Failed to read audio file")
             return
         }
 
         // 调用Whisper API
-        callWhisperAPI(audioURL: audioURL) { [weak self] result in
+        self.callWhisperAPI(audioURL: audioURL) { [weak self] result in
             guard let self else { return }
 
             DispatchQueue.main.async {
@@ -684,9 +684,9 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     // 转录当前录音片段，但保持录音状态
     private func transcribeCurrentSegment(_ audioURL: URL) {
         // 检查API密钥是否存在
-        guard !apiKey.isEmpty else {
-            progressMessage = "Please set API key in settings"
-            logger.error("API key not set")
+        guard !self.apiKey.isEmpty else {
+            self.progressMessage = "Please set API key in settings"
+            self.logger.error("API key not set")
 
             // 发送通知，表示缺少API密钥
             DispatchQueue.main.async {
@@ -698,18 +698,18 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             return
         }
 
-        progressMessage = "Transcribing current segment..."
-        logger.debug("Transcribing current segment from \(audioURL.path)")
+        self.progressMessage = "Transcribing current segment..."
+        self.logger.debug("Transcribing current segment from \(audioURL.path)")
 
         // 检查音频文件是否可读
         guard FileManager.default.fileExists(atPath: audioURL.path) else {
-            progressMessage = "Cannot read audio file"
-            logger.error("Failed to read audio file")
+            self.progressMessage = "Cannot read audio file"
+            self.logger.error("Failed to read audio file")
             return
         }
 
         // 调用Whisper API转录当前片段
-        callWhisperAPI(audioURL: audioURL) { [weak self] result in
+        self.callWhisperAPI(audioURL: audioURL) { [weak self] result in
             guard let self else { return }
 
             DispatchQueue.main.async {
@@ -760,7 +760,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         completion: @escaping (Result<String, Error>) -> Void
     ) {
         // 检查API密钥
-        guard !apiKey.isEmpty else {
+        guard !self.apiKey.isEmpty else {
             completion(.failure(DictationError.noAPIKey))
 
             // 发送通知，表示缺少API密钥
@@ -782,11 +782,11 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         // 记录音频文件大小，用于调试
         let fileSizeBytes = audioData.count
         let fileSizeKB = Double(fileSizeBytes) / 1024.0
-        logger.debug("Audio file size: \(fileSizeKB) KB")
+        self.logger.debug("Audio file size: \(fileSizeKB) KB")
 
         // 检查文件大小 - Whisper API对文件大小有限制
         if fileSizeBytes < 1024 { // 少于1KB，可能太小
-            logger.warning("Audio file may be too small (\(fileSizeKB) KB)")
+            self.logger.warning("Audio file may be too small (\(fileSizeKB) KB)")
             // 仍然尝试发送，但记录警告
         }
 
@@ -817,7 +817,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         // 创建请求
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("Bearer \(self.apiKey)", forHTTPHeaderField: "Authorization")
         request.addValue(
             "multipart/form-data; boundary=\(boundary)",
             forHTTPHeaderField: "Content-Type"
@@ -862,11 +862,11 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                         .data(using: .utf8)!
                 )
             httpBody.append("\(selectedLanguage)\r\n".data(using: .utf8)!)
-            logger.debug("Using specified language for transcription: \(selectedLanguage)")
+            self.logger.debug("Using specified language for transcription: \(selectedLanguage)")
         } else {
             // 不指定语言，让API自动检测
             // Whisper API会根据音频内容自动检测语言
-            logger.debug("Using automatic language detection for transcription")
+            self.logger.debug("Using automatic language detection for transcription")
         }
 
         // 添加温度参数（可以调整模型输出的随机性）
@@ -885,21 +885,21 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         request.httpBody = httpBody
 
         // 记录请求详情用于调试
-        logger.debug("API request total size: \(httpBody.count) bytes")
-        logger.debug("Audio file URL: \(audioURL.path)")
+        self.logger.debug("API request total size: \(httpBody.count) bytes")
+        self.logger.debug("Audio file URL: \(audioURL.path)")
 
         // 发送请求
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             guard let self else { return }
 
             if let error {
-                logger.error("Network error: \(error.localizedDescription)")
+                self.logger.error("Network error: \(error.localizedDescription)")
                 completion(.failure(error))
                 return
             }
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                logger.error("Invalid HTTP response")
+                self.logger.error("Invalid HTTP response")
                 completion(.failure(NSError(
                     domain: "com.tuna.error",
                     code: 500,
@@ -909,7 +909,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             }
 
             // 记录响应状态码
-            logger.debug("API response status code: \(httpResponse.statusCode)")
+            self.logger.debug("API response status code: \(httpResponse.statusCode)")
 
             // 检查状态码
             if httpResponse.statusCode != 200 {
@@ -918,7 +918,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 if let data {
                     // 尝试解析详细错误信息
                     if let responseString = String(data: data, encoding: .utf8) {
-                        logger.error("API error response: \(responseString)")
+                        self.logger.error("API error response: \(responseString)")
                         errorMessage = "API error(\(httpResponse.statusCode)): \(responseString)"
 
                         // 尝试解析为JSON获取更详细的错误
@@ -927,7 +927,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                             let errorObject = errorJson["error"] as? [String: Any],
                             let errorMessage = errorObject["message"] as? String
                         {
-                            logger.error("API error details: \(errorMessage)")
+                            self.logger.error("API error details: \(errorMessage)")
                             completion(.failure(NSError(
                                 domain: "com.tuna.error",
                                 code: httpResponse.statusCode,
@@ -949,7 +949,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
 
             // 解析响应
             guard let data else {
-                logger.error("API did not return data")
+                self.logger.error("API did not return data")
                 completion(.failure(NSError(
                     domain: "com.tuna.error",
                     code: 500,
@@ -960,16 +960,16 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
 
             do {
                 if let responseString = String(data: data, encoding: .utf8) {
-                    logger.debug("API raw response: \(responseString)")
+                    self.logger.debug("API raw response: \(responseString)")
                 }
 
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let text = json["text"] as? String
                 {
-                    logger.debug("API returned transcription: \(text)")
+                    self.logger.debug("API returned transcription: \(text)")
                     completion(.success(text))
                 } else {
-                    logger.error("Could not parse API response to expected format")
+                    self.logger.error("Could not parse API response to expected format")
                     completion(.failure(NSError(
                         domain: "com.tuna.error",
                         code: 500,
@@ -977,7 +977,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                     )))
                 }
             } catch {
-                logger.error("Failed to parse API response: \(error.localizedDescription)")
+                self.logger.error("Failed to parse API response: \(error.localizedDescription)")
                 completion(.failure(error))
             }
         }
@@ -985,7 +985,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         // 启动任务
         task.resume()
 
-        logger.debug("API request sent")
+        self.logger.debug("API request sent")
     }
 
     // 计算文本中的单词数
@@ -1016,10 +1016,10 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
     // 替换原有的finalizeTranscription方法
     func finalizeTranscription() {
         // 更新状态
-        state = .idle
+        self.state = .idle
 
         // 计算单词数
-        let wordCount = countWords(in: transcribedText)
+        let wordCount = self.countWords(in: self.transcribedText)
 
         // 发送完成通知，包含词数信息
         NotificationCenter.default.post(
@@ -1028,20 +1028,20 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             userInfo: ["wordCount": wordCount]
         )
 
-        if transcribedText.isEmpty {
-            progressMessage = "Transcription failed, no text result"
+        if self.transcribedText.isEmpty {
+            self.progressMessage = "Transcription failed, no text result"
         } else {
             // 添加词数信息到进度消息
-            progressMessage =
+            self.progressMessage =
                 "Transcription completed (\(wordCount) words) - click Save to save"
 
             // 检查是否启用了自动复制功能，如果是则复制到剪贴板
-            if TunaSettings.shared.autoCopyTranscriptionToClipboard, !transcribedText.isEmpty {
+            if TunaSettings.shared.autoCopyTranscriptionToClipboard, !self.transcribedText.isEmpty {
                 let pasteboard = NSPasteboard.general
                 pasteboard.clearContents()
-                pasteboard.setString(transcribedText, forType: .string)
-                logger.debug("Auto-copied transcription to clipboard")
-                progressMessage =
+                pasteboard.setString(self.transcribedText, forType: .string)
+                self.logger.debug("Auto-copied transcription to clipboard")
+                self.progressMessage =
                     "Transcription completed (\(wordCount) words) and copied to clipboard"
             }
 
@@ -1049,8 +1049,8 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             Task { await MagicTransformManager.shared.run(raw: self.transcribedText) }
         }
 
-        breathingAnimation = false
-        logger.debug("Completed transcription. Word count: \(wordCount)")
+        self.breathingAnimation = false
+        self.logger.debug("Completed transcription. Word count: \(wordCount)")
     }
 
     // 添加一个实用工具方法，用于发送通知

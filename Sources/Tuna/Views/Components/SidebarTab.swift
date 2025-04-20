@@ -12,18 +12,18 @@ struct SidebarTab: View {
     var action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: self.action) {
             VStack(spacing: 4) {
-                Image(systemName: icon)
+                Image(systemName: self.icon)
                     .font(.system(size: 22))
                     .frame(width: 22, height: 22)
 
-                Text(label)
-                    .sidebarItemStyle(isSelected: isSelected)
+                Text(self.label)
+                    .sidebarItemStyle(isSelected: self.isSelected)
             }
             .frame(width: Metrics.sidebarW - 20)
             .padding(.vertical, 6)
-            .foregroundColor(isSelected ? Colors.accent : .primary)
+            .foregroundColor(self.isSelected ? Colors.accent : .primary)
         }
         .buttonStyle(PlainButtonStyle())
     }

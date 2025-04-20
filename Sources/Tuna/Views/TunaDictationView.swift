@@ -31,8 +31,8 @@ struct QuickDictationView: View {
 
     // 默认初始化器 - 用于实际产品
     init() {
-        dictationManager = DictationManager.shared
-        animationsDisabled = false
+        self.dictationManager = DictationManager.shared
+        self.animationsDisabled = false
     }
 
     // 测试初始化器 - 允许注入测试依赖
@@ -52,7 +52,7 @@ struct QuickDictationView: View {
                 Spacer()
 
                 // 录音状态指示
-                if dictationManager.state == .recording {
+                if self.dictationManager.state == .recording {
                     HStack(spacing: 4) {
                         Circle()
                             .fill(Color.red)
@@ -66,7 +66,7 @@ struct QuickDictationView: View {
                     .padding(.vertical, 2)
                     .background(Color.black.opacity(0.2))
                     .cornerRadius(8)
-                } else if dictationManager.state == .processing {
+                } else if self.dictationManager.state == .processing {
                     Text("Processing...")
                         .font(.system(size: 13))
                         .foregroundColor(.yellow)
@@ -77,8 +77,8 @@ struct QuickDictationView: View {
             // 转录文本区域
             ZStack(alignment: .topTrailing) {
                 // 占位符文本 - 只在需要时显示
-                if isPlaceholderVisible, editableText.isEmpty,
-                   dictationManager.transcribedText
+                if self.isPlaceholderVisible, self.editableText.isEmpty,
+                   self.dictationManager.transcribedText
                        .isEmpty
                 {
                     Text("Transcription will appear here...")
@@ -90,7 +90,7 @@ struct QuickDictationView: View {
                 }
 
                 // 使用TextEditor允许编辑
-                TextEditor(text: $editableText)
+                TextEditor(text: self.$editableText)
                     .font(.system(size: 14))
                     .foregroundColor(.primary)
                     .frame(height: 120)
@@ -99,48 +99,48 @@ struct QuickDictationView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color(.textBackgroundColor).opacity(0.1))
                     )
-                    .onChange(of: dictationManager.transcribedText) { newText in
+                    .onChange(of: self.dictationManager.transcribedText) { newText in
                         // 当转录文本更新时，确保正确地添加到编辑框
-                        updateEditableText(newText)
+                        self.updateEditableText(newText)
                     }
-                    .onChange(of: editableText) { newText in
+                    .onChange(of: self.editableText) { newText in
                         // 当用户手动编辑文本时，同步回dictationManager
                         if !newText.isEmpty,
-                           editableText != dictationManager.transcribedText
+                           self.editableText != self.dictationManager.transcribedText
                         {
-                            dictationManager.transcribedText = newText
+                            self.dictationManager.transcribedText = newText
                         }
                     }
                     .onAppear {
                         // 初始化编辑文本
-                        if !dictationManager.transcribedText.isEmpty {
-                            editableText = dictationManager.transcribedText
-                            isPlaceholderVisible = false
+                        if !self.dictationManager.transcribedText.isEmpty {
+                            self.editableText = self.dictationManager.transcribedText
+                            self.isPlaceholderVisible = false
                         }
                     }
                     .contextMenu {
                         Button("Copy") {
                             NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(editableText, forType: .string)
+                            NSPasteboard.general.setString(self.editableText, forType: .string)
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Button("Cut") {
                             NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(editableText, forType: .string)
-                            editableText = ""
-                            dictationManager.transcribedText = ""
-                            isPlaceholderVisible = true
+                            NSPasteboard.general.setString(self.editableText, forType: .string)
+                            self.editableText = ""
+                            self.dictationManager.transcribedText = ""
+                            self.isPlaceholderVisible = true
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Button("Paste") {
                             if let clipboardContent = NSPasteboard.general
                                 .string(forType: .string)
                             {
-                                editableText = clipboardContent
-                                dictationManager.transcribedText = clipboardContent
-                                isPlaceholderVisible = false
+                                self.editableText = clipboardContent
+                                self.dictationManager.transcribedText = clipboardContent
+                                self.isPlaceholderVisible = false
                             }
                         }
 
@@ -148,40 +148,40 @@ struct QuickDictationView: View {
 
                         // 新增语音转写相关功能
                         Button(
-                            dictationManager
+                            self.dictationManager
                                 .state == .recording ? "Stop Recording" : "Start Recording"
                         ) {
-                            if dictationManager.state == .recording {
-                                dictationManager.stopRecording()
+                            if self.dictationManager.state == .recording {
+                                self.dictationManager.stopRecording()
                             } else {
-                                dictationManager.startRecording()
+                                self.dictationManager.startRecording()
                             }
                         }
 
                         Button("Clear Text") {
-                            editableText = ""
-                            dictationManager.transcribedText = ""
-                            isPlaceholderVisible = true
+                            self.editableText = ""
+                            self.dictationManager.transcribedText = ""
+                            self.isPlaceholderVisible = true
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Divider()
 
                         // 格式优化选项
                         Button("大写首字母") {
-                            if !editableText.isEmpty {
-                                let firstChar = editableText.prefix(1).uppercased()
-                                let restOfText = editableText.dropFirst()
-                                editableText = firstChar + restOfText
-                                dictationManager.transcribedText = editableText
+                            if !self.editableText.isEmpty {
+                                let firstChar = self.editableText.prefix(1).uppercased()
+                                let restOfText = self.editableText.dropFirst()
+                                self.editableText = firstChar + restOfText
+                                self.dictationManager.transcribedText = self.editableText
                             }
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Button("按句子优化格式") {
-                            if !editableText.isEmpty {
+                            if !self.editableText.isEmpty {
                                 // 分割句子
-                                let sentences = editableText.components(separatedBy: ". ")
+                                let sentences = self.editableText.components(separatedBy: ". ")
                                 let formattedSentences = sentences.map { sentence -> String in
                                     if sentence.isEmpty { return sentence }
                                     let firstChar = sentence.prefix(1).uppercased()
@@ -190,19 +190,19 @@ struct QuickDictationView: View {
                                 }
 
                                 // 重新组合句子
-                                editableText = formattedSentences.joined(separator: ". ")
-                                dictationManager.transcribedText = editableText
+                                self.editableText = formattedSentences.joined(separator: ". ")
+                                self.dictationManager.transcribedText = self.editableText
                             }
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
                     }
 
                 // 清除按钮 - 仅在有内容时显示
-                if !editableText.isEmpty {
+                if !self.editableText.isEmpty {
                     Button(action: {
-                        editableText = ""
-                        dictationManager.transcribedText = ""
-                        isPlaceholderVisible = true
+                        self.editableText = ""
+                        self.dictationManager.transcribedText = ""
+                        self.isPlaceholderVisible = true
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.secondary)
@@ -217,10 +217,10 @@ struct QuickDictationView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(
-                        dictationManager.state == .recording ?
+                        self.dictationManager.state == .recording ?
                             Color.red.opacity(0.7) :
                             Color.gray.opacity(0.3),
-                        lineWidth: dictationManager.state == .recording ? 1.5 : 0.5
+                        lineWidth: self.dictationManager.state == .recording ? 1.5 : 0.5
                     )
                     .padding(.horizontal, 12)
             )
@@ -237,13 +237,14 @@ struct QuickDictationView: View {
             .padding(.bottom, 4)
 
             // 可视化效果 - 仅在录音时显示
-            if dictationManager.state == .recording {
+            if self.dictationManager.state == .recording {
                 HStack(spacing: 2) {
                     ForEach(0 ..< 15, id: \.self) { index in
                         AudioVisualBar(
                             isRecording: true,
-                            disableAnimations: animationsDisabled,
-                            fixedTestHeight: animationsDisabled ? 5 + CGFloat(index % 5) * 4 : nil
+                            disableAnimations: self.animationsDisabled,
+                            fixedTestHeight: self
+                                .animationsDisabled ? 5 + CGFloat(index % 5) * 4 : nil
                         )
                     }
                 }
@@ -255,42 +256,42 @@ struct QuickDictationView: View {
             HStack(spacing: 12) {
                 // 录制/暂停按钮
                 Button(action: {
-                    switch dictationManager.state {
+                    switch self.dictationManager.state {
                         case .idle:
-                            dictationManager.startRecording()
+                            self.dictationManager.startRecording()
                         case .recording:
-                            dictationManager.pauseRecording()
+                            self.dictationManager.pauseRecording()
                         case .paused:
-                            dictationManager.startRecording()
+                            self.dictationManager.startRecording()
                         default:
                             break
                     }
                 }) {
                     HStack(spacing: 4) {
                         Image(
-                            systemName: dictationManager.state == .recording ?
+                            systemName: self.dictationManager.state == .recording ?
                                 "pause.circle.fill" :
                                 (
-                                    dictationManager
+                                    self.dictationManager
                                         .state == .paused ? "play.circle.fill" : "mic.circle.fill"
                                 )
                         )
                         .font(.system(size: 16))
 
                         Text(
-                            dictationManager.state == .recording ?
+                            self.dictationManager.state == .recording ?
                                 "Pause" :
-                                (dictationManager.state == .paused ? "Resume" : "Record")
+                                (self.dictationManager.state == .paused ? "Resume" : "Record")
                         )
                         .font(.system(size: 13))
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
-                        dictationManager.state == .recording ?
+                        self.dictationManager.state == .recording ?
                             Color.red.opacity(0.7) :
                             (
-                                dictationManager.state == .paused ? Color.orange
+                                self.dictationManager.state == .paused ? Color.orange
                                     .opacity(0.7) : Color.blue
                                     .opacity(0.7)
                             )
@@ -298,14 +299,14 @@ struct QuickDictationView: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
-                .disabled(dictationManager.state == .processing)
+                .disabled(self.dictationManager.state == .processing)
 
                 // 停止按钮 - 仅在录音或暂停状态显示
-                if dictationManager.state == .recording || dictationManager
+                if self.dictationManager.state == .recording || self.dictationManager
                     .state == .paused
                 {
                     Button(action: {
-                        dictationManager.stopRecording()
+                        self.dictationManager.stopRecording()
                     }) {
                         HStack(spacing: 4) {
                             Image(systemName: "stop.circle.fill")
@@ -320,7 +321,7 @@ struct QuickDictationView: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                     }
-                    .disabled(dictationManager.state == .processing)
+                    .disabled(self.dictationManager.state == .processing)
                 }
 
                 Spacer()
@@ -329,7 +330,7 @@ struct QuickDictationView: View {
                 Button(action: {
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
-                    pasteboard.setString(dictationManager.transcribedText, forType: .string)
+                    pasteboard.setString(self.dictationManager.transcribedText, forType: .string)
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "doc.on.doc")
@@ -343,11 +344,11 @@ struct QuickDictationView: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
-                .disabled(dictationManager.transcribedText.isEmpty)
+                .disabled(self.dictationManager.transcribedText.isEmpty)
 
                 // 保存按钮
                 Button(action: {
-                    saveTranscription()
+                    self.saveTranscription()
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "square.and.arrow.down")
@@ -361,7 +362,7 @@ struct QuickDictationView: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
-                .disabled(dictationManager.transcribedText.isEmpty)
+                .disabled(self.dictationManager.transcribedText.isEmpty)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
@@ -372,11 +373,11 @@ struct QuickDictationView: View {
         .cornerRadius(12)
         .onAppear {
             // 启动音频可视化效果
-            startVisualizing()
+            self.startVisualizing()
         }
         .onDisappear {
             // 停止音频可视化效果
-            stopVisualizing()
+            self.stopVisualizing()
         }
     }
 
@@ -386,35 +387,35 @@ struct QuickDictationView: View {
         if newText.isEmpty { return }
 
         // 如果当前编辑文本为空或是占位符，直接使用新转录文本
-        if editableText.isEmpty || isPlaceholderVisible {
-            editableText = newText
-            isPlaceholderVisible = false
-            lastTranscribedText = newText
+        if self.editableText.isEmpty || self.isPlaceholderVisible {
+            self.editableText = newText
+            self.isPlaceholderVisible = false
+            self.lastTranscribedText = newText
             return
         }
 
         // 检测新增内容并在合适位置插入
-        if newText.count > lastTranscribedText.count,
-           newText.hasPrefix(lastTranscribedText)
+        if newText.count > self.lastTranscribedText.count,
+           newText.hasPrefix(self.lastTranscribedText)
         {
             // 新文本是在旧文本基础上添加的
             let newContentStartIndex = newText.index(
                 newText.startIndex,
-                offsetBy: lastTranscribedText.count
+                offsetBy: self.lastTranscribedText.count
             )
             let newContent = String(newText[newContentStartIndex...])
 
             // 将新内容追加到当前编辑文本
-            editableText += newContent
-            lastTranscribedText = newText
-        } else if newText != lastTranscribedText {
+            self.editableText += newContent
+            self.lastTranscribedText = newText
+        } else if newText != self.lastTranscribedText {
             // 如果不是简单的追加，可能是完全新的文本或部分更新
             // 在这种情况下，可以选择保留用户编辑的内容，也可以选择使用新的转录文本
             // 这里我们选择保留用户编辑的内容，只在确认用户没有编辑时才更新
-            if editableText == lastTranscribedText {
-                editableText = newText
+            if self.editableText == self.lastTranscribedText {
+                self.editableText = newText
             }
-            lastTranscribedText = newText
+            self.lastTranscribedText = newText
         }
     }
 
@@ -434,17 +435,17 @@ struct QuickDictationView: View {
         savePanel.begin { response in
             if response == .OK, let url = savePanel.url {
                 do {
-                    try dictationManager.transcribedText.write(
+                    try self.dictationManager.transcribedText.write(
                         to: url,
                         atomically: true,
                         encoding: .utf8
                     )
 
                     // 显示成功消息
-                    dictationManager.progressMessage = "Saved to \(url.lastPathComponent)"
+                    self.dictationManager.progressMessage = "Saved to \(url.lastPathComponent)"
                 } catch {
                     // 显示错误消息
-                    dictationManager
+                    self.dictationManager
                         .progressMessage = "Failed to save: \(error.localizedDescription)"
                 }
             }
@@ -453,11 +454,11 @@ struct QuickDictationView: View {
 
     // 启动/停止可视化效果
     private func startVisualizing() {
-        isVisualizing = true
+        self.isVisualizing = true
     }
 
     private func stopVisualizing() {
-        isVisualizing = false
+        self.isVisualizing = false
     }
 }
 
@@ -478,7 +479,7 @@ struct TunaDictationView: View {
 
     // 默认初始化器
     init() {
-        animationsDisabled = false
+        self.animationsDisabled = false
     }
 
     // 测试初始化器
@@ -488,9 +489,9 @@ struct TunaDictationView: View {
 
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
-        if !dictationManager.transcribedText.isEmpty {
-            dictationManager.transcribedText
-        } else if isPlaceholderVisible {
+        if !self.dictationManager.transcribedText.isEmpty {
+            self.dictationManager.transcribedText
+        } else if self.isPlaceholderVisible {
             "This is the live transcription..."
         } else {
             ""
@@ -500,21 +501,21 @@ struct TunaDictationView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 标题部分
-            titleView
+            self.titleView
 
             // 状态信息
-            statusView
+            self.statusView
 
             // 可视化音频
-            if dictationManager.state == .recording {
-                visualizerView
+            if self.dictationManager.state == .recording {
+                self.visualizerView
             }
 
             // 文字输出框
-            transcriptionTextView
+            self.transcriptionTextView
 
             // 控制按钮
-            buttonRowView
+            self.buttonRowView
         }
         .padding(.vertical, 12)
         .background(
@@ -537,13 +538,13 @@ struct TunaDictationView: View {
         .cornerRadius(12)
         .onAppear {
             // 启动音频可视化效果定时器
-            startVisualizing()
+            self.startVisualizing()
             // 启动呼吸动画
-            isBreathingAnimation = true
+            self.isBreathingAnimation = true
         }
         .onDisappear {
             // 停止音频可视化效果定时器
-            stopVisualizing()
+            self.stopVisualizing()
         }
     }
 
@@ -566,7 +567,7 @@ struct TunaDictationView: View {
 
     // 状态信息
     private var statusView: some View {
-        Text(statusText)
+        Text(self.statusText)
             .font(.system(size: 14))
             .foregroundColor(.primary)
             .padding(.horizontal, 12)
@@ -577,7 +578,7 @@ struct TunaDictationView: View {
     private var visualizerView: some View {
         HStack {
             Spacer()
-            audioVisualizerView
+            self.audioVisualizerView
             Spacer()
         }
         .frame(height: 30)
@@ -588,19 +589,19 @@ struct TunaDictationView: View {
     private var transcriptionTextView: some View {
         VStack(spacing: 2) {
             TranscriptionTextBoxView(
-                editableText: $editableText,
-                isPlaceholderVisible: $isPlaceholderVisible,
-                isFocused: $isFocused,
-                cursorPosition: $cursorPosition, // 传递光标位置
-                dictationManager: dictationManager,
+                editableText: self.$editableText,
+                isPlaceholderVisible: self.$isPlaceholderVisible,
+                isFocused: self.$isFocused,
+                cursorPosition: self.$cursorPosition, // 传递光标位置
+                dictationManager: self.dictationManager,
                 onTextFieldFocus: {
-                    isFocused = true
+                    self.isFocused = true
                     print("\u{001B}[36m[DEBUG]\u{001B}[0m Text field focused")
                 },
                 onTranscriptionTextChange: { newText in
                     if !newText.isEmpty {
-                        isPlaceholderVisible = false
-                        editableText = newText
+                        self.isPlaceholderVisible = false
+                        self.editableText = newText
                     }
                 }
             )
@@ -626,22 +627,22 @@ struct TunaDictationView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(
-                        dictationManager.state == .recording ?
+                        self.dictationManager.state == .recording ?
                             Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
-                            Color.white.opacity(isBreathingAnimation ? 0.2 : 0.05),
+                            Color.white.opacity(self.isBreathingAnimation ? 0.2 : 0.05),
                         // 非录音时使用呼吸动画
-                        lineWidth: dictationManager
-                            .state == .recording ? 1.5 : (isBreathingAnimation ? 1.2 : 0.8)
+                        lineWidth: self.dictationManager
+                            .state == .recording ? 1.5 : (self.isBreathingAnimation ? 1.2 : 0.8)
                     )
                     .scaleEffect(
-                        dictationManager
-                            .state == .recording ? 1.0 : (isBreathingAnimation ? 1.01 : 1.0)
+                        self.dictationManager
+                            .state == .recording ? 1.0 : (self.isBreathingAnimation ? 1.01 : 1.0)
                     )
             )
             .animation(
-                dictationManager.state == .recording ? nil :
+                self.dictationManager.state == .recording ? nil :
                     Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true),
-                value: isBreathingAnimation
+                value: self.isBreathingAnimation
             )
 
             // 编辑提示标签
@@ -688,7 +689,7 @@ struct TunaDictationView: View {
                     .frame(minHeight: 72)
 
                 // 占位符文本 - 只在需要时显示
-                if isPlaceholderVisible, editableText.isEmpty {
+                if self.isPlaceholderVisible, self.editableText.isEmpty {
                     Text("This is the live transcription...")
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
@@ -698,7 +699,7 @@ struct TunaDictationView: View {
                 }
 
                 // 文本编辑器
-                TextEditor(text: $editableText)
+                TextEditor(text: self.$editableText)
                     .font(.system(size: 14))
                     .foregroundColor(.primary)
                     .modifier(TextEditorBackgroundModifier())
@@ -708,63 +709,63 @@ struct TunaDictationView: View {
                     .padding([.horizontal, .top], 6)
                     .padding(.bottom, 2)
                     .opacity(
-                        isPlaceholderVisible && editableText ==
+                        self.isPlaceholderVisible && self.editableText ==
                             "This is the live transcription..." ? 0 : 1
                     )
-                    .onChange(of: dictationManager.transcribedText) { newText in
+                    .onChange(of: self.dictationManager.transcribedText) { newText in
                         // 当dictationManager的转录文本更新时，插入到光标位置
-                        insertTextAtCursor(newText)
+                        self.insertTextAtCursor(newText)
                     }
-                    .onChange(of: editableText) { newEditedText in
-                        if !isFocused { return } // 仅在用户焦点时同步，避免循环更新
+                    .onChange(of: self.editableText) { newEditedText in
+                        if !self.isFocused { return } // 仅在用户焦点时同步，避免循环更新
 
                         // 如果是占位符文本，不进行同步
                         if newEditedText == "This is the live transcription..." { return }
 
                         // 当用户手动编辑时，同步到dictationManager，并估计光标位置
-                        if !isPlaceholderVisible {
+                        if !self.isPlaceholderVisible {
                             print("\u{001B}[36m[DEBUG]\u{001B}[0m 用户编辑了文本，同步到dictationManager")
-                            dictationManager.transcribedText = newEditedText
+                            self.dictationManager.transcribedText = newEditedText
                             // 更新上次转录文本，避免重复插入
-                            lastTranscribedText = newEditedText
+                            self.lastTranscribedText = newEditedText
 
                             // 尝试使用NSTextView API获取光标位置的简单方法
                             if let firstResponder = NSApp.keyWindow?.firstResponder as? NSTextView {
                                 if let range = firstResponder.selectedRanges.first as? NSRange {
-                                    cursorPosition = range.location
+                                    self.cursorPosition = range.location
                                     print(
-                                        "\u{001B}[36m[DEBUG]\u{001B}[0m 光标位置更新为: \(cursorPosition)"
+                                        "\u{001B}[36m[DEBUG]\u{001B}[0m 光标位置更新为: \(self.cursorPosition)"
                                     )
                                 }
                             }
                         }
                     }
                     .onTapGesture {
-                        onTextFieldFocus()
+                        self.onTextFieldFocus()
                     }
                     .contextMenu {
                         Button("Copy") {
                             NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(editableText, forType: .string)
+                            NSPasteboard.general.setString(self.editableText, forType: .string)
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Button("Cut") {
                             NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(editableText, forType: .string)
-                            editableText = ""
-                            dictationManager.transcribedText = ""
-                            isPlaceholderVisible = true
+                            NSPasteboard.general.setString(self.editableText, forType: .string)
+                            self.editableText = ""
+                            self.dictationManager.transcribedText = ""
+                            self.isPlaceholderVisible = true
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Button("Paste") {
                             if let clipboardContent = NSPasteboard.general
                                 .string(forType: .string)
                             {
-                                editableText = clipboardContent
-                                dictationManager.transcribedText = clipboardContent
-                                isPlaceholderVisible = false
+                                self.editableText = clipboardContent
+                                self.dictationManager.transcribedText = clipboardContent
+                                self.isPlaceholderVisible = false
                             }
                         }
 
@@ -772,40 +773,40 @@ struct TunaDictationView: View {
 
                         // 新增语音转写相关功能
                         Button(
-                            dictationManager
+                            self.dictationManager
                                 .state == .recording ? "Stop Recording" : "Start Recording"
                         ) {
-                            if dictationManager.state == .recording {
-                                dictationManager.stopRecording()
+                            if self.dictationManager.state == .recording {
+                                self.dictationManager.stopRecording()
                             } else {
-                                dictationManager.startRecording()
+                                self.dictationManager.startRecording()
                             }
                         }
 
                         Button("Clear Text") {
-                            editableText = ""
-                            dictationManager.transcribedText = ""
-                            isPlaceholderVisible = true
+                            self.editableText = ""
+                            self.dictationManager.transcribedText = ""
+                            self.isPlaceholderVisible = true
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Divider()
 
                         // 格式优化选项
                         Button("大写首字母") {
-                            if !editableText.isEmpty {
-                                let firstChar = editableText.prefix(1).uppercased()
-                                let restOfText = editableText.dropFirst()
-                                editableText = firstChar + restOfText
-                                dictationManager.transcribedText = editableText
+                            if !self.editableText.isEmpty {
+                                let firstChar = self.editableText.prefix(1).uppercased()
+                                let restOfText = self.editableText.dropFirst()
+                                self.editableText = firstChar + restOfText
+                                self.dictationManager.transcribedText = self.editableText
                             }
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
 
                         Button("按句子优化格式") {
-                            if !editableText.isEmpty {
+                            if !self.editableText.isEmpty {
                                 // 分割句子
-                                let sentences = editableText.components(separatedBy: ". ")
+                                let sentences = self.editableText.components(separatedBy: ". ")
                                 let formattedSentences = sentences.map { sentence -> String in
                                     if sentence.isEmpty { return sentence }
                                     let firstChar = sentence.prefix(1).uppercased()
@@ -814,18 +815,18 @@ struct TunaDictationView: View {
                                 }
 
                                 // 重新组合句子
-                                editableText = formattedSentences.joined(separator: ". ")
-                                dictationManager.transcribedText = editableText
+                                self.editableText = formattedSentences.joined(separator: ". ")
+                                self.dictationManager.transcribedText = self.editableText
                             }
                         }
-                        .disabled(editableText.isEmpty)
+                        .disabled(self.editableText.isEmpty)
                     }
                     .accentColor(Color(red: 0.3, green: 0.9, blue: 0.7))
                     .colorScheme(.dark)
             }
             .onAppear {
                 // 初始化上次转录文本
-                lastTranscribedText = dictationManager.transcribedText
+                self.lastTranscribedText = self.dictationManager.transcribedText
             }
         }
 
@@ -833,21 +834,23 @@ struct TunaDictationView: View {
         private func insertTextAtCursor(_ newText: String) {
             // 调试日志
             print("\u{001B}[36m[DEBUG]\u{001B}[0m 接收到新转录文本: \(newText)")
-            print("\u{001B}[36m[DEBUG]\u{001B}[0m 上次转录文本: \(lastTranscribedText)")
-            print("\u{001B}[36m[DEBUG]\u{001B}[0m 当前编辑框文本: \(editableText)")
-            print("\u{001B}[36m[DEBUG]\u{001B}[0m 当前光标位置: \(cursorPosition)")
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 上次转录文本: \(self.lastTranscribedText)")
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 当前编辑框文本: \(self.editableText)")
+            print("\u{001B}[36m[DEBUG]\u{001B}[0m 当前光标位置: \(self.cursorPosition)")
 
             // 如果当前是空文本或占位符，直接替换
-            if editableText.isEmpty || editableText == "This is the live transcription..." {
-                editableText = newText
-                isPlaceholderVisible = false
-                lastTranscribedText = newText // 更新上次文本
-                onTranscriptionTextChange(newText)
+            if self.editableText.isEmpty || self
+                .editableText == "This is the live transcription..."
+            {
+                self.editableText = newText
+                self.isPlaceholderVisible = false
+                self.lastTranscribedText = newText // 更新上次文本
+                self.onTranscriptionTextChange(newText)
                 return
             }
 
             // 确保转录文本确实有变化
-            if newText.isEmpty || newText == lastTranscribedText {
+            if newText.isEmpty || newText == self.lastTranscribedText {
                 return
             }
 
@@ -859,28 +862,28 @@ struct TunaDictationView: View {
                 print("\u{001B}[36m[DEBUG]\u{001B}[0m 精确检测到的新增文本: \(newlyAddedText)")
 
                 // 准备在光标位置插入文本
-                let startIndex = editableText.startIndex
-                let cursorIndex = editableText.index(startIndex, offsetBy: cursorPos)
+                let startIndex = self.editableText.startIndex
+                let cursorIndex = self.editableText.index(startIndex, offsetBy: cursorPos)
 
                 let textBeforeCursor = String(editableText[startIndex ..< cursorIndex])
                 let textAfterCursor = String(editableText[cursorIndex...])
 
                 // 在光标位置插入新文本
-                editableText = textBeforeCursor + newlyAddedText + textAfterCursor
-                isPlaceholderVisible = false
+                self.editableText = textBeforeCursor + newlyAddedText + textAfterCursor
+                self.isPlaceholderVisible = false
 
                 // 更新光标位置到新插入内容之后
-                cursorPosition = cursorPos + newlyAddedText.count
+                self.cursorPosition = cursorPos + newlyAddedText.count
 
                 // 记录这次处理过的文本，避免重复处理
-                lastTranscribedText = newText
+                self.lastTranscribedText = newText
 
                 // 通知外部文本已变更
-                onTranscriptionTextChange(editableText)
+                self.onTranscriptionTextChange(self.editableText)
             } else {
                 // 如果无法确定新增内容，但文本确实变了，仅更新跟踪状态
                 print("\u{001B}[36m[DEBUG]\u{001B}[0m 无法确定新增内容，更新跟踪状态")
-                lastTranscribedText = newText
+                self.lastTranscribedText = newText
             }
         }
 
@@ -981,67 +984,67 @@ struct TunaDictationView: View {
                     Spacer(minLength: 8)
 
                     // 暂停/播放按钮 - 根据当前状态显示不同提示
-                    controlButton(
-                        icon: playPauseIconName,
-                        title: dictationManager
+                    self.controlButton(
+                        icon: self.playPauseIconName,
+                        title: self.dictationManager
                             .state == .recording ? "Pause Recording" : "Start Recording",
-                        action: handlePlayPauseAction,
-                        isDisabled: dictationManager.state == .processing,
+                        action: self.handlePlayPauseAction,
+                        isDisabled: self.dictationManager.state == .processing,
                         width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
 
                     // 停止按钮 - 只在录音/暂停状态下激活
-                    controlButton(
+                    self.controlButton(
                         icon: "stop.fill",
                         title: "Stop Recording",
-                        action: { dictationManager.stopRecording() },
-                        isDisabled: dictationManager.state == .idle || dictationManager
+                        action: { self.dictationManager.stopRecording() },
+                        isDisabled: self.dictationManager.state == .idle || self.dictationManager
                             .state == .processing,
                         width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
 
                     // Magic 按钮 - 添加新按钮
-                    controlButton(
+                    self.controlButton(
                         icon: "wand.and.stars",
                         title: "Magic Transform",
                         action: {
-                            Task { await MagicTransformManager.shared.run(raw: editableText) }
+                            Task { await MagicTransformManager.shared.run(raw: self.editableText) }
                         },
-                        isDisabled: !TunaSettings.shared.magicEnabled || editableText
+                        isDisabled: !TunaSettings.shared.magicEnabled || self.editableText
                             .isEmpty ||
                             (
-                                isPlaceholderVisible && editableText ==
+                                self.isPlaceholderVisible && self.editableText ==
                                     "This is the live transcription..."
                             ),
                         width: (geometry.size.width - 80) / 6
                     )
 
                     // 清除按钮 - 放宽禁用条件，当占位符显示时才禁用
-                    controlButton(
+                    self.controlButton(
                         icon: "xmark",
                         title: "Clear Text",
-                        action: clearText,
-                        isDisabled: isPlaceholderVisible && editableText ==
+                        action: self.clearText,
+                        isDisabled: self.isPlaceholderVisible && self.editableText ==
                             "This is the live transcription...",
                         width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
 
                     // 复制按钮 - 放宽禁用条件，当占位符显示时才禁用
-                    controlButton(
+                    self.controlButton(
                         icon: "doc.on.doc",
                         title: "Copy to Clipboard",
-                        action: copyToClipboard,
-                        isDisabled: isPlaceholderVisible && editableText ==
+                        action: self.copyToClipboard,
+                        isDisabled: self.isPlaceholderVisible && self.editableText ==
                             "This is the live transcription...",
                         width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
 
                     // 保存按钮 - 放宽禁用条件，当占位符显示时才禁用
-                    controlButton(
+                    self.controlButton(
                         icon: "square.and.arrow.down",
                         title: "Export to File",
-                        action: saveTranscription,
-                        isDisabled: isPlaceholderVisible && editableText ==
+                        action: self.saveTranscription,
+                        isDisabled: self.isPlaceholderVisible && self.editableText ==
                             "This is the live transcription...",
                         width: (geometry.size.width - 80) / 6 // 调整宽度以适应新按钮
                     )
@@ -1087,59 +1090,59 @@ struct TunaDictationView: View {
     // 复制到剪贴板
     private func copyToClipboard() {
         // 不复制占位符文本
-        if isPlaceholderVisible, editableText == "This is the live transcription..." {
+        if self.isPlaceholderVisible, self.editableText == "This is the live transcription..." {
             return
         }
 
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString(editableText, forType: .string)
+        pasteboard.setString(self.editableText, forType: .string)
 
         // 添加复制成功提示
-        dictationManager.progressMessage = "Text copied to clipboard"
+        self.dictationManager.progressMessage = "Text copied to clipboard"
     }
 
     // 播放/暂停按钮动作
     private func handlePlayPauseAction() {
-        switch dictationManager.state {
+        switch self.dictationManager.state {
             case .idle:
                 // 开始新录音时重置占位符状态，但保留用户可能编辑过的文本
-                if editableText == "This is the live transcription..." || editableText
+                if self.editableText == "This is the live transcription..." || self.editableText
                     .isEmpty
                 {
-                    isPlaceholderVisible = true
-                    editableText = "This is the live transcription..."
+                    self.isPlaceholderVisible = true
+                    self.editableText = "This is the live transcription..."
                 } else {
                     // 如果用户已经有文本，保留它
-                    isPlaceholderVisible = false
+                    self.isPlaceholderVisible = false
                     // 确保dictationManager使用当前编辑框中的文本
-                    dictationManager.transcribedText = editableText
+                    self.dictationManager.transcribedText = self.editableText
                 }
-                dictationManager.startRecording()
+                self.dictationManager.startRecording()
             case .recording:
-                dictationManager.pauseRecording()
+                self.dictationManager.pauseRecording()
             case .paused:
                 // 继续录音时使用当前编辑框中的文本，确保不恢复被删除的内容
-                print("\u{001B}[36m[DEBUG]\u{001B}[0m 从暂停恢复录音，使用当前编辑文本: \(editableText)")
+                print("\u{001B}[36m[DEBUG]\u{001B}[0m 从暂停恢复录音，使用当前编辑文本: \(self.editableText)")
                 // 明确将当前用户编辑的文本设置为转录文本，覆盖任何可能的旧内容
-                dictationManager.transcribedText = editableText
+                self.dictationManager.transcribedText = self.editableText
                 // 确保占位符状态正确
-                isPlaceholderVisible = editableText
-                    .isEmpty || editableText == "This is the live transcription..."
-                dictationManager.startRecording()
+                self.isPlaceholderVisible = self.editableText
+                    .isEmpty || self.editableText == "This is the live transcription..."
+                self.dictationManager.startRecording()
             case .processing:
                 // 处理中不执行任何操作
                 break
             case .error:
                 // 错误状态尝试重置
                 print("\u{001B}[31m[ERROR]\u{001B}[0m 录音处于错误状态，尝试重置")
-                dictationManager.state = .idle
+                self.dictationManager.state = .idle
         }
     }
 
     // 播放/暂停按钮图标
     private var playPauseIconName: String {
-        switch dictationManager.state {
+        switch self.dictationManager.state {
             case .idle, .paused:
                 "play.fill"
             case .recording:
@@ -1153,17 +1156,17 @@ struct TunaDictationView: View {
 
     // 状态文本
     private var statusText: String {
-        if dictationManager.state == .recording {
+        if self.dictationManager.state == .recording {
             return "Listening..."
-        } else if !dictationManager.progressMessage.isEmpty {
-            return dictationManager.progressMessage
-        } else if dictationManager.transcribedText.isEmpty,
-                  dictationManager.state == .idle
+        } else if !self.dictationManager.progressMessage.isEmpty {
+            return self.dictationManager.progressMessage
+        } else if self.dictationManager.transcribedText.isEmpty,
+                  self.dictationManager.state == .idle
         {
             return "No recording files"
         }
 
-        switch dictationManager.state {
+        switch self.dictationManager.state {
             case .idle:
                 return "Ready to record"
             case .recording:
@@ -1182,9 +1185,9 @@ struct TunaDictationView: View {
         HStack(alignment: .center, spacing: 2) {
             ForEach(0 ..< 15, id: \.self) { index in
                 AudioVisualBar(
-                    isRecording: dictationManager.state == .recording,
-                    disableAnimations: animationsDisabled,
-                    fixedTestHeight: animationsDisabled ? 5 + CGFloat(index % 5) * 4 : nil
+                    isRecording: self.dictationManager.state == .recording,
+                    disableAnimations: self.animationsDisabled,
+                    fixedTestHeight: self.animationsDisabled ? 5 + CGFloat(index % 5) * 4 : nil
                 )
             }
         }
@@ -1192,22 +1195,22 @@ struct TunaDictationView: View {
 
     // 启动/停止可视化效果
     private func startVisualizing() {
-        isVisualizing = true
+        self.isVisualizing = true
     }
 
     private func stopVisualizing() {
-        isVisualizing = false
+        self.isVisualizing = false
     }
 
     // 保存转录文本到用户设置的路径
     private func saveTranscription() {
         // 不保存占位符文本
-        if isPlaceholderVisible, editableText == "This is the live transcription..." {
+        if self.isPlaceholderVisible, self.editableText == "This is the live transcription..." {
             return
         }
 
         // 使用editableText而不是dictationManager.transcribedText，以便用户的编辑也会被保存
-        let text = editableText
+        let text = self.editableText
         let timestamp = DateFormatter.localizedString(
             from: Date(),
             dateStyle: .short,
@@ -1217,8 +1220,8 @@ struct TunaDictationView: View {
         .replacingOccurrences(of: ":", with: "-")
 
         // 获取用户设置的输出目录
-        let outputDir = dictationManager.getDocumentsDirectory()
-        let outputFormat = dictationManager.outputFormat
+        let outputDir = self.dictationManager.getDocumentsDirectory()
+        let outputFormat = self.dictationManager.outputFormat
         let outputFileName = "dictation_\(timestamp).\(outputFormat)"
         let outputURL = outputDir.appendingPathComponent(outputFileName)
 
@@ -1241,12 +1244,12 @@ struct TunaDictationView: View {
             }
 
             // 更新状态消息和剪贴板
-            dictationManager.progressMessage = "Saved to: \(outputURL.lastPathComponent)"
+            self.dictationManager.progressMessage = "Saved to: \(outputURL.lastPathComponent)"
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(outputURL.path, forType: .string)
             print("Saved successfully: \(outputURL.path)")
         } catch {
-            dictationManager.progressMessage = "Save failed: \(error.localizedDescription)"
+            self.dictationManager.progressMessage = "Save failed: \(error.localizedDescription)"
             print("Save failed: \(error.localizedDescription)")
         }
     }
@@ -1258,11 +1261,11 @@ struct TunaDictationView: View {
 
     // 清除文本
     private func clearText() {
-        editableText = ""
-        dictationManager.transcribedText = ""
-        isPlaceholderVisible = true
-        editableText = "This is the live transcription..."
-        dictationManager.progressMessage = "Text cleared"
+        self.editableText = ""
+        self.dictationManager.transcribedText = ""
+        self.isPlaceholderVisible = true
+        self.editableText = "This is the live transcription..."
+        self.dictationManager.progressMessage = "Text cleared"
     }
 }
 
@@ -1298,62 +1301,62 @@ struct AudioVisualBar: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 1)
             .fill(Color(red: 0.3, green: 0.9, blue: 0.7))
-            .frame(width: 2, height: height)
+            .frame(width: 2, height: self.height)
             .onAppear {
-                startAnimation()
+                self.startAnimation()
             }
             .onDisappear {
-                stopAnimation()
+                self.stopAnimation()
             }
     }
 
     private func startAnimation() {
         // 停止现有的计时器
-        stopAnimation()
+        self.stopAnimation()
 
         // 如果有固定测试高度，使用它
         if let testHeight = fixedTestHeight {
-            height = testHeight
+            self.height = testHeight
             return
         }
 
         // 如果禁用了动画，则使用固定高度
-        if disableAnimations {
+        if self.disableAnimations {
             // 使用确定性的高度模式
             let baseHeights: [CGFloat] = [5, 10, 15, 20, 15, 10, 5, 8, 12, 18, 14, 10, 6, 10, 15]
             let index = Int(
                 nowProvider.now.timeIntervalSince1970
                     .truncatingRemainder(dividingBy: 15)
             )
-            height = baseHeights[index]
+            self.height = baseHeights[index]
             return
         }
 
         // 根据录制状态设置高度
-        if !isRecording {
-            height = 5
+        if !self.isRecording {
+            self.height = 5
             return
         }
 
         // 为录制状态创建动画
-        timer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
+        self.timer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
             withAnimation(.linear(duration: 0.1)) {
-                height = CGFloat.random(in: 2 ... 24)
+                self.height = CGFloat.random(in: 2 ... 24)
             }
         }
 
         // 立即触发一次
         withAnimation(.linear(duration: 0.1)) {
-            height = CGFloat.random(in: 2 ... 24)
+            self.height = CGFloat.random(in: 2 ... 24)
         }
     }
 
     private func stopAnimation() {
-        timer?.invalidate()
-        timer = nil
+        self.timer?.invalidate()
+        self.timer = nil
 
         withAnimation {
-            height = 5
+            self.height = 5
         }
     }
 }
@@ -1378,7 +1381,7 @@ struct HideScrollbarModifier: ViewModifier {
                 DispatchQueue.main.async {
                     // 查找所有NSScrollView并修改滚动条
                     for subview in NSApp.keyWindow?.contentView?.subviews ?? [] {
-                        modifyScrollViews(in: subview)
+                        self.modifyScrollViews(in: subview)
                     }
                 }
             }
@@ -1403,7 +1406,7 @@ struct HideScrollbarModifier: ViewModifier {
 
         // 递归检查子视图
         for subview in view.subviews {
-            modifyScrollViews(in: subview)
+            self.modifyScrollViews(in: subview)
         }
     }
 }

@@ -69,13 +69,13 @@ class TunaSettings: ObservableObject {
     // 当前操作模式
     @Published var currentMode: Mode = .standard {
         didSet {
-            if oldValue != currentMode, !isUpdating {
-                isUpdating = true
-                defaults.set(currentMode.rawValue, forKey: "currentMode")
-                logger.debug("Saved current mode: \(currentMode.rawValue)")
-                print("[SETTINGS] Current mode: \(currentMode.rawValue)")
+            if oldValue != self.currentMode, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.currentMode.rawValue, forKey: "currentMode")
+                self.logger.debug("Saved current mode: \(self.currentMode.rawValue)")
+                print("[SETTINGS] Current mode: \(self.currentMode.rawValue)")
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -83,16 +83,15 @@ class TunaSettings: ObservableObject {
     // 添加UI实验模式属性
     @Published var uiExperimentMode: UIExperimentMode {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != uiExperimentMode, !isUpdating {
-                isUpdating = true
-                defaults.set(uiExperimentMode.rawValue, forKey: "uiExperimentMode")
-                logger.debug("Saved UI experiment mode: \(uiExperimentMode.rawValue)")
+            if oldValue != self.uiExperimentMode, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.uiExperimentMode.rawValue, forKey: "uiExperimentMode")
+                self.logger.debug("Saved UI experiment mode: \(self.uiExperimentMode.rawValue)")
                 print(
-                    "\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(uiExperimentMode.rawValue)"
+                    "\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(self.uiExperimentMode.rawValue)"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -100,15 +99,15 @@ class TunaSettings: ObservableObject {
     // 智能设备切换
     @Published var enableSmartSwitching: Bool {
         didSet {
-            if oldValue != enableSmartSwitching, !isUpdating {
-                isUpdating = true
-                defaults.set(enableSmartSwitching, forKey: "enableSmartSwitching")
-                logger.debug("Saved smart switching: \(enableSmartSwitching)")
+            if oldValue != self.enableSmartSwitching, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.enableSmartSwitching, forKey: "enableSmartSwitching")
+                self.logger.debug("Saved smart switching: \(self.enableSmartSwitching)")
                 print(
-                    "[SETTINGS] Smart switching: \(enableSmartSwitching ? "enabled" : "disabled")"
+                    "[SETTINGS] Smart switching: \(self.enableSmartSwitching ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -116,42 +115,38 @@ class TunaSettings: ObservableObject {
     // 视频会议偏好设备
     @Published var preferredVideoChatOutputDeviceUID: String {
         didSet {
-            if oldValue != preferredVideoChatOutputDeviceUID, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    preferredVideoChatOutputDeviceUID,
+            if oldValue != self.preferredVideoChatOutputDeviceUID {
+                self.defaults.set(
+                    self.preferredVideoChatOutputDeviceUID,
                     forKey: "preferredVideoChatOutputDeviceUID"
                 )
-                logger
+                self.logger
                     .debug(
-                        "Saved video chat output device: \(preferredVideoChatOutputDeviceUID)"
+                        "Saved video chat output device: \(self.preferredVideoChatOutputDeviceUID)"
                     )
                 print(
-                    "[SETTINGS] Video chat output device: \(preferredVideoChatOutputDeviceUID)"
+                    "[SETTINGS] Video chat output device: \(self.preferredVideoChatOutputDeviceUID)"
                 )
                 fflush(stdout)
-                isUpdating = false
             }
         }
     }
 
     @Published var preferredVideoChatInputDeviceUID: String {
         didSet {
-            if oldValue != preferredVideoChatInputDeviceUID, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    preferredVideoChatInputDeviceUID,
+            if oldValue != self.preferredVideoChatInputDeviceUID {
+                self.defaults.set(
+                    self.preferredVideoChatInputDeviceUID,
                     forKey: "preferredVideoChatInputDeviceUID"
                 )
-                logger
+                self.logger
                     .debug(
-                        "Saved video chat input device: \(preferredVideoChatInputDeviceUID)"
+                        "Saved video chat input device: \(self.preferredVideoChatInputDeviceUID)"
                     )
                 print(
-                    "[SETTINGS] Video chat input device: \(preferredVideoChatInputDeviceUID)"
+                    "[SETTINGS] Video chat input device: \(self.preferredVideoChatInputDeviceUID)"
                 )
                 fflush(stdout)
-                isUpdating = false
             }
         }
     }
@@ -159,17 +154,15 @@ class TunaSettings: ObservableObject {
     // 音乐偏好设备
     @Published var preferredMusicOutputDeviceUID: String {
         didSet {
-            if oldValue != preferredMusicOutputDeviceUID, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    preferredMusicOutputDeviceUID,
+            if oldValue != self.preferredMusicOutputDeviceUID {
+                self.defaults.set(
+                    self.preferredMusicOutputDeviceUID,
                     forKey: "preferredMusicOutputDeviceUID"
                 )
-                logger
-                    .debug("Saved music output device: \(preferredMusicOutputDeviceUID)")
-                print("[SETTINGS] Music output device: \(preferredMusicOutputDeviceUID)")
+                self.logger
+                    .debug("Saved music output device: \(self.preferredMusicOutputDeviceUID)")
+                print("[SETTINGS] Music output device: \(self.preferredMusicOutputDeviceUID)")
                 fflush(stdout)
-                isUpdating = false
             }
         }
     }
@@ -177,34 +170,30 @@ class TunaSettings: ObservableObject {
     // 游戏偏好设备
     @Published var preferredGamingOutputDeviceUID: String {
         didSet {
-            if oldValue != preferredGamingOutputDeviceUID, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    preferredGamingOutputDeviceUID,
+            if oldValue != self.preferredGamingOutputDeviceUID {
+                self.defaults.set(
+                    self.preferredGamingOutputDeviceUID,
                     forKey: "preferredGamingOutputDeviceUID"
                 )
-                logger
-                    .debug("Saved gaming output device: \(preferredGamingOutputDeviceUID)")
-                print("[SETTINGS] Gaming output device: \(preferredGamingOutputDeviceUID)")
+                self.logger
+                    .debug("Saved gaming output device: \(self.preferredGamingOutputDeviceUID)")
+                print("[SETTINGS] Gaming output device: \(self.preferredGamingOutputDeviceUID)")
                 fflush(stdout)
-                isUpdating = false
             }
         }
     }
 
     @Published var preferredGamingInputDeviceUID: String {
         didSet {
-            if oldValue != preferredGamingInputDeviceUID, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    preferredGamingInputDeviceUID,
+            if oldValue != self.preferredGamingInputDeviceUID {
+                self.defaults.set(
+                    self.preferredGamingInputDeviceUID,
                     forKey: "preferredGamingInputDeviceUID"
                 )
-                logger
-                    .debug("Saved gaming input device: \(preferredGamingInputDeviceUID)")
-                print("[SETTINGS] Gaming input device: \(preferredGamingInputDeviceUID)")
+                self.logger
+                    .debug("Saved gaming input device: \(self.preferredGamingInputDeviceUID)")
+                print("[SETTINGS] Gaming input device: \(self.preferredGamingInputDeviceUID)")
                 fflush(stdout)
-                isUpdating = false
             }
         }
     }
@@ -212,46 +201,46 @@ class TunaSettings: ObservableObject {
     // UI 设置
     @Published var showVolumeSliders: Bool {
         didSet {
-            if oldValue != showVolumeSliders, !isUpdating {
-                isUpdating = true
-                defaults.set(showVolumeSliders, forKey: "showVolumeSliders")
-                logger.debug("Saved show volume sliders: \(showVolumeSliders)")
+            if oldValue != self.showVolumeSliders, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.showVolumeSliders, forKey: "showVolumeSliders")
+                self.logger.debug("Saved show volume sliders: \(self.showVolumeSliders)")
                 print(
-                    "[SETTINGS] Show volume sliders: \(showVolumeSliders ? "enabled" : "disabled")"
+                    "[SETTINGS] Show volume sliders: \(self.showVolumeSliders ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
 
     @Published var showMicrophoneLevelMeter: Bool {
         didSet {
-            if oldValue != showMicrophoneLevelMeter, !isUpdating {
-                isUpdating = true
-                defaults.set(showMicrophoneLevelMeter, forKey: "showMicrophoneLevelMeter")
-                logger
-                    .debug("Saved show microphone level meter: \(showMicrophoneLevelMeter)")
+            if oldValue != self.showMicrophoneLevelMeter, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.showMicrophoneLevelMeter, forKey: "showMicrophoneLevelMeter")
+                self.logger
+                    .debug("Saved show microphone level meter: \(self.showMicrophoneLevelMeter)")
                 print(
-                    "[SETTINGS] Show microphone level meter: \(showMicrophoneLevelMeter ? "enabled" : "disabled")"
+                    "[SETTINGS] Show microphone level meter: \(self.showMicrophoneLevelMeter ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
 
     @Published var useExperimentalUI: Bool {
         didSet {
-            if oldValue != useExperimentalUI, !isUpdating {
-                isUpdating = true
-                defaults.set(useExperimentalUI, forKey: "useExperimentalUI")
-                logger.debug("Saved use experimental UI: \(useExperimentalUI)")
+            if oldValue != self.useExperimentalUI, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.useExperimentalUI, forKey: "useExperimentalUI")
+                self.logger.debug("Saved use experimental UI: \(self.useExperimentalUI)")
                 print(
-                    "[SETTINGS] Use experimental UI: \(useExperimentalUI ? "enabled" : "disabled")"
+                    "[SETTINGS] Use experimental UI: \(self.useExperimentalUI ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -259,14 +248,14 @@ class TunaSettings: ObservableObject {
     @Published var launchAtLogin: Bool {
         didSet {
             // 只在值真的改变时才更新
-            if oldValue != launchAtLogin {
+            if oldValue != self.launchAtLogin {
                 // Save user preference
-                defaults.set(launchAtLogin, forKey: "launchAtLogin")
-                print("[SETTINGS] Launch at login: \(launchAtLogin ? "enabled" : "disabled")")
+                self.defaults.set(self.launchAtLogin, forKey: "launchAtLogin")
+                print("[SETTINGS] Launch at login: \(self.launchAtLogin ? "enabled" : "disabled")")
                 fflush(stdout)
 
                 // Apply system settings asynchronously
-                if launchAtLogin {
+                if self.launchAtLogin {
                     LaunchAtLogin.enable()
                 } else {
                     LaunchAtLogin.disable()
@@ -277,20 +266,18 @@ class TunaSettings: ObservableObject {
 
     @Published var preferredOutputDeviceUID: String {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != preferredOutputDeviceUID {
-                defaults.set(preferredOutputDeviceUID, forKey: "preferredOutputDeviceUID")
-                logger.debug("Saved preferred output device: \(preferredOutputDeviceUID)")
+            if oldValue != self.preferredOutputDeviceUID {
+                self.defaults.set(self.preferredOutputDeviceUID, forKey: "preferredOutputDeviceUID")
+                self.logger.debug("Saved preferred output device: \(self.preferredOutputDeviceUID)")
             }
         }
     }
 
     @Published var preferredInputDeviceUID: String {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != preferredInputDeviceUID {
-                defaults.set(preferredInputDeviceUID, forKey: "preferredInputDeviceUID")
-                logger.debug("Saved preferred input device: \(preferredInputDeviceUID)")
+            if oldValue != self.preferredInputDeviceUID {
+                self.defaults.set(self.preferredInputDeviceUID, forKey: "preferredInputDeviceUID")
+                self.logger.debug("Saved preferred input device: \(self.preferredInputDeviceUID)")
             }
         }
     }
@@ -298,14 +285,13 @@ class TunaSettings: ObservableObject {
     // 添加语音转录文件格式配置
     @Published var transcriptionFormat: String {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != transcriptionFormat, !isUpdating {
-                isUpdating = true
-                defaults.set(transcriptionFormat, forKey: "dictationFormat")
-                logger.debug("Saved transcription format: \(transcriptionFormat)")
-                print("[SETTINGS] Transcription format: \(transcriptionFormat)")
+            if oldValue != self.transcriptionFormat, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.transcriptionFormat, forKey: "dictationFormat")
+                self.logger.debug("Saved transcription format: \(self.transcriptionFormat)")
+                print("[SETTINGS] Transcription format: \(self.transcriptionFormat)")
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -313,22 +299,21 @@ class TunaSettings: ObservableObject {
     // 自动复制转录内容到剪贴板
     @Published var autoCopyTranscriptionToClipboard: Bool {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != autoCopyTranscriptionToClipboard, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    autoCopyTranscriptionToClipboard,
+            if oldValue != self.autoCopyTranscriptionToClipboard, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(
+                    self.autoCopyTranscriptionToClipboard,
                     forKey: "autoCopyTranscriptionToClipboard"
                 )
-                logger
+                self.logger
                     .debug(
-                        "Saved auto copy transcription: \(autoCopyTranscriptionToClipboard)"
+                        "Saved auto copy transcription: \(self.autoCopyTranscriptionToClipboard)"
                     )
                 print(
-                    "[SETTINGS] Auto copy transcription: \(autoCopyTranscriptionToClipboard ? "enabled" : "disabled")"
+                    "[SETTINGS] Auto copy transcription: \(self.autoCopyTranscriptionToClipboard ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -336,18 +321,17 @@ class TunaSettings: ObservableObject {
     // Dictation全局快捷键开关
     @Published var enableDictationShortcut: Bool {
         didSet {
-            if oldValue != enableDictationShortcut, !isUpdating {
-                isUpdating = true
-                defaults.set(enableDictationShortcut, forKey: "enableDictationShortcut")
-                logger
-                    .debug("Saved dictation shortcut enabled: \(enableDictationShortcut)")
+            if oldValue != self.enableDictationShortcut, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.enableDictationShortcut, forKey: "enableDictationShortcut")
+                self.logger
+                    .debug("Saved dictation shortcut enabled: \(self.enableDictationShortcut)")
                 print(
-                    "[SETTINGS] Dictation shortcut: \(enableDictationShortcut ? "enabled" : "disabled")"
+                    "[SETTINGS] Dictation shortcut: \(self.enableDictationShortcut ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
 
-                // 发送通知告知设置已变更
                 NotificationCenter.default.post(
                     name: Notification.Name.dictationShortcutSettingsChanged,
                     object: nil
@@ -357,29 +341,27 @@ class TunaSettings: ObservableObject {
     }
 
     // Dictation快捷键组合
-    @Published var dictationShortcutKeyCombo: String = "cmd+u" {
+    @Published var dictationShortcutKeyCombo: String {
         didSet {
-            if oldValue != dictationShortcutKeyCombo {
-                logger
-                    .info(
-                        "Dictation shortcut key combo changed to \(dictationShortcutKeyCombo, privacy: .public)"
-                    )
-
-                // 保存设置到UserDefaults
-                defaults.set(
-                    dictationShortcutKeyCombo,
+            if oldValue != self.dictationShortcutKeyCombo, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(
+                    self.dictationShortcutKeyCombo,
                     forKey: "dictationShortcutKeyCombo"
                 )
-                objectWillChange.send()
+                self.logger
+                    .info(
+                        "Dictation shortcut key combo changed to \(self.dictationShortcutKeyCombo, privacy: .public)"
+                    )
+                print(
+                    "[SETTINGS] Dictation shortcut key combo: \(self.dictationShortcutKeyCombo)"
+                )
+                fflush(stdout)
+                self.isUpdating = false
 
-                // 通知快捷键管理器 - 使用dictationShortcutSettingsChanged通知名
                 NotificationCenter.default.post(
                     name: Notification.Name.dictationShortcutSettingsChanged,
-                    object: nil,
-                    userInfo: [
-                        "setting": "dictationShortcutKeyCombo",
-                        "value": dictationShortcutKeyCombo,
-                    ]
+                    object: nil
                 )
             }
         }
@@ -388,23 +370,22 @@ class TunaSettings: ObservableObject {
     // 快捷键触发时显示听写页面
     @Published var showDictationPageOnShortcut: Bool {
         didSet {
-            if oldValue != showDictationPageOnShortcut, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    showDictationPageOnShortcut,
+            if oldValue != self.showDictationPageOnShortcut, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(
+                    self.showDictationPageOnShortcut,
                     forKey: "showDictationPageOnShortcut"
                 )
-                logger
+                self.logger
                     .debug(
-                        "Saved show dictation page on shortcut: \(showDictationPageOnShortcut)"
+                        "Saved show dictation page on shortcut: \(self.showDictationPageOnShortcut)"
                     )
                 print(
-                    "[SETTINGS] Show dictation page on shortcut: \(showDictationPageOnShortcut ? "enabled" : "disabled")"
+                    "[SETTINGS] Show dictation page on shortcut: \(self.showDictationPageOnShortcut ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
 
-                // 发送通知告知设置已变更
                 NotificationCenter.default.post(
                     name: Notification.Name.dictationShortcutSettingsChanged,
                     object: nil
@@ -416,21 +397,21 @@ class TunaSettings: ObservableObject {
     // 启用听写声音反馈
     @Published var enableDictationSoundFeedback: Bool {
         didSet {
-            if oldValue != enableDictationSoundFeedback, !isUpdating {
-                isUpdating = true
-                defaults.set(
-                    enableDictationSoundFeedback,
+            if oldValue != self.enableDictationSoundFeedback, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(
+                    self.enableDictationSoundFeedback,
                     forKey: "enableDictationSoundFeedback"
                 )
-                logger
+                self.logger
                     .debug(
-                        "Saved enable dictation sound feedback: \(enableDictationSoundFeedback)"
+                        "Saved enable dictation sound feedback: \(self.enableDictationSoundFeedback)"
                     )
                 print(
-                    "[SETTINGS] Dictation sound feedback: \(enableDictationSoundFeedback ? "enabled" : "disabled")"
+                    "[SETTINGS] Dictation sound feedback: \(self.enableDictationSoundFeedback ? "enabled" : "disabled")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -438,15 +419,37 @@ class TunaSettings: ObservableObject {
     // Engine card expansion state
     @Published var isEngineOpen: Bool = false {
         didSet {
-            if oldValue != isEngineOpen, !isUpdating {
-                isUpdating = true
-                defaults.set(isEngineOpen, forKey: "isEngineOpen")
-                logger.debug("Saved engine card state: \(isEngineOpen)")
+            if oldValue != self.isEngineOpen, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.isEngineOpen, forKey: "isEngineOpen")
+                self.logger.debug("Saved engine card state: \(self.isEngineOpen)")
                 print(
-                    "[SETTINGS] Engine card state: \(isEngineOpen ? "expanded" : "collapsed")"
+                    "[SETTINGS] Engine card state: \(self.isEngineOpen ? "expanded" : "collapsed")"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
+            }
+        }
+    }
+
+    // Transcription Output card expansion state
+    @Published var isTranscriptionOutputOpen: Bool = false {
+        didSet {
+            if oldValue != self.isTranscriptionOutputOpen, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(
+                    self.isTranscriptionOutputOpen,
+                    forKey: "isTranscriptionOutputOpen"
+                )
+                self.logger
+                    .debug(
+                        "Saved transcription output card state: \(self.isTranscriptionOutputOpen)"
+                    )
+                print(
+                    "[SETTINGS] Transcription output card state: \(self.isTranscriptionOutputOpen ? "expanded" : "collapsed")"
+                )
+                fflush(stdout)
+                self.isUpdating = false
             }
         }
     }
@@ -454,21 +457,20 @@ class TunaSettings: ObservableObject {
     // 添加语音转录语言设置
     @Published var transcriptionLanguage: String {
         didSet {
-            if oldValue != transcriptionLanguage, !isUpdating {
-                isUpdating = true
-                defaults.set(transcriptionLanguage, forKey: "transcriptionLanguage")
-                logger.debug("Saved transcription language: \(transcriptionLanguage)")
+            if oldValue != self.transcriptionLanguage, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.transcriptionLanguage, forKey: "transcriptionLanguage")
+                self.logger.debug("Saved transcription language: \(self.transcriptionLanguage)")
                 print(
-                    "[SETTINGS] Transcription language: \(transcriptionLanguage.isEmpty ? "Auto Detect" : transcriptionLanguage)"
+                    "[SETTINGS] Transcription language: \(self.transcriptionLanguage.isEmpty ? "Auto Detect" : self.transcriptionLanguage)"
                 )
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
 
-                // 发送通知告知设置已变更
                 NotificationCenter.default.post(
                     name: Notification.Name("transcriptionLanguageChanged"),
                     object: nil,
-                    userInfo: ["language": transcriptionLanguage]
+                    userInfo: ["language": self.transcriptionLanguage]
                 )
             }
         }
@@ -477,20 +479,20 @@ class TunaSettings: ObservableObject {
     // 添加语音转录文件保存路径配置
     @Published var transcriptionOutputDirectory: URL? {
         didSet {
-            if !isUpdating {
-                isUpdating = true
-                if let url = transcriptionOutputDirectory {
+            if !self.isUpdating {
+                self.isUpdating = true
+                if let url = self.transcriptionOutputDirectory {
                     if oldValue?.path != url.path {
-                        defaults.set(url, forKey: "dictationOutputDirectory")
-                        logger.debug("Saved transcription output directory: \(url.path)")
+                        self.defaults.set(url, forKey: "dictationOutputDirectory")
+                        self.logger.debug("Saved transcription output directory: \(url.path)")
                         print("[SETTINGS] Transcription output directory: \(url.path)")
                     }
                 } else if oldValue != nil {
-                    defaults.removeObject(forKey: "dictationOutputDirectory")
-                    logger.debug("Removed transcription output directory setting")
+                    self.defaults.removeObject(forKey: "dictationOutputDirectory")
+                    self.logger.debug("Removed transcription output directory setting")
                 }
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -498,14 +500,13 @@ class TunaSettings: ObservableObject {
     // 默认音频输出设备
     @Published var defaultOutputDeviceUID: String {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != defaultOutputDeviceUID, !isUpdating {
-                isUpdating = true
-                defaults.set(defaultOutputDeviceUID, forKey: "defaultOutputDeviceUID")
-                logger.debug("Saved default output device: \(defaultOutputDeviceUID)")
-                print("[SETTINGS] Default output device: \(defaultOutputDeviceUID)")
+            if oldValue != self.defaultOutputDeviceUID, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.defaultOutputDeviceUID, forKey: "defaultOutputDeviceUID")
+                self.logger.debug("Saved default output device: \(self.defaultOutputDeviceUID)")
+                print("[SETTINGS] Default output device: \(self.defaultOutputDeviceUID)")
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -513,14 +514,13 @@ class TunaSettings: ObservableObject {
     // 默认音频输入设备
     @Published var defaultInputDeviceUID: String {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != defaultInputDeviceUID, !isUpdating {
-                isUpdating = true
-                defaults.set(defaultInputDeviceUID, forKey: "defaultInputDeviceUID")
-                logger.debug("Saved default input device: \(defaultInputDeviceUID)")
-                print("[SETTINGS] Default input device: \(defaultInputDeviceUID)")
+            if oldValue != self.defaultInputDeviceUID, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.defaultInputDeviceUID, forKey: "defaultInputDeviceUID")
+                self.logger.debug("Saved default input device: \(self.defaultInputDeviceUID)")
+                print("[SETTINGS] Default input device: \(self.defaultInputDeviceUID)")
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
@@ -528,24 +528,24 @@ class TunaSettings: ObservableObject {
     // 设备偏好属性 - 标准模式
     @Published var preferredStandardInputDeviceName: String? {
         didSet {
-            defaults.setValue(
-                preferredStandardInputDeviceName,
+            self.defaults.setValue(
+                self.preferredStandardInputDeviceName,
                 forKey: "preferredStandardInputDeviceName"
             )
             print(
-                "[SETTINGS] Standard mode preferred input device: \(preferredStandardInputDeviceName ?? "None")"
+                "[SETTINGS] Standard mode preferred input device: \(self.preferredStandardInputDeviceName ?? "None")"
             )
         }
     }
 
     @Published var preferredStandardOutputDeviceName: String? {
         didSet {
-            defaults.setValue(
-                preferredStandardOutputDeviceName,
+            self.defaults.setValue(
+                self.preferredStandardOutputDeviceName,
                 forKey: "preferredStandardOutputDeviceName"
             )
             print(
-                "[SETTINGS] Standard mode preferred output device: \(preferredStandardOutputDeviceName ?? "None")"
+                "[SETTINGS] Standard mode preferred output device: \(self.preferredStandardOutputDeviceName ?? "None")"
             )
         }
     }
@@ -553,24 +553,24 @@ class TunaSettings: ObservableObject {
     // 设备偏好属性 - 实验模式
     @Published var preferredExperimentalInputDeviceName: String? {
         didSet {
-            defaults.setValue(
-                preferredExperimentalInputDeviceName,
+            self.defaults.setValue(
+                self.preferredExperimentalInputDeviceName,
                 forKey: "preferredExperimentalInputDeviceName"
             )
             print(
-                "[SETTINGS] Experimental mode preferred input device: \(preferredExperimentalInputDeviceName ?? "None")"
+                "[SETTINGS] Experimental mode preferred input device: \(self.preferredExperimentalInputDeviceName ?? "None")"
             )
         }
     }
 
     @Published var preferredExperimentalOutputDeviceName: String? {
         didSet {
-            defaults.setValue(
-                preferredExperimentalOutputDeviceName,
+            self.defaults.setValue(
+                self.preferredExperimentalOutputDeviceName,
                 forKey: "preferredExperimentalOutputDeviceName"
             )
             print(
-                "[SETTINGS] Experimental mode preferred output device: \(preferredExperimentalOutputDeviceName ?? "None")"
+                "[SETTINGS] Experimental mode preferred output device: \(self.preferredExperimentalOutputDeviceName ?? "None")"
             )
         }
     }
@@ -578,137 +578,140 @@ class TunaSettings: ObservableObject {
     // Magic Transform 功能设置
     @Published var magicEnabled: Bool {
         didSet {
-            if oldValue != magicEnabled, !isUpdating {
-                isUpdating = true
-                defaults.set(magicEnabled, forKey: "magicEnabled")
-                logger.debug("Saved magic enabled: \(magicEnabled)")
-                print("[SETTINGS] Magic transform: \(magicEnabled ? "enabled" : "disabled")")
+            if oldValue != self.magicEnabled, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.magicEnabled, forKey: "magicEnabled")
+                self.logger.debug("Saved magic enabled: \(self.magicEnabled)")
+                print("[SETTINGS] Magic transform: \(self.magicEnabled ? "enabled" : "disabled")")
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
 
     @Published var magicPreset: PresetStyle {
         didSet {
-            if oldValue != magicPreset, !isUpdating {
-                isUpdating = true
-                defaults.set(magicPreset.rawValue, forKey: "magicPreset")
-                logger.debug("Saved magic preset: \(magicPreset.rawValue)")
-                print("[SETTINGS] Magic preset: \(magicPreset.rawValue)")
+            if oldValue != self.magicPreset, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.magicPreset.rawValue, forKey: "magicPreset")
+                self.logger.debug("Saved magic preset: \(self.magicPreset.rawValue)")
+                print("[SETTINGS] Magic preset: \(self.magicPreset.rawValue)")
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
 
     @Published var magicCustomPrompt: String {
         didSet {
-            if oldValue != magicCustomPrompt, !isUpdating {
-                isUpdating = true
-                defaults.set(magicCustomPrompt, forKey: "magicCustomPrompt")
-                logger.debug("Saved magic custom prompt: \(magicCustomPrompt)")
+            if oldValue != self.magicCustomPrompt, !self.isUpdating {
+                self.isUpdating = true
+                self.defaults.set(self.magicCustomPrompt, forKey: "magicCustomPrompt")
+                self.logger.debug("Saved magic custom prompt: \(self.magicCustomPrompt)")
                 print("[SETTINGS] Magic custom prompt updated")
                 fflush(stdout)
-                isUpdating = false
+                self.isUpdating = false
             }
         }
     }
 
     private init() {
         // 初始化操作模式
-        let savedModeString = defaults.string(forKey: "currentMode") ?? Mode.standard.rawValue
+        let savedModeString = self.defaults.string(forKey: "currentMode") ?? Mode.standard.rawValue
         if let mode = Mode(rawValue: savedModeString) {
-            currentMode = mode
+            self.currentMode = mode
         } else {
-            currentMode = .standard
+            self.currentMode = .standard
         }
 
         // 初始化UI实验模式
-        let savedUIString = defaults.string(forKey: "uiExperimentMode") ?? UIExperimentMode
+        let savedUIString = self.defaults.string(forKey: "uiExperimentMode") ?? UIExperimentMode
             .newUI1
             .rawValue
-        uiExperimentMode = UIExperimentMode.allCases
+        self.uiExperimentMode = UIExperimentMode.allCases
             .first { $0.rawValue == savedUIString } ?? .newUI1
 
         // Initialize with actual launch agent status
-        launchAtLogin = LaunchAtLogin.isEnabled
+        self.launchAtLogin = LaunchAtLogin.isEnabled
 
         // Load saved device UIDs
-        preferredOutputDeviceUID = defaults
+        self.preferredOutputDeviceUID = self.defaults
             .string(forKey: "preferredOutputDeviceUID") ?? ""
-        preferredInputDeviceUID = defaults.string(forKey: "preferredInputDeviceUID") ?? ""
+        self.preferredInputDeviceUID = self.defaults.string(forKey: "preferredInputDeviceUID") ?? ""
 
         // 初始化智能设备切换设置
-        enableSmartSwitching = defaults.bool(forKey: "enableSmartSwitching")
-        preferredVideoChatOutputDeviceUID = defaults
+        self.enableSmartSwitching = self.defaults.bool(forKey: "enableSmartSwitching")
+        self.preferredVideoChatOutputDeviceUID = self.defaults
             .string(forKey: "preferredVideoChatOutputDeviceUID") ?? ""
-        preferredVideoChatInputDeviceUID = defaults
+        self.preferredVideoChatInputDeviceUID = self.defaults
             .string(forKey: "preferredVideoChatInputDeviceUID") ?? ""
-        preferredMusicOutputDeviceUID = defaults
+        self.preferredMusicOutputDeviceUID = self.defaults
             .string(forKey: "preferredMusicOutputDeviceUID") ?? ""
-        preferredGamingOutputDeviceUID = defaults
+        self.preferredGamingOutputDeviceUID = self.defaults
             .string(forKey: "preferredGamingOutputDeviceUID") ?? ""
-        preferredGamingInputDeviceUID = defaults
+        self.preferredGamingInputDeviceUID = self.defaults
             .string(forKey: "preferredGamingInputDeviceUID") ?? ""
 
         // 初始化UI设置
-        showVolumeSliders = defaults.bool(forKey: "showVolumeSliders")
-        showMicrophoneLevelMeter = defaults.bool(forKey: "showMicrophoneLevelMeter")
-        useExperimentalUI = defaults.bool(forKey: "useExperimentalUI")
+        self.showVolumeSliders = self.defaults.bool(forKey: "showVolumeSliders")
+        self.showMicrophoneLevelMeter = self.defaults.bool(forKey: "showMicrophoneLevelMeter")
+        self.useExperimentalUI = self.defaults.bool(forKey: "useExperimentalUI")
 
         // 初始化语音转录设置
-        transcriptionFormat = defaults.string(forKey: "dictationFormat") ?? "txt"
-        transcriptionOutputDirectory = defaults.url(forKey: "dictationOutputDirectory")
-        autoCopyTranscriptionToClipboard = defaults
+        self.transcriptionFormat = self.defaults.string(forKey: "dictationFormat") ?? "txt"
+        self.transcriptionOutputDirectory = self.defaults.url(forKey: "dictationOutputDirectory")
+        self.autoCopyTranscriptionToClipboard = self.defaults
             .bool(forKey: "autoCopyTranscriptionToClipboard")
 
         // 初始化Dictation快捷键设置
-        enableDictationShortcut = defaults.bool(forKey: "enableDictationShortcut")
-        dictationShortcutKeyCombo = defaults
+        self.enableDictationShortcut = self.defaults.bool(forKey: "enableDictationShortcut")
+        self.dictationShortcutKeyCombo = self.defaults
             .string(forKey: "dictationShortcutKeyCombo") ?? "cmd+u"
-        showDictationPageOnShortcut = defaults.bool(forKey: "showDictationPageOnShortcut")
+        self.showDictationPageOnShortcut = self.defaults.bool(forKey: "showDictationPageOnShortcut")
 
         // 初始化Engine卡片状态
-        isEngineOpen = defaults.bool(forKey: "isEngineOpen")
+        self.isEngineOpen = self.defaults.bool(forKey: "isEngineOpen")
+
+        // 初始化Transcription Output卡片状态
+        self.isTranscriptionOutputOpen = self.defaults.bool(forKey: "isTranscriptionOutputOpen")
 
         // 初始化默认音频设备设置
-        defaultOutputDeviceUID = defaults.string(forKey: "defaultOutputDeviceUID") ?? ""
-        defaultInputDeviceUID = defaults.string(forKey: "defaultInputDeviceUID") ?? ""
+        self.defaultOutputDeviceUID = self.defaults.string(forKey: "defaultOutputDeviceUID") ?? ""
+        self.defaultInputDeviceUID = self.defaults.string(forKey: "defaultInputDeviceUID") ?? ""
 
         // 初始化声音反馈设置
-        enableDictationSoundFeedback = defaults
+        self.enableDictationSoundFeedback = self.defaults
             .object(forKey: "enableDictationSoundFeedback") != nil ?
-            defaults.bool(forKey: "enableDictationSoundFeedback") : true // 默认启用声音反馈
+            self.defaults.bool(forKey: "enableDictationSoundFeedback") : true // 默认启用声音反馈
 
         // 初始化语音转录语言设置
-        transcriptionLanguage = defaults
+        self.transcriptionLanguage = self.defaults
             .string(forKey: "transcriptionLanguage") ?? "" // 默认为空字符串，表示自动检测
 
         // 初始化设备偏好属性
-        preferredStandardInputDeviceName = defaults
+        self.preferredStandardInputDeviceName = self.defaults
             .string(forKey: "preferredStandardInputDeviceName")
-        preferredStandardOutputDeviceName = defaults
+        self.preferredStandardOutputDeviceName = self.defaults
             .string(forKey: "preferredStandardOutputDeviceName")
-        preferredExperimentalInputDeviceName = defaults
+        self.preferredExperimentalInputDeviceName = self.defaults
             .string(forKey: "preferredExperimentalInputDeviceName")
-        preferredExperimentalOutputDeviceName = defaults
+        self.preferredExperimentalOutputDeviceName = self.defaults
             .string(forKey: "preferredExperimentalOutputDeviceName")
 
         // 初始化Magic Transform设置
-        magicEnabled = defaults.bool(forKey: "magicEnabled")
-        let savedPresetString = defaults.string(forKey: "magicPreset") ?? PresetStyle.abit
+        self.magicEnabled = self.defaults.bool(forKey: "magicEnabled")
+        let savedPresetString = self.defaults.string(forKey: "magicPreset") ?? PresetStyle.abit
             .rawValue
-        magicPreset = PresetStyle(rawValue: savedPresetString) ?? .abit
-        magicCustomPrompt = defaults.string(forKey: "magicCustomPrompt") ?? ""
+        self.magicPreset = PresetStyle(rawValue: savedPresetString) ?? .abit
+        self.magicCustomPrompt = self.defaults.string(forKey: "magicCustomPrompt") ?? ""
 
         // 迁移旧数据 - 移到最后，所有属性都初始化后执行
-        migrateOldSettings()
+        self.migrateOldSettings()
 
         // Log initial state
-        print("[SETTINGS] Launch at login: \(launchAtLogin ? "enabled" : "disabled")")
+        print("[SETTINGS] Launch at login: \(self.launchAtLogin ? "enabled" : "disabled")")
         print(
-            "\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(uiExperimentMode.rawValue)"
+            "\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(self.uiExperimentMode.rawValue)"
         )
         fflush(stdout)
     }
@@ -740,25 +743,27 @@ class TunaSettings: ObservableObject {
             "transcriptionLanguage",
             // Magic Transform 设置
             "magicEnabled", "magicPreset", "magicCustomPrompt",
+            // 新添加的Transcription Output卡片状态
+            "isTranscriptionOutputOpen",
         ]
 
         var migrated = false
 
         for key in keys {
-            if standardDefaults.object(forKey: key) != nil {
+            if self.standardDefaults.object(forKey: key) != nil {
                 if let value = standardDefaults.object(forKey: key) {
-                    defaults.set(value, forKey: key)
-                    standardDefaults.removeObject(forKey: key)
-                    logger.debug("Migrated setting: \(key)")
+                    self.defaults.set(value, forKey: key)
+                    self.standardDefaults.removeObject(forKey: key)
+                    self.logger.debug("Migrated setting: \(key)")
                     migrated = true
                 }
             }
         }
 
         if migrated {
-            standardDefaults.synchronize()
-            defaults.synchronize()
-            logger.notice("Settings migrated from standard UserDefaults to ai.tuna.app domain")
+            self.standardDefaults.synchronize()
+            self.defaults.synchronize()
+            self.logger.notice("Settings migrated from standard UserDefaults to ai.tuna.app domain")
         }
     }
 }
@@ -801,30 +806,30 @@ extension TunaSettings {
 
     // Magic Transform settings (already exists but renaming for consistency)
     var magicTransformEnabled: Bool {
-        get { magicEnabled }
-        set { magicEnabled = newValue }
+        get { self.magicEnabled }
+        set { self.magicEnabled = newValue }
     }
 
     var magicTransformStyle: PresetStyle {
-        get { magicPreset }
-        set { magicPreset = newValue }
+        get { self.magicPreset }
+        set { self.magicPreset = newValue }
     }
 
     // Shortcut settings (aliases to existing properties)
     var shortcutEnabled: Bool {
-        get { enableDictationShortcut }
-        set { enableDictationShortcut = newValue }
+        get { self.enableDictationShortcut }
+        set { self.enableDictationShortcut = newValue }
     }
 
     var shortcutKey: String {
-        get { dictationShortcutKeyCombo }
-        set { dictationShortcutKeyCombo = newValue }
+        get { self.dictationShortcutKeyCombo }
+        set { self.dictationShortcutKeyCombo = newValue }
     }
 
     // Smart Swaps alias
     var smartSwaps: Bool {
-        get { enableSmartSwitching }
-        set { enableSmartSwitching = newValue }
+        get { self.enableSmartSwitching }
+        set { self.enableSmartSwitching = newValue }
     }
 
     // Whisper API Key

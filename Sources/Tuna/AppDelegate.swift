@@ -19,21 +19,21 @@ class EventMonitor {
 
     // 监控应用外部事件
     func startGlobal() {
-        monitor = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: handler)
+        self.monitor = NSEvent.addGlobalMonitorForEvents(matching: self.mask, handler: self.handler)
     }
 
     // 监控应用内部事件
     func startLocal() {
-        monitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
+        self.monitor = NSEvent.addLocalMonitorForEvents(matching: self.mask) { [weak self] event in
             self?.handler(event)
             return event
         }
     }
 
     func stop() {
-        if monitor != nil {
-            NSEvent.removeMonitor(monitor!)
-            monitor = nil
+        if self.monitor != nil {
+            NSEvent.removeMonitor(self.monitor!)
+            self.monitor = nil
         }
     }
 }
@@ -78,27 +78,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("\u{001B}[34m[APP]\u{001B}[0m Application finished launching")
         fflush(stdout)
 
-        setupStatusItem()
-        setupEventMonitor()
+        self.setupStatusItem()
+        self.setupEventMonitor()
 
         // 检查并更新旧的快捷键设置
         if let currentShortcut = defaults.string(forKey: "dictationShortcutKeyCombo"),
            currentShortcut == "opt+t"
         {
-            defaults.set("cmd+u", forKey: "dictationShortcutKeyCombo")
-            logger.info("Updated legacy shortcut from opt+t to cmd+u")
+            self.defaults.set("cmd+u", forKey: "dictationShortcutKeyCombo")
+            self.logger.info("Updated legacy shortcut from opt+t to cmd+u")
         }
 
         // 初始化键盘快捷键管理器
-        keyboardShortcutManager = KeyboardShortcutManager.shared
+        self.keyboardShortcutManager = KeyboardShortcutManager.shared
 
         // 检查辅助功能权限
-        checkAccessibilityOnLaunchIfNeeded()
+        self.checkAccessibilityOnLaunchIfNeeded()
 
         // Register notification observer for settings window
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(showSettingsWindow(_:)),
+            selector: #selector(self.showSettingsWindow(_:)),
             name: Notification.Name.showSettings,
             object: nil
         )
@@ -106,34 +106,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 添加 togglePinned 通知的观察者，处理窗口固定/取消固定状态
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handlePinToggle(_:)),
+            selector: #selector(self.handlePinToggle(_:)),
             name: Notification.Name.togglePinned,
             object: nil
         )
 
         // 检查上次使用时是否为固定状态，如果是，则在第一次点击图标时自动固定
-        let wasPinned = defaults.bool(forKey: "popoverPinned")
+        let wasPinned = self.defaults.bool(forKey: "popoverPinned")
         if wasPinned {
             print("\u{001B}[36m[UI]\u{001B}[0m Will restore pin state on first click")
             // 但不立即执行固定操作，避免在启动时的问题
         }
 
-        logger.info("Application initialization completed")
+        self.logger.info("Application initialization completed")
         print("\u{001B}[32m[APP]\u{001B}[0m Initialization complete")
         fflush(stdout)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         // 停止事件监视器
-        eventMonitor?.stop()
+        self.eventMonitor?.stop()
 
         print("\u{001B}[34m[APP]\u{001B}[0m Application will terminate")
-        logger.info("Application will terminate")
+        self.logger.info("Application will terminate")
         fflush(stdout)
     }
 
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
             // Use fish icon to match app name "Tuna"
@@ -147,19 +147,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             // 确保同时设置target和action
             button.target = self
-            button.action = #selector(togglePopover(_:))
+            button.action = #selector(self.togglePopover(_:))
         }
 
-        popover = NSPopover()
-        popover.contentSize = NSSize(width: 400, height: 600) // 设置固定尺寸，确保足够显示所有内容
-        popover.behavior = .transient
+        self.popover = NSPopover()
+        self.popover.contentSize = NSSize(width: 400, height: 600) // 设置固定尺寸，确保足够显示所有内容
+        self.popover.behavior = .transient
 
         // 移除弹出窗口的背景和阴影，解决灰色阴影问题
-        popover.setValue(true, forKeyPath: "shouldHideAnchor")
+        self.popover.setValue(true, forKeyPath: "shouldHideAnchor")
 
         // 使用系统风格的外观
         if let appearance = NSAppearance(named: .darkAqua) {
-            popover.appearance = appearance
+            self.popover.appearance = appearance
         }
 
         // 预先创建内容视图，提高首次显示速度
@@ -170,7 +170,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         .environmentObject(DictationManager.shared)
         .environmentObject(TabRouter.shared)
         let hostingController = NSHostingController(rootView: contentView)
-        popover.contentViewController = hostingController
+        self.popover.contentViewController = hostingController
 
         print("\u{001B}[36m[UI]\u{001B}[0m Status bar icon configured")
         fflush(stdout)
@@ -178,17 +178,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupEventMonitor() {
         // 创建事件监视器，监听鼠标点击事件 - 使用全局监视器
-        eventMonitor = EventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+        self.eventMonitor = EventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self, popover.isShown else { return }
 
             // 当点击发生在应用窗口外时，关闭弹出窗口
             print("\u{001B}[36m[UI]\u{001B}[0m User clicked outside popover, closing")
             fflush(stdout)
-            popover.performClose(nil)
+            self.popover.performClose(nil)
         }
 
         // 在应用程序启动时开始监听
-        eventMonitor?.startGlobal()
+        self.eventMonitor?.startGlobal()
 
         print("\u{001B}[36m[UI]\u{001B}[0m Event monitor configured")
         fflush(stdout)
@@ -197,11 +197,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func togglePopover(_ sender: Any?) {
         if let button = statusItem.button {
             // 正常 popover 逻辑
-            if popover.isShown {
-                closePopover()
+            if self.popover.isShown {
+                self.closePopover()
             } else {
                 // 显示弹出窗口
-                eventMonitor?.stop() // 暂时停止监听以避免立即触发关闭
+                self.eventMonitor?.stop() // 暂时停止监听以避免立即触发关闭
 
                 print("\u{001B}[36m[UI]\u{001B}[0m Showing popover")
                 fflush(stdout)
@@ -227,7 +227,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     ) ?? buttonRect
 
                     // 使用精确位置显示popover
-                    popover.show(
+                    self.popover.show(
                         relativeTo: convertedRect,
                         of: button.window!.contentView!,
                         preferredEdge: .minY
@@ -244,7 +244,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                             popoverWindow.setFrame(frame, display: true)
 
                             // 检查是否需要应用固定状态
-                            let shouldPin = defaults.bool(forKey: "popoverPinned")
+                            let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                             if shouldPin {
                                 // 直接应用固定状态
                                 NotificationCenter.default.post(
@@ -258,11 +258,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 } else {
                     // 退回到标准方法
-                    popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                    self.popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
                     // 检查是否需要应用固定状态
                     DispatchQueue.main.async { [self] in
-                        let shouldPin = defaults.bool(forKey: "popoverPinned")
+                        let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                         if shouldPin {
                             NotificationCenter.default.post(
                                 name: Notification.Name.togglePinned,
@@ -299,8 +299,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
 
                 // 如果不是固定状态，才重启事件监视器
-                if !defaults.bool(forKey: "popoverPinned") {
-                    eventMonitor?.startGlobal()
+                if !self.defaults.bool(forKey: "popoverPinned") {
+                    self.eventMonitor?.startGlobal()
                 }
             }
         }
@@ -308,10 +308,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 显示菜单栏弹窗；若已显示则什么都不做
     func ensurePopoverVisible() {
-        if !popover.isShown {
+        if !self.popover.isShown {
             Logger(subsystem: "ai.tuna", category: "Shortcut").notice("[P] showPopover")
-            rebuildPopover() // 确保每次显示前重建Popover
-            showPopover()
+            self.rebuildPopover() // 确保每次显示前重建Popover
+            self.showPopover()
         }
     }
 
@@ -331,10 +331,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("ROUTER-DBG [2]", ObjectIdentifier(TabRouter.shared), TabRouter.shared.current)
 
         let hostingController = NSHostingController(rootView: contentView)
-        popover.contentViewController = hostingController
+        self.popover.contentViewController = hostingController
 
         // 设置固定尺寸，确保足够显示所有内容
-        popover.contentSize = NSSize(width: 400, height: 600)
+        self.popover.contentSize = NSSize(width: 400, height: 600)
         print("🔄 [DEBUG] 设置Popover固定大小: 400 x 600")
     }
 
@@ -342,7 +342,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPopover() {
         if let button = statusItem.button {
             // 暂时停止监听以避免立即触发关闭
-            eventMonitor?.stop()
+            self.eventMonitor?.stop()
 
             print("\u{001B}[36m[UI]\u{001B}[0m Showing popover")
             fflush(stdout)
@@ -366,7 +366,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     .convert(adjustedRect, from: nil) ?? buttonRect
 
                 // 使用精确位置显示popover
-                popover.show(
+                self.popover.show(
                     relativeTo: convertedRect,
                     of: button.window!.contentView!,
                     preferredEdge: .minY
@@ -383,7 +383,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         popoverWindow.setFrame(frame, display: true)
 
                         // 检查是否需要应用固定状态
-                        let shouldPin = defaults.bool(forKey: "popoverPinned")
+                        let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                         if shouldPin {
                             // 直接应用固定状态
                             NotificationCenter.default.post(
@@ -397,11 +397,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } else {
                 // 退回到标准方法
-                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                self.popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
                 // 检查是否需要应用固定状态
                 DispatchQueue.main.async { [self] in
-                    let shouldPin = defaults.bool(forKey: "popoverPinned")
+                    let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                     if shouldPin {
                         NotificationCenter.default.post(
                             name: Notification.Name.togglePinned,
@@ -438,23 +438,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             // 如果不是固定状态，才重启事件监视器
-            if !defaults.bool(forKey: "popoverPinned") {
-                eventMonitor?.startGlobal()
+            if !self.defaults.bool(forKey: "popoverPinned") {
+                self.eventMonitor?.startGlobal()
             }
         }
     }
 
     // 添加关闭popover的方法
     private func closePopover() {
-        popover.performClose(nil)
+        self.popover.performClose(nil)
     }
 
     @objc func showSettingsWindow(_ notification: Notification) {
         print("\u{001B}[36m[SETTINGS]\u{001B}[0m User requested settings window")
         fflush(stdout)
 
-        if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController()
+        if self.settingsWindowController == nil {
+            self.settingsWindowController = SettingsWindowController()
         }
 
         if let window = settingsWindowController?.window {
@@ -490,13 +490,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if isPinned {
             // 停止事件监听器，防止点击外部区域关闭 popover
-            eventMonitor?.stop()
+            self.eventMonitor?.stop()
 
             // 修改 popover 行为，防止自动关闭
-            popover.behavior = .applicationDefined
+            self.popover.behavior = .applicationDefined
 
             // 如果 popover 已显示，调整窗口级别使其保持在最前
-            if popover.isShown,
+            if self.popover.isShown,
                let popoverWindow = popover.contentViewController?.view.window
             {
                 // 设置窗口级别为浮动（保持在大多数窗口之上）
@@ -511,10 +511,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         } else {
             // 恢复 popover 的默认行为
-            popover.behavior = .transient
+            self.popover.behavior = .transient
 
             // 如果 popover 正在显示，恢复其窗口级别
-            if popover.isShown,
+            if self.popover.isShown,
                let popoverWindow = popover.contentViewController?.view.window
             {
                 popoverWindow.level = .normal
@@ -522,12 +522,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             // 重新启动事件监听器，使点击外部区域时关闭 popover
-            eventMonitor?.startGlobal()
+            self.eventMonitor?.startGlobal()
         }
 
         // 保存状态到 UserDefaults
-        defaults.set(isPinned, forKey: "popoverPinned")
-        defaults.synchronize()
+        self.defaults.set(isPinned, forKey: "popoverPinned")
+        self.defaults.synchronize()
 
         fflush(stdout)
     }
@@ -535,7 +535,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 应用启动时检查辅助功能权限
     private func checkAccessibilityOnLaunchIfNeeded() {
         // 检查用户是否已经看过权限提示
-        let hasSeenAccessibilityPrompt = defaults.bool(forKey: "hasSeenAccessibilityPrompt")
+        let hasSeenAccessibilityPrompt = self.defaults.bool(forKey: "hasSeenAccessibilityPrompt")
         if hasSeenAccessibilityPrompt {
             return // 只提示一次
         }
@@ -594,15 +594,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func showMainWindow() {
         // 使用MainWindowManager显示主窗口
         MainWindowManager.shared.show()
-        logger.notice("通过AppDelegate显示主窗口")
+        self.logger.notice("通过AppDelegate显示主窗口")
         print("\u{001B}[34m[WINDOW]\u{001B}[0m 通过AppDelegate显示主窗口")
         fflush(stdout)
     }
 
     /// For unit tests: sets up statusItem without relying on NSApplication run‑loop.
     @objc func setupStatusItemForTesting() {
-        if statusItem == nil {
-            setupStatusItem() // 使用正确的方法名
+        if self.statusItem == nil {
+            self.setupStatusItem() // 使用正确的方法名
         }
     }
 }

@@ -13,13 +13,13 @@ final class TabRouter: ObservableObject {
                 "🧭 TabRouter.current 变更：",
                 oldValue,
                 "→",
-                current,
+                self.current,
                 "at",
                 Thread.isMainThread ? "Main" : "BG",
                 ObjectIdentifier(self)
             )
             Logger(subsystem: "ai.tuna", category: "Shortcut")
-                .notice("🧭 current: \(oldValue) → \(current)")
+                .notice("🧭 current: \(oldValue) → \(self.current)")
         }
     }
 

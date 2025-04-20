@@ -6,9 +6,9 @@ struct DeviceButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(device.name)
-                .foregroundColor(isSelected ? .accentColor : .primary)
+        Button(action: self.action) {
+            Text(self.device.name)
+                .foregroundColor(self.isSelected ? .accentColor : .primary)
         }
         .buttonStyle(.plain)
     }
@@ -21,17 +21,17 @@ struct DeviceListItem: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: self.action) {
             HStack {
-                Image(systemName: iconName)
+                Image(systemName: self.iconName)
                     .foregroundColor(.secondary)
                     .frame(width: 16)
 
-                Text(device.name)
+                Text(self.device.name)
                     .foregroundColor(.primary)
 
                 Spacer()
-                if isSelected {
+                if self.isSelected {
                     Image(systemName: "checkmark")
                         .foregroundColor(.green)
                 }
@@ -53,18 +53,18 @@ struct DeviceSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title)
+            Text(self.title)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
 
-            ForEach(devices) { device in
+            ForEach(self.devices) { device in
                 DeviceListItem(
                     device: device,
-                    isSelected: device.id == selectedDevice?.id,
-                    iconName: iconName,
-                    action: { onSelect(device) }
+                    isSelected: device.id == self.selectedDevice?.id,
+                    iconName: self.iconName,
+                    action: { self.onSelect(device) }
                 )
             }
         }
@@ -79,14 +79,14 @@ struct VolumeControl: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title)
+            Text(self.title)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
 
             HStack {
-                Slider(value: $volume, onEditingChanged: { _ in
-                    audioManager.setVolume(volume, forInput: isInput)
+                Slider(value: self.$volume, onEditingChanged: { _ in
+                    self.audioManager.setVolume(self.volume, forInput: self.isInput)
                 })
                 .padding(.horizontal, 12)
             }
@@ -105,10 +105,10 @@ struct MenuBarView: View {
             // Input Devices Section
             DeviceSection(
                 title: "Input Devices",
-                devices: audioManager.inputDevices,
-                selectedDevice: audioManager.selectedInputDevice,
+                devices: self.audioManager.inputDevices,
+                selectedDevice: self.audioManager.selectedInputDevice,
                 iconName: "mic",
-                onSelect: audioManager.selectInputDevice
+                onSelect: self.audioManager.selectInputDevice
             )
 
             Divider()
@@ -116,27 +116,27 @@ struct MenuBarView: View {
             // Output Devices Section
             DeviceSection(
                 title: "Output Devices",
-                devices: audioManager.outputDevices,
-                selectedDevice: audioManager.selectedOutputDevice,
+                devices: self.audioManager.outputDevices,
+                selectedDevice: self.audioManager.selectedOutputDevice,
                 iconName: "speaker.wave.3",
-                onSelect: audioManager.selectOutputDevice
+                onSelect: self.audioManager.selectOutputDevice
             )
 
             Divider()
 
             // Volume Controls
-            if audioManager.selectedInputDevice != nil {
+            if self.audioManager.selectedInputDevice != nil {
                 VolumeControl(
                     title: "Input Volume",
-                    volume: $audioManager.inputVolume,
+                    volume: self.$audioManager.inputVolume,
                     isInput: true
                 )
             }
 
-            if audioManager.selectedOutputDevice != nil {
+            if self.audioManager.selectedOutputDevice != nil {
                 VolumeControl(
                     title: "Output Volume",
-                    volume: $audioManager.outputVolume,
+                    volume: self.$audioManager.outputVolume,
                     isInput: false
                 )
             }
