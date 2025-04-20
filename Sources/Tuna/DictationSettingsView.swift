@@ -112,7 +112,10 @@ struct DictationSettingsView: View {
 
     // 转录输出部分
     private var transcriptionOutputSection: some View {
-        CollapsibleCard(title: "Transcription Output", isExpanded: $isTranscriptionOutputExpanded) {
+        CollapsibleCard(
+            title: "Transcription Output",
+            isExpanded: $isTranscriptionOutputExpanded
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 // 导出格式选择器
                 formatSelector

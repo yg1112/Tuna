@@ -496,7 +496,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             popover.behavior = .applicationDefined
 
             // 如果 popover 已显示，调整窗口级别使其保持在最前
-            if popover.isShown, let popoverWindow = popover.contentViewController?.view.window {
+            if popover.isShown,
+               let popoverWindow = popover.contentViewController?.view.window
+            {
                 // 设置窗口级别为浮动（保持在大多数窗口之上）
                 popoverWindow.level = .floating
                 popoverWindow.orderFrontRegardless()
@@ -512,7 +514,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             popover.behavior = .transient
 
             // 如果 popover 正在显示，恢复其窗口级别
-            if popover.isShown, let popoverWindow = popover.contentViewController?.view.window {
+            if popover.isShown,
+               let popoverWindow = popover.contentViewController?.view.window
+            {
                 popoverWindow.level = .normal
                 print("\u{001B}[36m[UI]\u{001B}[0m Popover restored to normal level")
             }

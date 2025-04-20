@@ -77,8 +77,9 @@ struct QuickDictationView: View {
             // 转录文本区域
             ZStack(alignment: .topTrailing) {
                 // 占位符文本 - 只在需要时显示
-                if isPlaceholderVisible, editableText.isEmpty, dictationManager.transcribedText
-                    .isEmpty
+                if isPlaceholderVisible, editableText.isEmpty,
+                   dictationManager.transcribedText
+                       .isEmpty
                 {
                     Text("Transcription will appear here...")
                         .font(.system(size: 14))
@@ -104,7 +105,9 @@ struct QuickDictationView: View {
                     }
                     .onChange(of: editableText) { newText in
                         // 当用户手动编辑文本时，同步回dictationManager
-                        if !newText.isEmpty, editableText != dictationManager.transcribedText {
+                        if !newText.isEmpty,
+                           editableText != dictationManager.transcribedText
+                        {
                             dictationManager.transcribedText = newText
                         }
                     }
@@ -298,7 +301,9 @@ struct QuickDictationView: View {
                 .disabled(dictationManager.state == .processing)
 
                 // 停止按钮 - 仅在录音或暂停状态显示
-                if dictationManager.state == .recording || dictationManager.state == .paused {
+                if dictationManager.state == .recording || dictationManager
+                    .state == .paused
+                {
                     Button(action: {
                         dictationManager.stopRecording()
                     }) {
@@ -389,7 +394,9 @@ struct QuickDictationView: View {
         }
 
         // 检测新增内容并在合适位置插入
-        if newText.count > lastTranscribedText.count, newText.hasPrefix(lastTranscribedText) {
+        if newText.count > lastTranscribedText.count,
+           newText.hasPrefix(lastTranscribedText)
+        {
             // 新文本是在旧文本基础上添加的
             let newContentStartIndex = newText.index(
                 newText.startIndex,
@@ -621,7 +628,8 @@ struct TunaDictationView: View {
                     .stroke(
                         dictationManager.state == .recording ?
                             Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
-                            Color.white.opacity(isBreathingAnimation ? 0.2 : 0.05), // 非录音时使用呼吸动画
+                            Color.white.opacity(isBreathingAnimation ? 0.2 : 0.05),
+                        // 非录音时使用呼吸动画
                         lineWidth: dictationManager
                             .state == .recording ? 1.5 : (isBreathingAnimation ? 1.2 : 0.8)
                     )
@@ -1096,7 +1104,9 @@ struct TunaDictationView: View {
         switch dictationManager.state {
             case .idle:
                 // 开始新录音时重置占位符状态，但保留用户可能编辑过的文本
-                if editableText == "This is the live transcription..." || editableText.isEmpty {
+                if editableText == "This is the live transcription..." || editableText
+                    .isEmpty
+                {
                     isPlaceholderVisible = true
                     editableText = "This is the live transcription..."
                 } else {
@@ -1147,7 +1157,9 @@ struct TunaDictationView: View {
             return "Listening..."
         } else if !dictationManager.progressMessage.isEmpty {
             return dictationManager.progressMessage
-        } else if dictationManager.transcribedText.isEmpty, dictationManager.state == .idle {
+        } else if dictationManager.transcribedText.isEmpty,
+                  dictationManager.state == .idle
+        {
             return "No recording files"
         }
 

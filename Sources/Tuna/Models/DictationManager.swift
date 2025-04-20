@@ -1032,7 +1032,8 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             progressMessage = "Transcription failed, no text result"
         } else {
             // 添加词数信息到进度消息
-            progressMessage = "Transcription completed (\(wordCount) words) - click Save to save"
+            progressMessage =
+                "Transcription completed (\(wordCount) words) - click Save to save"
 
             // 检查是否启用了自动复制功能，如果是则复制到剪贴板
             if TunaSettings.shared.autoCopyTranscriptionToClipboard, !transcribedText.isEmpty {
@@ -1045,7 +1046,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             }
 
             // Magic Transform 功能集成
-            Task { await MagicTransformManager.shared.run(raw: transcribedText) }
+            Task { await MagicTransformManager.shared.run(raw: self.transcribedText) }
         }
 
         breathingAnimation = false

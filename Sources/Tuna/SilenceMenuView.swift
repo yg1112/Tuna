@@ -26,7 +26,8 @@ struct SilenceButton: View {
             isHovering = hovering
         }
         .shadow(
-            color: isActive ? Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5) : Color.clear,
+            color: isActive ? Color(red: 0.3, green: 0.9, blue: 0.7).opacity(0.5) : Color
+                .clear,
             radius: 3
         )
         .help(isActive ? "Disable Muted Mode" : "Enable Muted Mode")
@@ -132,7 +133,10 @@ struct SilenceMenuView: View {
                             .foregroundColor(.white.opacity(0.8))
                             .padding(.vertical, 6)
                             .padding(.horizontal, 12)
-                            .background(showingSettings ? Color.white.opacity(0.2) : Color.clear)
+                            .background(
+                                showingSettings ? Color.white.opacity(0.2) : Color
+                                    .clear
+                            )
                             .cornerRadius(6)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -154,7 +158,10 @@ struct SilenceMenuView: View {
                             .foregroundColor(.white.opacity(0.8))
                             .padding(.vertical, 6)
                             .padding(.horizontal, 12)
-                            .background(showingDevices ? Color.white.opacity(0.2) : Color.clear)
+                            .background(
+                                showingDevices ? Color.white.opacity(0.2) : Color
+                                    .clear
+                            )
                             .cornerRadius(6)
                         }
                         .buttonStyle(PlainButtonStyle())

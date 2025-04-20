@@ -23,16 +23,22 @@ struct ModeSettingsView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(mode.name)
-                                .fontWeight(mode.id == modeManager.currentModeID ? .bold : .regular)
+                                .fontWeight(
+                                    mode.id == modeManager
+                                        .currentModeID ? .bold : .regular
+                                )
 
                             if !mode.outputDeviceUID.isEmpty {
                                 HStack {
                                     Image(systemName: "speaker.wave.2")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
-                                    Text(getDeviceName(uid: mode.outputDeviceUID, isInput: false))
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    Text(getDeviceName(
+                                        uid: mode.outputDeviceUID,
+                                        isInput: false
+                                    ))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 }
                             }
 
@@ -41,9 +47,12 @@ struct ModeSettingsView: View {
                                     Image(systemName: "mic")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
-                                    Text(getDeviceName(uid: mode.inputDeviceUID, isInput: true))
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    Text(getDeviceName(
+                                        uid: mode.inputDeviceUID,
+                                        isInput: true
+                                    ))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 }
                             }
                         }

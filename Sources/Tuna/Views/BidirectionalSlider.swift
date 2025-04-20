@@ -25,7 +25,8 @@ struct BidirectionalSlider: View {
                     .frame(height: trackHeight)
 
                 // 高亮轨道
-                let thumbPosition = ((value - minValue) / (maxValue - minValue)) * geometry.size
+                let thumbPosition = ((value - minValue) / (maxValue - minValue)) *
+                    geometry.size
                     .width
 
                 // 滑块按钮 - 使用更大、更明显的样式

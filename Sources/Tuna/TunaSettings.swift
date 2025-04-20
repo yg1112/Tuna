@@ -122,8 +122,13 @@ class TunaSettings: ObservableObject {
                     preferredVideoChatOutputDeviceUID,
                     forKey: "preferredVideoChatOutputDeviceUID"
                 )
-                logger.debug("Saved video chat output device: \(preferredVideoChatOutputDeviceUID)")
-                print("[SETTINGS] Video chat output device: \(preferredVideoChatOutputDeviceUID)")
+                logger
+                    .debug(
+                        "Saved video chat output device: \(preferredVideoChatOutputDeviceUID)"
+                    )
+                print(
+                    "[SETTINGS] Video chat output device: \(preferredVideoChatOutputDeviceUID)"
+                )
                 fflush(stdout)
                 isUpdating = false
             }
@@ -138,8 +143,13 @@ class TunaSettings: ObservableObject {
                     preferredVideoChatInputDeviceUID,
                     forKey: "preferredVideoChatInputDeviceUID"
                 )
-                logger.debug("Saved video chat input device: \(preferredVideoChatInputDeviceUID)")
-                print("[SETTINGS] Video chat input device: \(preferredVideoChatInputDeviceUID)")
+                logger
+                    .debug(
+                        "Saved video chat input device: \(preferredVideoChatInputDeviceUID)"
+                    )
+                print(
+                    "[SETTINGS] Video chat input device: \(preferredVideoChatInputDeviceUID)"
+                )
                 fflush(stdout)
                 isUpdating = false
             }
@@ -151,8 +161,12 @@ class TunaSettings: ObservableObject {
         didSet {
             if oldValue != preferredMusicOutputDeviceUID, !isUpdating {
                 isUpdating = true
-                defaults.set(preferredMusicOutputDeviceUID, forKey: "preferredMusicOutputDeviceUID")
-                logger.debug("Saved music output device: \(preferredMusicOutputDeviceUID)")
+                defaults.set(
+                    preferredMusicOutputDeviceUID,
+                    forKey: "preferredMusicOutputDeviceUID"
+                )
+                logger
+                    .debug("Saved music output device: \(preferredMusicOutputDeviceUID)")
                 print("[SETTINGS] Music output device: \(preferredMusicOutputDeviceUID)")
                 fflush(stdout)
                 isUpdating = false
@@ -169,7 +183,8 @@ class TunaSettings: ObservableObject {
                     preferredGamingOutputDeviceUID,
                     forKey: "preferredGamingOutputDeviceUID"
                 )
-                logger.debug("Saved gaming output device: \(preferredGamingOutputDeviceUID)")
+                logger
+                    .debug("Saved gaming output device: \(preferredGamingOutputDeviceUID)")
                 print("[SETTINGS] Gaming output device: \(preferredGamingOutputDeviceUID)")
                 fflush(stdout)
                 isUpdating = false
@@ -181,8 +196,12 @@ class TunaSettings: ObservableObject {
         didSet {
             if oldValue != preferredGamingInputDeviceUID, !isUpdating {
                 isUpdating = true
-                defaults.set(preferredGamingInputDeviceUID, forKey: "preferredGamingInputDeviceUID")
-                logger.debug("Saved gaming input device: \(preferredGamingInputDeviceUID)")
+                defaults.set(
+                    preferredGamingInputDeviceUID,
+                    forKey: "preferredGamingInputDeviceUID"
+                )
+                logger
+                    .debug("Saved gaming input device: \(preferredGamingInputDeviceUID)")
                 print("[SETTINGS] Gaming input device: \(preferredGamingInputDeviceUID)")
                 fflush(stdout)
                 isUpdating = false
@@ -211,7 +230,8 @@ class TunaSettings: ObservableObject {
             if oldValue != showMicrophoneLevelMeter, !isUpdating {
                 isUpdating = true
                 defaults.set(showMicrophoneLevelMeter, forKey: "showMicrophoneLevelMeter")
-                logger.debug("Saved show microphone level meter: \(showMicrophoneLevelMeter)")
+                logger
+                    .debug("Saved show microphone level meter: \(showMicrophoneLevelMeter)")
                 print(
                     "[SETTINGS] Show microphone level meter: \(showMicrophoneLevelMeter ? "enabled" : "disabled")"
                 )
@@ -300,7 +320,10 @@ class TunaSettings: ObservableObject {
                     autoCopyTranscriptionToClipboard,
                     forKey: "autoCopyTranscriptionToClipboard"
                 )
-                logger.debug("Saved auto copy transcription: \(autoCopyTranscriptionToClipboard)")
+                logger
+                    .debug(
+                        "Saved auto copy transcription: \(autoCopyTranscriptionToClipboard)"
+                    )
                 print(
                     "[SETTINGS] Auto copy transcription: \(autoCopyTranscriptionToClipboard ? "enabled" : "disabled")"
                 )
@@ -316,7 +339,8 @@ class TunaSettings: ObservableObject {
             if oldValue != enableDictationShortcut, !isUpdating {
                 isUpdating = true
                 defaults.set(enableDictationShortcut, forKey: "enableDictationShortcut")
-                logger.debug("Saved dictation shortcut enabled: \(enableDictationShortcut)")
+                logger
+                    .debug("Saved dictation shortcut enabled: \(enableDictationShortcut)")
                 print(
                     "[SETTINGS] Dictation shortcut: \(enableDictationShortcut ? "enabled" : "disabled")"
                 )
@@ -342,7 +366,10 @@ class TunaSettings: ObservableObject {
                     )
 
                 // 保存设置到UserDefaults
-                defaults.set(dictationShortcutKeyCombo, forKey: "dictationShortcutKeyCombo")
+                defaults.set(
+                    dictationShortcutKeyCombo,
+                    forKey: "dictationShortcutKeyCombo"
+                )
                 objectWillChange.send()
 
                 // 通知快捷键管理器 - 使用dictationShortcutSettingsChanged通知名
@@ -363,9 +390,14 @@ class TunaSettings: ObservableObject {
         didSet {
             if oldValue != showDictationPageOnShortcut, !isUpdating {
                 isUpdating = true
-                defaults.set(showDictationPageOnShortcut, forKey: "showDictationPageOnShortcut")
+                defaults.set(
+                    showDictationPageOnShortcut,
+                    forKey: "showDictationPageOnShortcut"
+                )
                 logger
-                    .debug("Saved show dictation page on shortcut: \(showDictationPageOnShortcut)")
+                    .debug(
+                        "Saved show dictation page on shortcut: \(showDictationPageOnShortcut)"
+                    )
                 print(
                     "[SETTINGS] Show dictation page on shortcut: \(showDictationPageOnShortcut ? "enabled" : "disabled")"
                 )
@@ -386,9 +418,14 @@ class TunaSettings: ObservableObject {
         didSet {
             if oldValue != enableDictationSoundFeedback, !isUpdating {
                 isUpdating = true
-                defaults.set(enableDictationSoundFeedback, forKey: "enableDictationSoundFeedback")
+                defaults.set(
+                    enableDictationSoundFeedback,
+                    forKey: "enableDictationSoundFeedback"
+                )
                 logger
-                    .debug("Saved enable dictation sound feedback: \(enableDictationSoundFeedback)")
+                    .debug(
+                        "Saved enable dictation sound feedback: \(enableDictationSoundFeedback)"
+                    )
                 print(
                     "[SETTINGS] Dictation sound feedback: \(enableDictationSoundFeedback ? "enabled" : "disabled")"
                 )
@@ -405,7 +442,9 @@ class TunaSettings: ObservableObject {
                 isUpdating = true
                 defaults.set(isEngineOpen, forKey: "isEngineOpen")
                 logger.debug("Saved engine card state: \(isEngineOpen)")
-                print("[SETTINGS] Engine card state: \(isEngineOpen ? "expanded" : "collapsed")")
+                print(
+                    "[SETTINGS] Engine card state: \(isEngineOpen ? "expanded" : "collapsed")"
+                )
                 fflush(stdout)
                 isUpdating = false
             }
@@ -586,7 +625,8 @@ class TunaSettings: ObservableObject {
         }
 
         // 初始化UI实验模式
-        let savedUIString = defaults.string(forKey: "uiExperimentMode") ?? UIExperimentMode.newUI1
+        let savedUIString = defaults.string(forKey: "uiExperimentMode") ?? UIExperimentMode
+            .newUI1
             .rawValue
         uiExperimentMode = UIExperimentMode.allCases
             .first { $0.rawValue == savedUIString } ?? .newUI1
@@ -595,7 +635,8 @@ class TunaSettings: ObservableObject {
         launchAtLogin = LaunchAtLogin.isEnabled
 
         // Load saved device UIDs
-        preferredOutputDeviceUID = defaults.string(forKey: "preferredOutputDeviceUID") ?? ""
+        preferredOutputDeviceUID = defaults
+            .string(forKey: "preferredOutputDeviceUID") ?? ""
         preferredInputDeviceUID = defaults.string(forKey: "preferredInputDeviceUID") ?? ""
 
         // 初始化智能设备切换设置
@@ -619,11 +660,13 @@ class TunaSettings: ObservableObject {
         // 初始化语音转录设置
         transcriptionFormat = defaults.string(forKey: "dictationFormat") ?? "txt"
         transcriptionOutputDirectory = defaults.url(forKey: "dictationOutputDirectory")
-        autoCopyTranscriptionToClipboard = defaults.bool(forKey: "autoCopyTranscriptionToClipboard")
+        autoCopyTranscriptionToClipboard = defaults
+            .bool(forKey: "autoCopyTranscriptionToClipboard")
 
         // 初始化Dictation快捷键设置
         enableDictationShortcut = defaults.bool(forKey: "enableDictationShortcut")
-        dictationShortcutKeyCombo = defaults.string(forKey: "dictationShortcutKeyCombo") ?? "cmd+u"
+        dictationShortcutKeyCombo = defaults
+            .string(forKey: "dictationShortcutKeyCombo") ?? "cmd+u"
         showDictationPageOnShortcut = defaults.bool(forKey: "showDictationPageOnShortcut")
 
         // 初始化Engine卡片状态
@@ -654,7 +697,8 @@ class TunaSettings: ObservableObject {
 
         // 初始化Magic Transform设置
         magicEnabled = defaults.bool(forKey: "magicEnabled")
-        let savedPresetString = defaults.string(forKey: "magicPreset") ?? PresetStyle.abit.rawValue
+        let savedPresetString = defaults.string(forKey: "magicPreset") ?? PresetStyle.abit
+            .rawValue
         magicPreset = PresetStyle(rawValue: savedPresetString) ?? .abit
         magicCustomPrompt = defaults.string(forKey: "magicCustomPrompt") ?? ""
 
@@ -663,7 +707,9 @@ class TunaSettings: ObservableObject {
 
         // Log initial state
         print("[SETTINGS] Launch at login: \(launchAtLogin ? "enabled" : "disabled")")
-        print("\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(uiExperimentMode.rawValue)")
+        print(
+            "\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(uiExperimentMode.rawValue)"
+        )
         fflush(stdout)
     }
 

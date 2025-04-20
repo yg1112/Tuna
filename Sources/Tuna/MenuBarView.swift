@@ -89,7 +89,12 @@ struct MenuBarView: View {
         .onAppear {
             print("[DEBUG] MenuBarView appeared – observer added")
             print("🖼 router id in MenuBarView.onAppear:", ObjectIdentifier(router))
-            print("🟡 router.current =", router.current, "router id =", ObjectIdentifier(router))
+            print(
+                "🟡 router.current =",
+                router.current,
+                "router id =",
+                ObjectIdentifier(router)
+            )
             Logger(subsystem: "ai.tuna", category: "Shortcut")
                 .notice("MenuBarView appeared – observer added")
             // 确保Smart Swaps在UI加载后被应用
@@ -278,7 +283,10 @@ struct TunaMenuBarView: View {
                             .frame(width: 20, height: 20)
                             .background(
                                 Circle()
-                                    .fill(isPinned ? TunaTheme.accent.opacity(0.15) : Color.clear)
+                                    .fill(
+                                        isPinned ? TunaTheme.accent.opacity(0.15) : Color
+                                            .clear
+                                    )
                                     .frame(width: 24, height: 24)
                             )
                             .animation(.easeInOut(duration: 0.2), value: isPinned)
@@ -667,7 +675,8 @@ struct DictationView: View {
                                 ),
                             // 非录音时保持呼吸动画
                             lineWidth: dictationManager.isRecording && !dictationManager
-                                .isPaused ? 2.0 : (dictationManager.breathingAnimation ? 2.0 : 0.5)
+                                .isPaused ? 2.0 :
+                                (dictationManager.breathingAnimation ? 2.0 : 0.5)
                         )
                         .scaleEffect(
                             dictationManager.isRecording && !dictationManager
@@ -719,7 +728,8 @@ struct DictationView: View {
                         .font(.system(size: 18))
                         Text(
                             dictationManager
-                                .isRecording ? (dictationManager.isPaused ? "Continue" : "Pause") :
+                                .isRecording ?
+                                (dictationManager.isPaused ? "Continue" : "Pause") :
                                 "Record"
                         )
                         .font(.system(size: 13))
@@ -737,7 +747,10 @@ struct DictationView: View {
                 .help(
                     dictationManager
                         .isRecording ?
-                        (dictationManager.isPaused ? "Continue recording" : "Pause recording") :
+                        (
+                            dictationManager
+                                .isPaused ? "Continue recording" : "Pause recording"
+                        ) :
                         "Start recording"
                 )
 

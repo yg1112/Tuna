@@ -64,7 +64,8 @@ class KeyboardShortcutManager {
         // 解析快捷键组合
         if let keyCombo = parseKeyCombo(settings.dictationShortcutKeyCombo) {
             registerDictationShortcut(keyCombo)
-            logger.notice("registered \(settings.dictationShortcutKeyCombo, privacy: .public)")
+            logger
+                .notice("registered \(settings.dictationShortcutKeyCombo, privacy: .public)")
         } else {
             logger
                 .error(
