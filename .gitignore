@@ -39,4 +39,7 @@ DerivedData/
 *.hmap
 *.ipa
 *.dSYM.zip
-*.dSYM 
+*.dSYM
+
+# never commit personal tokens
+*.token 
