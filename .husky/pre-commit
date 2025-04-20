@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Husky pre-commit hook
+
+# 运行格式化检查
+if command -v swiftformat >/dev/null 2>&1; then
+  swiftformat --config .swiftformat .
+  git add -u
+fi
+
+# 检测GitHub令牌泄漏
+if git diff --cached -G'ghp_[A-Za-z0-9]{36}' | grep -q 'ghp_'; then
+  echo "❌ Detected GitHub token in staged diff. Commit aborted."; exit 1;
+fi
+
+# 成功通过所有检查
+exit 0 
