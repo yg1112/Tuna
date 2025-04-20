@@ -5,17 +5,9 @@ import ServiceManagement
 import SwiftUI
 
 // 添加UI实验模式枚举
-enum UIExperimentMode: String, CaseIterable, Identifiable {
-    case newUI1 = "Tuna UI"
-
-    var id: String { rawValue }
-
-    var description: String {
-        switch self {
-            case .newUI1:
-                "Standard Tuna user interface"
-        }
-    }
+enum UIExperimentMode: String, CaseIterable {
+    case standard
+    case experimental
 }
 
 // 添加操作模式枚举
@@ -55,6 +47,10 @@ extension PromptTemplate {
         .concise: .init(id: .concise, system: "Summarize concisely in ≤2 lines."),
         .custom: .init(id: .custom, system: ""), // placeholder
     ]
+}
+
+extension Notification.Name {
+    static let appearanceChanged = Notification.Name("TunaAppearanceDidChange")
 }
 
 class TunaSettings: ObservableObject {
@@ -700,7 +696,33 @@ class TunaSettings: ObservableObject {
         }
     }
 
+    @Published var selectedTheme: String {
+        didSet {
+            if oldValue != self.selectedTheme {
+                UserDefaults.standard.set(self.selectedTheme, forKey: "selectedTheme")
+                NotificationCenter.default.post(name: .appearanceChanged, object: nil)
+            }
+        }
+    }
+
     private init() {
+        // Initialize selectedTheme first
+        self.selectedTheme = UserDefaults.standard.string(forKey: "selectedTheme") ?? "system"
+        
+        // Initialize other properties
+        self.launchAtLogin = UserDefaults.standard.bool(forKey: "launchAtLogin")
+        self.uiExperimentMode = UIExperimentMode(rawValue: UserDefaults.standard.string(forKey: "uiExperimentMode") ?? "standard") ?? .standard
+        
+        // Migrate old settings
+        self.migrateOldSettings()
+        
+        // Log initial state
+        print("[SETTINGS] Launch at login: \(self.launchAtLogin ? "enabled" : "disabled")")
+        print(
+            "\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(self.uiExperimentMode.rawValue)"
+        )
+        fflush(stdout)
+
         // 初始化操作模式
         let savedModeString = self.defaults.string(forKey: "currentMode") ?? Mode.standard.rawValue
         if let mode = Mode(rawValue: savedModeString) {
@@ -711,10 +733,10 @@ class TunaSettings: ObservableObject {
 
         // 初始化UI实验模式
         let savedUIString = self.defaults.string(forKey: "uiExperimentMode") ?? UIExperimentMode
-            .newUI1
+            .standard
             .rawValue
         self.uiExperimentMode = UIExperimentMode.allCases
-            .first { $0.rawValue == savedUIString } ?? .newUI1
+            .first { $0.rawValue == savedUIString } ?? .standard
 
         // Initialize with actual launch agent status
         self.launchAtLogin = LaunchAtLogin.isEnabled
@@ -826,6 +848,8 @@ class TunaSettings: ObservableObject {
             "\u{001B}[36m[SETTINGS]\u{001B}[0m UI experiment mode: \(self.uiExperimentMode.rawValue)"
         )
         fflush(stdout)
+
+        self.selectedTheme = UserDefaults.standard.string(forKey: "selectedTheme") ?? "system"
     }
 
     // 从UserDefaults.standard迁移设置到带域名的UserDefaults
@@ -918,6 +942,8 @@ class TunaSettings: ObservableObject {
         self.isBetaOpen = true
         self.isDebugOpen = true
         self.isAboutOpen = true
+
+        UserDefaults.standard.set("system", forKey: "selectedTheme")
     }
 }
 

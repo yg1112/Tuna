@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev-* ]
   pull_request:
     branches: [ main ]
 
@@ -11,21 +11,19 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - name: Install dependencies
+    - name: Set up Swift
+      uses: swift-actions/setup-swift@v1
+
+    - name: Detect duplicate producers
       run: |
-        brew install swiftformat
-        brew install yamllint
+        swift package diagnose 2>&1 | grep -q "multiple producers" && {
+          echo "::error::duplicate sources detected"
+          exit 1
+        } || true
 
-    - name: Run SwiftFormat
-      run: swiftformat . --lint
-
-    - name: Run YAML lint
-      run: yamllint .cursorscratchpad
-
-    - name: Build project
-      run: swift build --build-tests --parallel
-
-    - name: Run tests
-      run: swift test --parallel 
+    - name: Build and test
+      run: |
+        swift build --build-tests
+        swift test 

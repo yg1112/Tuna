@@ -33,8 +33,8 @@ auto_delete_branch_after_merge = true
 cleanup_stale_branches_days = 30
 
 rules:
-  cursor_context_auto_update:
-    description: "Keep .cursorscratchpad and docs/GPT_CONTEXT.md in sync with source changes"
+  - name: CursorContextAutoUpdate
+    description: "Keep .cursorscratchpad (full) and docs/GPT_CONTEXT.md (ChatGPT snapshot) in sync with source changes, then auto‑push branch to origin. Commit message embeds [gpt-context] <org>/<repo> for easy retrieval."
     trigger:
       on_change:
         - "**/*.swift"
@@ -44,12 +44,12 @@ rules:
         - "**/*.go"
         - "**/*.rs"
         - "**/*.java"
-        - Package.*
-        - pyproject.toml
-        - Cargo.toml
-        - requirements*.txt
-        - package.json
-        - .cursor/rules
+        - "Package.*"
+        - "pyproject.toml"
+        - "Cargo.toml"
+        - "requirements*.txt"
+        - "package.json"
+        - ".cursor/rules"
     steps:
       - run: |
           if [ ! -f tools/update_scratchpad.py ]; then
@@ -73,6 +73,19 @@ rules:
       - run: |
           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
           git push -u origin "${CURRENT_BRANCH}" || echo "🔐 Push skipped (no permission)."
+
+  - name: UIInvariants
+    description: "Ensure UI components maintain consistent appearance and behavior"
+    trigger:
+      on_change:
+        - "**/*.swift"
+    steps:
+      - run: swift test
+      - run: swiftformat .
+      - run: |
+          swift test --filter ThemeToggleTests
+          swift test --filter VolumeSliderTests
+          swift test --filter SettingsLayoutTests
 
   collapsible_card_expansion:
     description: "Never hard-code isExpanded = false in CollapsibleCard components"
