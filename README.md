@@ -1,3 +1,5 @@
+![CI](https://github.com/yg1112/Tuna/actions/workflows/ci.yml/badge.svg)
+
 # Tuna - 音频转写与设备管理工具
 
 Tuna是一款功能强大的macOS应用，专为音频转写和设备管理而设计。它允许用户通过全局快捷键快速开启语音转写，管理音频设备，并提供高效的用户界面。
@@ -63,3 +65,4 @@ Tuna是一款功能强大的macOS应用，专为音频转写和设备管理而�
 ## 🔑 许可证
 
 此项目基于MIT许可证发布。 
+
