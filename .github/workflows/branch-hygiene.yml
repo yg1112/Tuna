@@ -1,0 +1,45 @@
+name: Branch Hygiene
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # Run at 04:00 UTC daily
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch all history for all branches
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Git config
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+    
+    - name: Install GitHub CLI
+      run: |
+        type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+        && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && sudo apt update \
+        && sudo apt install gh -y
+    
+    - name: Run branch hygiene script
+      run: |
+        chmod +x ./scripts/branch-hygiene.sh
+        ./scripts/branch-hygiene.sh 2>&1 | tee branch-hygiene.log
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload log as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: branch-hygiene-log
+        path: branch-hygiene.log 

@@ -1,4 +1,4 @@
-.PHONY: bootstrap lint snapshot test clean all watch-ci
+.PHONY: bootstrap lint snapshot test clean all watch-ci branch-hygiene
 
 all: bootstrap test
 
@@ -19,3 +19,7 @@ clean:
 
 watch-ci:
 	@Scripts/ci-watch.sh $(PR) 
+
+branch-hygiene:
+	@echo "Running branch hygiene checks..."
+	@./scripts/branch-hygiene.sh 

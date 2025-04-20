@@ -1,0 +1,32 @@
+# Tuna.app code formatting rules
+# See https://github.com/nicklockwood/SwiftFormat for documentation
+
+# 格式选项
+--allman false               # 使用 K&R 风格大括号（不使用 Allman 风格）
+--indent 4                   # 使用 4 个空格缩进
+--maxwidth 100               # 最大行宽
+--wraparguments before-first # 函数参数包装样式
+--wrapparameters before-first # 参数包装样式
+--wrapcollections before-first # 集合包装样式
+
+# 规则启用/禁用
+--disable blankLinesAroundMark
+--disable unusedArguments    # 防止将未使用的参数替换为下划线
+--disable specifiers          # 不删除冗余访问控制说明符
+
+# 命名规则
+--enumnamespaces structured  # 使用结构化命名空间
+
+# 禁用文件头规则，使用项目特定注释
+--header ignore
+
+# 缩进规则
+--indentcase true            # switch case 缩进
+--ifdef no-indent            # #if/#endif 不额外缩进
+--xcodeindentation enabled   # 使用与 Xcode 兼容的缩进
+
+# 分号规则
+--semicolons inline          # 保持行内分号
+
+# 排除规则
+--exclude vendor,Pods,Generated 

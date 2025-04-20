@@ -7,8 +7,10 @@ models:
 after_apply:
   - run: swift build
   - run: swift test
-branch_prefix: dev-
-branch_pattern: '[a-z0-9-]+'
+branch_prefixes = ["dev-", "fix-", "feature/", "infra/"]
+disallow_random_branches = true
+auto_delete_branch_on_merge = true
+post_merge_hook = "make branch-hygiene"
 skip_markers:
   start: "// cursor:skip-start"
   end: "// cursor:skip-end"
