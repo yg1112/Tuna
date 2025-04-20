@@ -665,3 +665,14 @@ fix(menu‑bar): wire status‑item button target/action and add popover tests
 
 ### 提交信息
 "fix(settings): eliminate duplicate controls and ensure state consistency in DictationSettingsView"
+
+## Module: DocumentationUpdate
+- Status: ✅ Complete
+- Prompt: 优化文档格式
+- Completed On: 2024-05-11
+
+### 任务清单
+- [x] 在 README.md 末尾添加空行，提高文档格式规范性
+
+### Manual Verification
+- README.md 格式检查: ✅
