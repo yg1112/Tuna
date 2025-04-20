@@ -2,13 +2,14 @@ import AppKit
 import SwiftUI
 
 /// 单例设置窗口，用于在应用中统一管理设置窗口的显示和隐藏
-class TunaSettingsWindow {
+class TunaSettingsWindow: NSWindow {
     // 单例实例
     static let shared = TunaSettingsWindow()
 
     // 窗口引用
     var windowController: NSWindowController?
     private var rootHostingView: NSHostingView<TunaSettingsView>?
+    private var settingsView: TunaSettingsView?
 
     // 侧边栏宽度
     var sidebarWidth: CGFloat {
@@ -26,55 +27,56 @@ class TunaSettingsWindow {
     }
 
     // 初始化方法改为内部可见，以便测试可以创建实例
-    init() {}
-
-    /// 显示设置窗口
-    func show() {
-        // 如果窗口控制器已存在，则显示窗口
-        if let windowController, let window = windowController.window {
-            NSApp.activate(ignoringOtherApps: true)
-            window.makeKeyAndOrderFront(nil)
-            return
-        }
-
-        // 创建窗口 - 初始高度设置为较低值，加载后会自动调整
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 300),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+    init() {
+        // Initialize with default frame
+        super.init(
+            contentRect: NSRect(x: 0, y: 0, width: 630, height: 400),
+            styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
-
-        // 设置窗口标题和其他属性
-        window.title = "Tuna Settings"
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.identifier = NSUserInterfaceItemIdentifier("TunaSettingsWindow")
-        window.minSize = NSSize(width: 600, height: 300)
-        window.maxSize = NSSize(width: 800, height: 800)
-
-        // 创建设置视图并设置为窗口内容
+        
+        self.title = "Tuna Settings"
+        self.center()
+        
+        // Set minimum size to accommodate sidebar and content
+        self.minSize = NSSize(width: 630, height: 300)
+        
+        // Set maximum height based on tallest tab content + padding
+        self.maxSize = NSSize(width: 1000, height: 600)
+        
+        // Enable autosaving of window position and size
+        self.setFrameAutosaveName("TunaSettingsWindow")
+        
+        // Create and set content view
         let settingsView = TunaSettingsView()
-        let hostingView = NSHostingView(rootView: settingsView)
-        window.contentView = hostingView
-        self.rootHostingView = hostingView
+        let hostingView = NSHostingView(
+            rootView: settingsView
+                .environmentObject(TunaSettings.shared)
+                .environmentObject(AudioManager.shared)
+        )
+        
+        self.contentView = hostingView
+        self.settingsView = settingsView
+    }
 
-        // 创建窗口控制器并存储引用
-        windowController = NSWindowController(window: window)
+    override var canBecomeKey: Bool {
+        return true
+    }
+    
+    override var canBecomeMain: Bool {
+        return true
+    }
 
-        // 显示窗口
+    /// 显示设置窗口
+    func show() {
         NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
-
-        // 窗口显示后，计算并设置最佳高度
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.adjustWindowHeight()
-        }
+        self.makeKeyAndOrderFront(nil)
     }
 
     /// 隐藏设置窗口
     func hide() {
-        self.windowController?.window?.orderOut(nil)
+        self.orderOut(nil)
     }
 
     /// 切换到指定的标签页
