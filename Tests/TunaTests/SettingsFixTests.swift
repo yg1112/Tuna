@@ -77,30 +77,36 @@ class SettingsFixTests: XCTestCase {
     // MARK: - Transcription Format Tests
     
     func testTranscriptionFormatChanges() throws {
-        // 测试格式切换功能
+        // Reset any previous values
+        UserDefaults.standard.removeObject(forKey: "dictationFormat")
+        
+        // Set initial format value
         UserDefaults.standard.set("txt", forKey: "dictationFormat")
         
-        // 验证初始格式
+        // Verify initial format
         XCTAssertEqual(UserDefaults.standard.string(forKey: "dictationFormat"), "txt")
         
-        // 模拟选择新格式
+        // Change to new format
         UserDefaults.standard.set("json", forKey: "dictationFormat")
         
-        // 验证格式已更改
+        // Verify format has changed
         XCTAssertEqual(UserDefaults.standard.string(forKey: "dictationFormat"), "json")
     }
     
     // MARK: - Theme Tests
     
     func testThemeChangeNotification() throws {
-        // 测试主题变更通知
+        // Reset any previous values
+        UserDefaults.standard.removeObject(forKey: "theme")
+        
+        // Set initial theme (system mode)
+        UserDefaults.standard.set("system", forKey: "theme")
+        
+        // Create expectation for notification
         let expectation = XCTestExpectation(description: "Theme change notification received")
         var receivedChange = false
         
-        // 设置为初始状态（系统模式）
-        UserDefaults.standard.set("system", forKey: "theme")
-        
-        // 监听通知
+        // Listen for notification
         let observer = NotificationCenter.default.addObserver(
             forName: .appearanceChanged,
             object: nil,
@@ -110,19 +116,19 @@ class SettingsFixTests: XCTestCase {
             expectation.fulfill()
         }
         
-        // 模拟更改主题
+        // Change theme
         UserDefaults.standard.set("dark", forKey: "theme")
-        // 手动发送通知以模拟SettingsView中的行为
+        // Manually send notification to simulate SettingsView behavior
         NotificationCenter.default.post(name: .appearanceChanged, object: nil)
         
-        // 等待通知
+        // Wait for notification
         wait(for: [expectation], timeout: 1)
         
-        // 验证结果
+        // Verify results
         XCTAssertTrue(receivedChange)
         XCTAssertEqual(UserDefaults.standard.string(forKey: "theme"), "dark")
         
-        // 清理
+        // Clean up
         NotificationCenter.default.removeObserver(observer)
     }
 }

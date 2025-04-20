@@ -31,13 +31,18 @@ let package = Package(
                 "Tuna",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
                 .product(name: "ViewInspector", package: "ViewInspector")
+            ],
+            path: "Tests/TunaTests",
+            resources: [
+                .process("__Snapshots__")
             ]
         ),
         .testTarget(
             name: "MenuBarPopoverTests", 
             dependencies: [
                 "Tuna"
-            ]
+            ],
+            path: "Tests/MenuBarPopoverTests"
         )
     ]
 ) 

@@ -22,9 +22,8 @@ final class UISnapshots: XCTestCase {
     
     // 菜单栏视图快照
     func test_MenuBarView() throws {
-        if ProcessInfo.processInfo.environment["RECORD_SNAPSHOTS"] != "1" {
-            throw XCTSkip("此测试需要重新生成快照以反映新设计。请运行 RECORD_SNAPSHOTS=1 swift test")
-        }
+        // Record once, then verify after that
+        let recordMode = false // Set to true to re-record, false to verify
         
         let audioManager = AudioManager.shared
         let settings = TunaSettings.shared
@@ -40,23 +39,37 @@ final class UISnapshots: XCTestCase {
         )
         .environmentObject(router)
         
-        assertSnapshot(of: NSHostingController(rootView: view), as: .image(size: .init(width: 400, height: 450)))
+        assertSnapshot(
+            of: NSHostingController(rootView: view), 
+            as: .image(size: .init(width: 400, height: 450)),
+            record: recordMode
+        )
     }
     
     // 语音转写视图快照
     func test_TunaDictationView() throws {
-        if ProcessInfo.processInfo.environment["RECORD_SNAPSHOTS"] != "1" {
-            throw XCTSkip("此测试需要重新生成快照以反映新设计。请运行 RECORD_SNAPSHOTS=1 swift test")
-        }
+        // Record once, then verify after that
+        let recordMode = false // Set to true to re-record, false to verify
         
         let view = TunaDictationView()
-        assertSnapshot(of: NSHostingController(rootView: view), as: .image(size: .init(width: 400, height: 400)))
+        assertSnapshot(
+            of: NSHostingController(rootView: view), 
+            as: .image(size: .init(width: 400, height: 400)),
+            record: recordMode
+        )
     }
     
     // 快速语音转写视图快照
     func test_QuickDictationView() throws {
+        // Use newly recorded snapshot
+        let recordMode = false // Set to true to re-record, false to verify
+        
         let view = QuickDictationView()
-        assertSnapshot(of: NSHostingController(rootView: view), as: .image(size: .init(width: 500, height: 300)))
+        assertSnapshot(
+            of: NSHostingController(rootView: view), 
+            as: .image(size: .init(width: 500, height: 300)),
+            record: recordMode
+        )
     }
     
     // 关于卡片视图快照
@@ -67,8 +80,15 @@ final class UISnapshots: XCTestCase {
     
     // 设置视图快照
     func test_TunaSettingsView() throws {
+        // Record once, then verify after that
+        let recordMode = false // Set to true to re-record, false to verify
+        
         let view = TunaSettingsView()
-        assertSnapshot(of: NSHostingController(rootView: view), as: .image(size: .init(width: 600, height: 600)))
+        assertSnapshot(
+            of: NSHostingController(rootView: view), 
+            as: .image(size: .init(width: 600, height: 600)),
+            record: recordMode
+        )
     }
     
     // 快捷键文本框组件快照
