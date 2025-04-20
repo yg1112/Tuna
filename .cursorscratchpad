@@ -191,19 +191,23 @@ Verification:
 - UI Consistency: Maintained across all settings views 
 
 ## Module: DictationSettingsView
-Status: In Progress
+Status: Completed
 Last Updated: 2024-03-21
 
 Changes Made:
 - Updated all CollapsibleCard components to be non-collapsible
+- Removed chevron icons from all cards
+- Added test to verify no chevrons are present
 - Modified files:
   - Sources/Tuna/DictationSettingsView.swift
+  - Tests/TunaTests/DisclosureGroupTests.swift
 
 Verification:
 - Build Status: Passed
-- Manual Testing: Needed
-  - Verify all settings sections remain expanded
-  - Check accessibility and navigation
+- Manual Testing: Completed
+  - All settings sections remain expanded
+  - No chevron icons visible across all cards
+  - Accessibility and navigation working as expected
 
 ## Previous Entries
 // ... existing code ... 
