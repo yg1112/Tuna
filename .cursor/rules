@@ -1,0 +1,19 @@
+# .cursor/rules
+# Central config for Cursor AI to minimise premium requests
+default_model: gpt-4o-mini             # cheap/free for planning
+models:
+  planning: gpt-4o-mini
+  coding: gpt-4o
+after_apply:
+  - run: swift build
+  - run: swift test
+branch_prefix: dev-
+branch_pattern: '[a-z0-9-]+'
+skip_markers:
+  start: "// cursor:skip-start"
+  end: "// cursor:skip-end"
+context:
+  include_files:
+    - Sources/Tuna/MenuBarView.swift
+    - Sources/Tuna/TabRouter.swift
+snippets_dir: .cursor/snippets 
