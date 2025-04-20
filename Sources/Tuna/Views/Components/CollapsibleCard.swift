@@ -10,34 +10,38 @@ struct CollapsibleCard<Content: View>: View {
     let title: String
     @Binding var isExpanded: Bool
     let content: () -> Content
+    let collapsible: Bool
 
-    init(title: String, isExpanded: Binding<Bool>, @ViewBuilder content: @escaping () -> Content) {
+    init(title: String, isExpanded: Binding<Bool>, collapsible: Bool = true, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self._isExpanded = isExpanded
         self.content = content
+        self.collapsible = collapsible
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button(action: {
-                withAnimation {
-                    self.isExpanded.toggle()
-                }
-            }) {
-                HStack {
-                    Text(self.title)
-                        .font(.headline)
-                    Spacer()
+            HStack {
+                Text(self.title)
+                    .font(.headline)
+                Spacer()
+                if collapsible {
                     Image(systemName: self.isExpanded ? "chevron.up" : "chevron.down")
                         .foregroundColor(.secondary)
                 }
-                .padding(.vertical, 12)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(PlainButtonStyle())
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if collapsible {
+                    withAnimation {
+                        self.isExpanded.toggle()
+                    }
+                }
+            }
             .accessibilityIdentifier("\(self.title)Toggle")
 
-            if self.isExpanded {
+            if !collapsible || self.isExpanded {
                 self.content()
                     .padding(.top, 8)
                     .transition(.opacity)
@@ -52,14 +56,14 @@ struct CollapsibleCard<Content: View>: View {
 struct CollapsibleCard_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
-            CollapsibleCard(title: "Expanded Card", isExpanded: .constant(true)) {
-                Text("Card content goes here")
+            CollapsibleCard(title: "Non-collapsible Card", isExpanded: .constant(true), collapsible: false) {
+                Text("This content is always visible")
                     .font(Typography.body)
                     .padding(.top, 4)
             }
 
-            CollapsibleCard(title: "Collapsed Card", isExpanded: .constant(false)) {
-                Text("This content is hidden")
+            CollapsibleCard(title: "Collapsible Card", isExpanded: .constant(false)) {
+                Text("This content can be hidden")
                     .font(Typography.body)
                     .padding(.top, 4)
             }

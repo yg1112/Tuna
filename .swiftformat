@@ -36,4 +36,8 @@
 --semicolons inline          # 保持行内分号
 
 # 排除规则
---exclude vendor,Pods,Generated 
+--exclude vendor,Pods,Generated
+
+# 新增规则
+--rules explicitSelf
+--insertSelf true 

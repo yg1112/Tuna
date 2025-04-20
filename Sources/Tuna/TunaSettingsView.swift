@@ -141,6 +141,7 @@ struct TunaSettingsView: View {
     @ObservedObject private var settings = TunaSettings.shared
     @State private var selectedTab: SettingsTab = .general
     @ObservedObject private var audioManager = AudioManager.shared
+    @State private var showingDirectoryPicker = false
     @State private var isLaunchCardExpanded = false
     @State private var isShortcutCardExpanded = false
     @State private var isSmartSwapsCardExpanded = false
@@ -202,12 +203,12 @@ struct TunaSettingsView: View {
 
     private var generalTabView: some View {
         VStack(alignment: .leading, spacing: 20) {
-            CollapsibleCard(title: "Launch on Startup", isExpanded: self.$isLaunchCardExpanded) {
+            CollapsibleCard(title: "Launch on Startup", isExpanded: self.$settings.isLaunchOpen, collapsible: false) {
                 Toggle("Start Tuna when you login", isOn: self.$settings.launchAtLogin)
                     .font(Typography.body)
             }
 
-            CollapsibleCard(title: "Check for Updates", isExpanded: self.$isUpdatesCardExpanded) {
+            CollapsibleCard(title: "Check for Updates", isExpanded: self.$settings.isUpdatesOpen, collapsible: false) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Current version: 1.0.0")
                         .font(Typography.body)
@@ -218,11 +219,12 @@ struct TunaSettingsView: View {
             }
         }
         .padding(self.padding)
+        .id("generalTab")
     }
 
     private var dictationTabView: some View {
         VStack(alignment: .leading, spacing: 20) {
-            CollapsibleCard(title: "Shortcut (PRO)", isExpanded: self.$isShortcutCardExpanded) {
+            CollapsibleCard(title: "Shortcut", isExpanded: self.$settings.isShortcutOpen, collapsible: false) {
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle(
                         "Enable global shortcut",
@@ -231,23 +233,82 @@ struct TunaSettingsView: View {
                     .font(Typography.body)
                 }
             }
+            .id("ShortcutCard")
 
             CollapsibleCard(
-                title: "Magic Transform (PRO)",
-                isExpanded: self.$isMagicTransformCardExpanded
+                title: "Magic Transform",
+                isExpanded: self.$settings.isMagicTransformOpen
             ) {
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle("Enable text transformation", isOn: self.$settings.magicEnabled)
                         .font(Typography.body)
                 }
             }
+            .id("MagicTransformCard")
+
+            CollapsibleCard(title: "Engine", isExpanded: self.$settings.isEngineOpen, collapsible: false) {
+                VStack(alignment: .leading, spacing: 8) {
+                    SecureField("OpenAI API Key", text: self.$settings.whisperAPIKey)
+                        .font(Typography.body)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .accessibilityIdentifier("API Key")
+
+                    Text("Enter your OpenAI API key to enable transcription.")
+                        .font(Typography.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .id("EngineCard")
+
+            CollapsibleCard(title: "Transcription Output", isExpanded: self.$settings.isTranscriptionOutputOpen, collapsible: false) {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Format picker
+                    Picker("Export Format:", selection: self.$settings.transcriptionFormat) {
+                        ForEach(TranscriptionExportFormat.allCases) { format in
+                            Text(format.displayName).tag(format.rawValue)
+                        }
+                    }
+                    .font(Typography.body)
+
+                    // Auto-copy toggle
+                    Toggle("Auto-copy to clipboard", isOn: self.$settings.autoCopyTranscriptionToClipboard)
+                        .font(Typography.body)
+
+                    // Output directory picker
+                    HStack {
+                        Text("Save to:")
+                            .font(Typography.body)
+                        Spacer()
+                        Text(settings.transcriptionOutputDirectoryDisplay)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Button("Browse…") {
+                            self.showingDirectoryPicker = true
+                        }
+                    }
+                }
+            }
+            .id("TranscriptionOutputCard")
+            .fileImporter(
+                isPresented: self.$showingDirectoryPicker,
+                allowedContentTypes: [.folder],
+                allowsMultipleSelection: false
+            ) { result in
+                if case .success(let urls) = result {
+                    guard let url = urls.first else { return }
+                    self.settings.transcriptionOutputDirectory = url
+                }
+            }
         }
         .padding(self.padding)
+        .id("dictationTab")
     }
 
     private var audioTabView: some View {
         VStack(alignment: .leading, spacing: 20) {
-            CollapsibleCard(title: "Smart Swaps", isExpanded: self.$isSmartSwapsCardExpanded) {
+            CollapsibleCard(title: "Smart Swaps", isExpanded: self.$settings.isSmartSwapsOpen, collapsible: false) {
                 Toggle(
                     "Automatically change audio devices based on context",
                     isOn: self.$settings.enableSmartSwitching
@@ -255,7 +316,7 @@ struct TunaSettingsView: View {
                 .font(Typography.body)
             }
 
-            CollapsibleCard(title: "Audio Devices", isExpanded: self.$isAudioDevicesCardExpanded) {
+            CollapsibleCard(title: "Audio Devices", isExpanded: self.$settings.isAudioDevicesOpen, collapsible: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Input Device:")
@@ -271,11 +332,12 @@ struct TunaSettingsView: View {
             }
         }
         .padding(self.padding)
+        .id("audioTab")
     }
 
     private var appearanceTabView: some View {
         VStack(alignment: .leading, spacing: 20) {
-            CollapsibleCard(title: "Theme", isExpanded: self.$isThemeCardExpanded) {
+            CollapsibleCard(title: "Theme", isExpanded: self.$settings.isThemeOpen, collapsible: false) {
                 Picker("Application theme:", selection: .constant("system")) {
                     Text("System").tag("system")
                     Text("Light").tag("light")
@@ -284,7 +346,7 @@ struct TunaSettingsView: View {
                 .font(Typography.body)
             }
 
-            CollapsibleCard(title: "Appearance", isExpanded: self.$isAppearanceCardExpanded) {
+            CollapsibleCard(title: "Appearance", isExpanded: self.$settings.isAppearanceOpen, collapsible: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Menu Bar Icon")
@@ -299,16 +361,17 @@ struct TunaSettingsView: View {
             }
         }
         .padding(self.padding)
+        .id("appearanceTab")
     }
 
     private var advancedTabView: some View {
         VStack(alignment: .leading, spacing: 20) {
-            CollapsibleCard(title: "Beta Features", isExpanded: self.$isBetaCardExpanded) {
+            CollapsibleCard(title: "Beta Features", isExpanded: self.$settings.isBetaOpen, collapsible: false) {
                 Toggle("Enable beta features", isOn: .constant(false))
                     .font(Typography.body)
             }
 
-            CollapsibleCard(title: "Debug", isExpanded: self.$isDebugCardExpanded) {
+            CollapsibleCard(title: "Debug", isExpanded: self.$settings.isDebugOpen, collapsible: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     Button("Export Debug Log") {
                         // Export logic
@@ -318,11 +381,12 @@ struct TunaSettingsView: View {
             }
         }
         .padding(self.padding)
+        .id("advancedTab")
     }
 
     private var supportTabView: some View {
         VStack(alignment: .leading, spacing: 20) {
-            CollapsibleCard(title: "About Tuna", isExpanded: self.$isAboutCardExpanded) {
+            CollapsibleCard(title: "About Tuna", isExpanded: self.$settings.isAboutOpen, collapsible: false) {
                 VStack(alignment: .center, spacing: 12) {
                     Image(systemName: "waveform")
                         .font(.system(size: 48))
@@ -337,6 +401,7 @@ struct TunaSettingsView: View {
             }
         }
         .padding(self.padding)
+        .id("supportTab")
     }
 }
 

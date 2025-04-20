@@ -37,6 +37,9 @@ struct DictationSettingsView: View {
                 // Transcription Output 部分
                 self.transcriptionOutputSection
 
+                // Magic Transform 部分
+                self.magicTransformSection
+
                 Spacer()
             }
             .padding(20)
@@ -66,7 +69,7 @@ struct DictationSettingsView: View {
 
     // 引擎部分
     private var engineSection: some View {
-        CollapsibleCard(title: "Engine", isExpanded: self.$settings.isEngineOpen) {
+        CollapsibleCard(title: "Engine", isExpanded: self.$settings.isEngineOpen, collapsible: false) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     SecureField("OpenAI API Key", text: Binding(
@@ -114,7 +117,8 @@ struct DictationSettingsView: View {
     private var transcriptionOutputSection: some View {
         CollapsibleCard(
             title: "Transcription Output",
-            isExpanded: self.$settings.isTranscriptionOutputOpen
+            isExpanded: self.$settings.isTranscriptionOutputOpen,
+            collapsible: false
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 // 导出格式选择器
@@ -311,6 +315,21 @@ struct DictationSettingsView: View {
     private func validateApiKey(_ key: String) {
         // 简单的格式验证 - OpenAI API密钥通常以"sk-"开头并且较长
         self.isApiKeyValid = key.hasPrefix("sk-") && key.count > 10
+    }
+
+    // Magic Transform 部分
+    private var magicTransformSection: some View {
+        CollapsibleCard(
+            title: "Magic Transform",
+            isExpanded: .constant(true),
+            collapsible: false
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle("Enable text transformation", isOn: self.$settings.magicEnabled)
+                    .font(.system(size: 14))
+            }
+        }
+        .id("MagicTransformCard")
     }
 }
 

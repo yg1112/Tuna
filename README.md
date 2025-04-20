@@ -43,6 +43,62 @@ Tuna是一款功能强大的macOS应用，专为音频转写和设备管理而�
 5. 转写结果会显示在窗口中
 6. **新功能**: 直接点击转写文本进行编辑，右键点击可以使用更多文本操作
 
+## 🛠 开发指南
+
+### 开发环境设置
+
+1. 克隆仓库
+2. 运行 `make bootstrap` 安装必要工具
+3. 运行 `make test` 确保所有测试通过
+
+### 测试要求
+
+项目包含多层测试保障：
+
+1. **UI组件测试**
+   - ViewInspector 覆盖所有设置标签页的存在性与默认展开状态：
+     - General: Launch、Updates 卡片
+     - Dictation: Shortcut、Magic Transform、Engine、Transcription Output 卡片
+     - Audio: Smart Swaps、Audio Devices 卡片
+     - Appearance: Theme、Appearance 卡片
+     - Advanced: Beta Features、Debug 卡片
+     - Support: About 卡片
+   - 确保所有卡片默认为展开状态
+   - 验证卡片展开状态的持久化
+
+2. **数据持久化测试**
+   - DirectoryPersistenceTests 使用临时目录验证：
+     - 转写输出目录 URL 的保存和读取
+     - URL round-trip 测试（写入后重新读取）
+     - 目录设置在重启后保持一致
+     - 卡片展开状态的持久化
+     - UserDefaults 同步验证
+
+3. **快照测试**
+   - UI更改必须更新相关快照
+   - 运行 `make snapshot` 更新快照
+
+4. **代码质量检查**
+   - SwiftFormat格式化检查
+   - YAML文件语法检查
+   - 构建验证
+
+### 提交工作流
+
+每次提交前必须通过以下检查：
+
+```bash
+make lint      # 运行代码格式化检查
+make snapshot  # 更新UI快照
+make test      # 运行所有测试
+```
+
+### CI/CD
+
+- GitHub Actions自动运行所有测试
+- 主分支受保护，需要通过所有CI检查
+- PR必须至少有一个审阅者批准
+
 ## 📝 版本历史
 
 ### V1.1 (2025-04-16)

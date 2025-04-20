@@ -23,6 +23,10 @@ snippets_dir: .cursor/snippets
 # 添加新规则
 require_explicit_self = true
 run_make_format_on_write = true
+require_successful_swift_build = true
+require_yamllint_pass = true
+require_ui_presence_tests = ["Shortcut","Magic Transform","Engine","Transcription Output"]
+snapshot_tests_must_update = true
 
 rules:
   cursor_context_auto_update:

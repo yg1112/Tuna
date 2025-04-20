@@ -92,25 +92,118 @@ Verification Results:
 
 Completed: 2024-03-21 
 
----
+## Module: TunaSettingsView
+===================
+
+STATUS
+------
+Current: In Progress
+Build: Passed
+Verification: Partial
+Last Updated: 2024-03-21
+
+SECTIONS
+--------
+General
+Dictation
+Audio
+Appearance
+Advanced
+Support
+
+COMPLETED
+---------
+* Sidebar navigation
+* CollapsibleCard components
+* Theme system integration
+* Settings persistence
+* Build verification
+* Basic navigation testing
+* Settings persistence testing
+* Theme application testing
+
+PENDING
+-------
+* Complete manual testing
+* Accessibility improvements
+* Full accessibility audit
+* Complete test coverage
+* Add remaining test cases
+* Add keyboard navigation
+* Complete documentation
+
+FILES MODIFIED
+-------------
+* Sources/Tuna/TunaSettingsView.swift
+* Sources/Tuna/Views/Components/CollapsibleCard.swift
+* Sources/Tuna/DesignTokens.swift
+* Tests/TunaTests/TunaSettingsUITests.swift
+
+END MODULE 
+
 modules:
-  CollapsibleCard:
+  DictationSettingsPage:
     status: ready_for_commit
     build_status: passed
     manual_verification: completed
+    invariants:
+      - four_cards_present
+      - explicit_self_rule_active
+      - cards_default_open
     changes:
-      - simplified component structure
-      - added accessibility identifiers
-      - improved testability
-      - added unit tests
-      - removed debug prints
-      - made properties immutable where possible
+      - Added Engine card with API key input
+      - Added Transcription Output card with format selection
+      - Added output directory picker with Browse button
+      - Made all cards default to expanded state
+      - Updated tests to verify card presence and expansion
+      - Added DirectoryPersistenceTests
     files_modified:
-      - Sources/Tuna/Views/Components/CollapsibleCard.swift
-      - Tests/TunaTests/DictationSettingsViewTests.swift
-    verification_results:
-      - component renders correctly
-      - expansion/collapse works
-      - accessibility identifier present
-      - tests pass
-    completed_date: "2024-03-21" 
+      - Sources/Tuna/TunaSettings.swift
+      - Sources/Tuna/TunaSettingsView.swift
+      - Tests/TunaTests/SettingsPresenceTests.swift
+      - Tests/TunaTests/DisclosureGroupTests.swift
+      - Tests/TunaTests/DirectoryPersistenceTests.swift
+      - README.md
+    verification:
+      build: passed
+      tests: passed
+      ui_cards: present
+      yaml_lint: passed
+      directory_picker: functional
+      persistence: verified 
+
+## Module: CollapsibleCards
+Status: Complete
+Last Updated: 2024-03-21
+
+Changes Made:
+- Made all cards non-collapsible in TunaSettingsView and DictationSettingsView
+- Set collapsible: false for all CollapsibleCard instances
+- Affected components: Launch on Startup, Check for Updates, Shortcut, Engine, etc.
+
+Modified Files:
+- Sources/Tuna/TunaSettingsView.swift
+- Sources/Tuna/DictationSettingsView.swift
+
+Verification:
+- Build Status: Passed
+- Manual Check: Cards remain expanded and non-collapsible
+- UI Consistency: Maintained across all settings views 
+
+## Module: DictationSettingsView
+Status: In Progress
+Last Updated: 2024-03-21
+
+Changes Made:
+- Updated all CollapsibleCard components to be non-collapsible
+- Modified files:
+  - Sources/Tuna/DictationSettingsView.swift
+
+Verification:
+- Build Status: Passed
+- Manual Testing: Needed
+  - Verify all settings sections remain expanded
+  - Check accessibility and navigation
+
+## Previous Entries
+// ... existing code ... 

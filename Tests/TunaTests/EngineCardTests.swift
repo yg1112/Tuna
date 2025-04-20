@@ -1,70 +1,41 @@
 import SwiftUI
 @testable import Tuna
+import ViewInspector
 import XCTest
 
 final class EngineCardTests: XCTestCase {
     override func setUp() {
         super.setUp()
-        // Reset settings before each test
-        UserDefaults.standard.removeObject(forKey: "isEngineOpen")
+        UserDefaultsHelper.resetAllSettings()
+        TunaSettings.shared.loadDefaults()
     }
-
-    func testCollapsibleCardToggle() {
-        // Create an observable state value
-        var isExpanded = false
-
-        // Create a CollapsibleCard with a binding
-        let _ = CollapsibleCard(title: "Test Card", isExpanded: Binding(
-            get: { isExpanded },
-            set: { isExpanded = $0 }
-        )) {
-            Text("Content")
-        }
-
-        // Verify initial state is collapsed
-        XCTAssertFalse(isExpanded)
-
-        // Simulate button tap - directly change the bound value
-        isExpanded = true
-
-        // Verify state has changed to expanded
-        XCTAssertTrue(isExpanded, "Card should be expanded after button tap")
-
-        // Simulate tap again to collapse
-        isExpanded = false
-
-        // Verify state has changed back to collapsed
-        XCTAssertFalse(isExpanded, "Card should be collapsed after second tap")
+    
+    override func tearDown() {
+        UserDefaultsHelper.resetAllSettings()
+        super.tearDown()
     }
-
-    func testCardPersistsState() {
-        // Create a UserDefaults key for testing
-        let testKey = "engineCard.testState"
-
-        // Clear any existing value
-        UserDefaults.standard.removeObject(forKey: testKey)
-
-        // Create a binding to UserDefaults
+    
+    func testEngineCardExpansionState() throws {
+        let testKey = "isEngineOpen"
+        
+        // Create a binding that uses UserDefaults
         let binding = Binding<Bool>(
             get: { UserDefaults.standard.bool(forKey: testKey) },
             set: { UserDefaults.standard.set($0, forKey: testKey) }
         )
-
-        // Create a card with this binding
-        let _ = CollapsibleCard(title: "Test Card", isExpanded: binding) {
-            Text("Content")
+        
+        // Create the card with the binding
+        let card = CollapsibleCard(title: "Engine", isExpanded: binding) {
+            Text("Test Content")
         }
-
-        // Verify default state is false
+        
+        // Initially, the card should be collapsed
         XCTAssertFalse(UserDefaults.standard.bool(forKey: testKey))
-
-        // Change the state to expanded
+        
+        // Expand the card
         UserDefaults.standard.set(true, forKey: testKey)
-
-        // Verify state has changed
+        
+        // Verify the card is expanded
         XCTAssertTrue(UserDefaults.standard.bool(forKey: testKey))
-
-        // Clean up
-        UserDefaults.standard.removeObject(forKey: testKey)
     }
 }

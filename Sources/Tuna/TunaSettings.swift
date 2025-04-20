@@ -416,40 +416,125 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    // Engine card expansion state
-    @Published var isEngineOpen: Bool = false {
+    // 转写输出目录
+    @Published var transcriptionOutputDirectory: URL? = nil {
         didSet {
-            if oldValue != self.isEngineOpen, !self.isUpdating {
-                self.isUpdating = true
-                self.defaults.set(self.isEngineOpen, forKey: "isEngineOpen")
-                self.logger.debug("Saved engine card state: \(self.isEngineOpen)")
-                print(
-                    "[SETTINGS] Engine card state: \(self.isEngineOpen ? "expanded" : "collapsed")"
-                )
-                fflush(stdout)
-                self.isUpdating = false
+            guard oldValue != self.transcriptionOutputDirectory else { return }
+            self.isUpdating = true
+            let pathString = self.transcriptionOutputDirectory?.absoluteString ?? ""
+            defaults.set(pathString, forKey: "transcriptionOutputDirectory")
+            logger.debug("Saved transcription output dir: \(pathString)")
+            self.isUpdating = false
+        }
+    }
+
+    /// Helper for UI display
+    var transcriptionOutputDirectoryDisplay: String {
+        transcriptionOutputDirectory?.lastPathComponent ?? "Not set"
+    }
+
+    // 卡片展开状态 - 默认全部展开
+    @Published var isShortcutOpen: Bool = true {
+        didSet {
+            if oldValue != self.isShortcutOpen {
+                self.defaults.set(self.isShortcutOpen, forKey: "isShortcutOpen")
             }
         }
     }
 
-    // Transcription Output card expansion state
-    @Published var isTranscriptionOutputOpen: Bool = false {
+    @Published var isMagicTransformOpen: Bool = true {
         didSet {
-            if oldValue != self.isTranscriptionOutputOpen, !self.isUpdating {
-                self.isUpdating = true
-                self.defaults.set(
-                    self.isTranscriptionOutputOpen,
-                    forKey: "isTranscriptionOutputOpen"
-                )
-                self.logger
-                    .debug(
-                        "Saved transcription output card state: \(self.isTranscriptionOutputOpen)"
-                    )
-                print(
-                    "[SETTINGS] Transcription output card state: \(self.isTranscriptionOutputOpen ? "expanded" : "collapsed")"
-                )
-                fflush(stdout)
-                self.isUpdating = false
+            if oldValue != self.isMagicTransformOpen {
+                self.defaults.set(self.isMagicTransformOpen, forKey: "isMagicTransformOpen")
+            }
+        }
+    }
+
+    @Published var isEngineOpen: Bool = true {
+        didSet {
+            if oldValue != self.isEngineOpen {
+                self.defaults.set(self.isEngineOpen, forKey: "isEngineOpen")
+            }
+        }
+    }
+
+    @Published var isTranscriptionOutputOpen: Bool = true {
+        didSet {
+            if oldValue != self.isTranscriptionOutputOpen {
+                self.defaults.set(self.isTranscriptionOutputOpen, forKey: "isTranscriptionOutputOpen")
+            }
+        }
+    }
+
+    // 其他卡片展开状态
+    @Published var isLaunchOpen: Bool = true {
+        didSet {
+            if oldValue != self.isLaunchOpen {
+                self.defaults.set(self.isLaunchOpen, forKey: "isLaunchOpen")
+            }
+        }
+    }
+
+    @Published var isUpdatesOpen: Bool = true {
+        didSet {
+            if oldValue != self.isUpdatesOpen {
+                self.defaults.set(self.isUpdatesOpen, forKey: "isUpdatesOpen")
+            }
+        }
+    }
+
+    @Published var isSmartSwapsOpen: Bool = true {
+        didSet {
+            if oldValue != self.isSmartSwapsOpen {
+                self.defaults.set(self.isSmartSwapsOpen, forKey: "isSmartSwapsOpen")
+            }
+        }
+    }
+
+    @Published var isAudioDevicesOpen: Bool = true {
+        didSet {
+            if oldValue != self.isAudioDevicesOpen {
+                self.defaults.set(self.isAudioDevicesOpen, forKey: "isAudioDevicesOpen")
+            }
+        }
+    }
+
+    @Published var isThemeOpen: Bool = true {
+        didSet {
+            if oldValue != self.isThemeOpen {
+                self.defaults.set(self.isThemeOpen, forKey: "isThemeOpen")
+            }
+        }
+    }
+
+    @Published var isAppearanceOpen: Bool = true {
+        didSet {
+            if oldValue != self.isAppearanceOpen {
+                self.defaults.set(self.isAppearanceOpen, forKey: "isAppearanceOpen")
+            }
+        }
+    }
+
+    @Published var isBetaOpen: Bool = true {
+        didSet {
+            if oldValue != self.isBetaOpen {
+                self.defaults.set(self.isBetaOpen, forKey: "isBetaOpen")
+            }
+        }
+    }
+
+    @Published var isDebugOpen: Bool = true {
+        didSet {
+            if oldValue != self.isDebugOpen {
+                self.defaults.set(self.isDebugOpen, forKey: "isDebugOpen")
+            }
+        }
+    }
+
+    @Published var isAboutOpen: Bool = true {
+        didSet {
+            if oldValue != self.isAboutOpen {
+                self.defaults.set(self.isAboutOpen, forKey: "isAboutOpen")
             }
         }
     }
@@ -477,11 +562,11 @@ class TunaSettings: ObservableObject {
     }
 
     // 添加语音转录文件保存路径配置
-    @Published var transcriptionOutputDirectory: URL? {
+    @Published var transcriptionOutputDirectoryURL: URL? {
         didSet {
             if !self.isUpdating {
                 self.isUpdating = true
-                if let url = self.transcriptionOutputDirectory {
+                if let url = self.transcriptionOutputDirectoryURL {
                     if oldValue?.path != url.path {
                         self.defaults.set(url, forKey: "dictationOutputDirectory")
                         self.logger.debug("Saved transcription output directory: \(url.path)")
@@ -659,7 +744,10 @@ class TunaSettings: ObservableObject {
 
         // 初始化语音转录设置
         self.transcriptionFormat = self.defaults.string(forKey: "dictationFormat") ?? "txt"
-        self.transcriptionOutputDirectory = self.defaults.url(forKey: "dictationOutputDirectory")
+        if let saved = defaults.string(forKey: "transcriptionOutputDirectory"),
+           let url = URL(string: saved), !saved.isEmpty {
+            self.transcriptionOutputDirectory = url
+        }
         self.autoCopyTranscriptionToClipboard = self.defaults
             .bool(forKey: "autoCopyTranscriptionToClipboard")
 
@@ -669,11 +757,35 @@ class TunaSettings: ObservableObject {
             .string(forKey: "dictationShortcutKeyCombo") ?? "cmd+u"
         self.showDictationPageOnShortcut = self.defaults.bool(forKey: "showDictationPageOnShortcut")
 
-        // 初始化Engine卡片状态
-        self.isEngineOpen = self.defaults.bool(forKey: "isEngineOpen")
-
-        // 初始化Transcription Output卡片状态
-        self.isTranscriptionOutputOpen = self.defaults.bool(forKey: "isTranscriptionOutputOpen")
+        // 初始化卡片展开状态 - 全部默认展开
+        self.isShortcutOpen = self.defaults.object(forKey: "isShortcutOpen") != nil ? 
+            self.defaults.bool(forKey: "isShortcutOpen") : true
+        self.isMagicTransformOpen = self.defaults.object(forKey: "isMagicTransformOpen") != nil ? 
+            self.defaults.bool(forKey: "isMagicTransformOpen") : true
+        self.isEngineOpen = self.defaults.object(forKey: "isEngineOpen") != nil ? 
+            self.defaults.bool(forKey: "isEngineOpen") : true
+        self.isTranscriptionOutputOpen = self.defaults.object(forKey: "isTranscriptionOutputOpen") != nil ? 
+            self.defaults.bool(forKey: "isTranscriptionOutputOpen") : true
+        
+        // 其他卡片展开状态初始化
+        self.isLaunchOpen = self.defaults.object(forKey: "isLaunchOpen") != nil ? 
+            self.defaults.bool(forKey: "isLaunchOpen") : true
+        self.isUpdatesOpen = self.defaults.object(forKey: "isUpdatesOpen") != nil ? 
+            self.defaults.bool(forKey: "isUpdatesOpen") : true
+        self.isSmartSwapsOpen = self.defaults.object(forKey: "isSmartSwapsOpen") != nil ? 
+            self.defaults.bool(forKey: "isSmartSwapsOpen") : true
+        self.isAudioDevicesOpen = self.defaults.object(forKey: "isAudioDevicesOpen") != nil ? 
+            self.defaults.bool(forKey: "isAudioDevicesOpen") : true
+        self.isThemeOpen = self.defaults.object(forKey: "isThemeOpen") != nil ? 
+            self.defaults.bool(forKey: "isThemeOpen") : true
+        self.isAppearanceOpen = self.defaults.object(forKey: "isAppearanceOpen") != nil ? 
+            self.defaults.bool(forKey: "isAppearanceOpen") : true
+        self.isBetaOpen = self.defaults.object(forKey: "isBetaOpen") != nil ? 
+            self.defaults.bool(forKey: "isBetaOpen") : true
+        self.isDebugOpen = self.defaults.object(forKey: "isDebugOpen") != nil ? 
+            self.defaults.bool(forKey: "isDebugOpen") : true
+        self.isAboutOpen = self.defaults.object(forKey: "isAboutOpen") != nil ? 
+            self.defaults.bool(forKey: "isAboutOpen") : true
 
         // 初始化默认音频设备设置
         self.defaultOutputDeviceUID = self.defaults.string(forKey: "defaultOutputDeviceUID") ?? ""
@@ -766,6 +878,47 @@ class TunaSettings: ObservableObject {
             self.logger.notice("Settings migrated from standard UserDefaults to ai.tuna.app domain")
         }
     }
+
+    // Method to load default values
+    func loadDefaults() {
+        // Set default values
+        UserDefaults.standard.set("system", forKey: "theme")
+        UserDefaults.standard.set(0.7, forKey: "glassStrength")
+        UserDefaults.standard.set("system", forKey: "fontScale")
+        UserDefaults.standard.set(false, forKey: "reduceMotion")
+        UserDefaults.standard.set(false, forKey: "enableBeta")
+        UserDefaults.standard.set("", forKey: "whisperAPIKey")
+
+        // Set default values for card expansion states
+        UserDefaults.standard.set(true, forKey: "isShortcutOpen")
+        UserDefaults.standard.set(true, forKey: "isMagicTransformOpen")
+        UserDefaults.standard.set(true, forKey: "isEngineOpen")
+        UserDefaults.standard.set(true, forKey: "isTranscriptionOutputOpen")
+        UserDefaults.standard.set(true, forKey: "isLaunchOpen")
+        UserDefaults.standard.set(true, forKey: "isUpdatesOpen")
+        UserDefaults.standard.set(true, forKey: "isSmartSwapsOpen")
+        UserDefaults.standard.set(true, forKey: "isAudioDevicesOpen")
+        UserDefaults.standard.set(true, forKey: "isThemeOpen")
+        UserDefaults.standard.set(true, forKey: "isAppearanceOpen")
+        UserDefaults.standard.set(true, forKey: "isBetaOpen")
+        UserDefaults.standard.set(true, forKey: "isDebugOpen")
+        UserDefaults.standard.set(true, forKey: "isAboutOpen")
+
+        // Reinitialize the instance
+        self.isShortcutOpen = true
+        self.isMagicTransformOpen = true
+        self.isEngineOpen = true
+        self.isTranscriptionOutputOpen = true
+        self.isLaunchOpen = true
+        self.isUpdatesOpen = true
+        self.isSmartSwapsOpen = true
+        self.isAudioDevicesOpen = true
+        self.isThemeOpen = true
+        self.isAppearanceOpen = true
+        self.isBetaOpen = true
+        self.isDebugOpen = true
+        self.isAboutOpen = true
+    }
 }
 
 // MARK: - UI Settings Extension
@@ -852,18 +1005,5 @@ extension TunaSettings {
 
         // Post notification for UI refresh
         NotificationCenter.default.post(name: Notification.Name("settingsReset"), object: nil)
-    }
-
-    // Method to load default values
-    func loadDefaults() {
-        // Set default values
-        UserDefaults.standard.set("system", forKey: "theme")
-        UserDefaults.standard.set(0.7, forKey: "glassStrength")
-        UserDefaults.standard.set("system", forKey: "fontScale")
-        UserDefaults.standard.set(false, forKey: "reduceMotion")
-        UserDefaults.standard.set(false, forKey: "enableBeta")
-        UserDefaults.standard.set("", forKey: "whisperAPIKey")
-
-        // Other defaults are handled by the original init method
     }
 }

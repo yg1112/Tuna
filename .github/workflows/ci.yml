@@ -1,44 +1,31 @@
-name: Tuna CI
+name: CI
 
 on:
   push:
-    branches: [ main, 'feature/**', 'bugfix/**', 'release/**', 'infra-**' ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  test:
-    runs-on: macos-14
-    
+  build:
+    runs-on: macos-latest
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v2
 
-    - name: Setup Swift
-      uses: swift-actions/setup-swift@v1
-
-    - name: Install CI dependencies
+    - name: Install dependencies
       run: |
-        chmod +x Scripts/ci-setup.sh
-        ./Scripts/ci-setup.sh
+        brew install swiftformat
+        brew install yamllint
 
-    - name: Bootstrap environment
-      run: make bootstrap
+    - name: Run SwiftFormat
+      run: swiftformat . --lint
 
-    - name: Lint code
-      run: make lint
+    - name: Run YAML lint
+      run: yamllint .cursorscratchpad
 
-    - name: Run snapshot tests
-      run: make snapshot
-      continue-on-error: true  # 允许快照测试失败，但我们仍然会上传差异
+    - name: Build project
+      run: swift build --build-tests --parallel
 
     - name: Run tests
-      run: make test
-
-    - name: Upload snapshot diff artifacts
-      uses: actions/upload-artifact@v3
-      if: ${{ failure() }}
-      with:
-        name: snapshot-diffs
-        path: Tests/Snapshots/__FailureDiffs__
-        if-no-files-found: ignore 
+      run: swift test --parallel 

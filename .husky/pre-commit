@@ -27,4 +27,13 @@ fi
 
 # 成功通过所有检查
 echo "✅ All pre-commit checks passed"
-exit 0 
+exit 0
+
+# Run SwiftFormat linting
+swiftformat . --lint || exit 1
+
+# Run YAML linting
+yamllint .cursorscratchpad || exit 1
+
+# Run Swift build
+swift build --quiet || exit 1 
