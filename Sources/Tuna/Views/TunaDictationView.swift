@@ -16,7 +16,7 @@ extension String {
 
 // 添加QuickDictationView - 专门用于快捷键激活的简化界面
 struct QuickDictationView: View {
-    @ObservedObject private var dictationManager = DictationManager.shared
+    @ObservedObject private var dictationManager: DictationManager
     @State private var isVisualizing = false
     @State private var isPlaceholderVisible = true
     @State private var editableText: String = ""
@@ -24,6 +24,21 @@ struct QuickDictationView: View {
     @State private var cursorPosition: Int = 0 // 追踪光标位置
     @State private var isFocused: Bool = false
     @State private var lastTranscribedText: String = "" // 跟踪上一次转录文本
+    
+    // 添加用于在测试中禁用动画的标志
+    private let animationsDisabled: Bool
+    
+    // 默认初始化器 - 用于实际产品
+    init() {
+        self.dictationManager = DictationManager.shared
+        self.animationsDisabled = false
+    }
+    
+    // 测试初始化器 - 允许注入测试依赖
+    init(dictationManager: DictationManager, animationsDisabled: Bool = false) {
+        self.dictationManager = dictationManager
+        self.animationsDisabled = animationsDisabled
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -213,8 +228,12 @@ struct QuickDictationView: View {
             // 可视化效果 - 仅在录音时显示
             if dictationManager.state == .recording {
                 HStack(spacing: 2) {
-                    ForEach(0..<15, id: \.self) { _ in
-                        AudioVisualBar()
+                    ForEach(0..<15, id: \.self) { index in
+                        AudioVisualBar(
+                            isRecording: true,
+                            disableAnimations: animationsDisabled,
+                            fixedTestHeight: animationsDisabled ? 5 + CGFloat(index % 5) * 4 : nil
+                        )
                     }
                 }
                 .frame(height: 20)
@@ -404,16 +423,30 @@ struct QuickDictationView: View {
     }
 }
 
+// 语音转写视图
 struct TunaDictationView: View {
     @ObservedObject private var dictationManager = DictationManager.shared
     @State private var isVisualizing = false
     @State private var isPlaceholderVisible = true
-    @State private var editableText: String = "This is the live transcription..."
+    @State private var editableText: String = ""
     @State private var showEditHint: Bool = false
     @State private var isFocused: Bool = false
     @State private var cursorPosition: Int = 0 // 追踪光标位置
     @State private var isBreathingAnimation = false
     @State private var showSavePanel = false
+    
+    // 添加动画禁用标志，用于测试
+    private let animationsDisabled: Bool
+    
+    // 默认初始化器
+    init() {
+        self.animationsDisabled = false
+    }
+    
+    // 测试初始化器
+    init(animationsDisabled: Bool = false) {
+        self.animationsDisabled = animationsDisabled
+    }
     
     // 计算显示的文本 - 如果有转录内容则显示实际转录，否则显示占位符
     private var displayText: String {
@@ -1069,7 +1102,11 @@ struct TunaDictationView: View {
     private var audioVisualizerView: some View {
         HStack(alignment: .center, spacing: 2) {
             ForEach(0..<15, id: \.self) { index in
-                AudioVisualizerBar(isRecording: dictationManager.state == .recording)
+                AudioVisualBar(
+                    isRecording: dictationManager.state == .recording,
+                    disableAnimations: animationsDisabled,
+                    fixedTestHeight: animationsDisabled ? 5 + CGFloat(index % 5) * 4 : nil
+                )
             }
         }
     }
@@ -1147,12 +1184,28 @@ struct TunaDictationView: View {
 }
 
 // 音频可视化条 - 使用mint绿色
-struct AudioVisualizerBar: View {
+struct AudioVisualBar: View {
     let isRecording: Bool
     @State private var height: CGFloat = 5
     
     // 定时器状态
     @State private var timer: Timer?
+    
+    // 测试模式 - 禁用随机动画
+    var disableAnimations: Bool = false
+    
+    // 允许为测试指定固定高度
+    var fixedTestHeight: CGFloat? = nil
+    
+    // 时间提供者
+    private let nowProvider: NowProvider
+    
+    init(isRecording: Bool = true, disableAnimations: Bool = false, fixedTestHeight: CGFloat? = nil, nowProvider: NowProvider = RealNowProvider()) {
+        self.isRecording = isRecording
+        self.disableAnimations = disableAnimations
+        self.fixedTestHeight = fixedTestHeight
+        self.nowProvider = nowProvider
+    }
     
     var body: some View {
         RoundedRectangle(cornerRadius: 1)
@@ -1169,6 +1222,21 @@ struct AudioVisualizerBar: View {
     private func startAnimation() {
         // 停止现有的计时器
         stopAnimation()
+        
+        // 如果有固定测试高度，使用它
+        if let testHeight = fixedTestHeight {
+            height = testHeight
+            return
+        }
+        
+        // 如果禁用了动画，则使用固定高度
+        if disableAnimations {
+            // 使用确定性的高度模式
+            let baseHeights: [CGFloat] = [5, 10, 15, 20, 15, 10, 5, 8, 12, 18, 14, 10, 6, 10, 15]
+            let index = Int(nowProvider.now.timeIntervalSince1970.truncatingRemainder(dividingBy: 15))
+            height = baseHeights[index]
+            return
+        }
         
         // 根据录制状态设置高度
         if !isRecording {

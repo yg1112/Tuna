@@ -22,8 +22,7 @@ final class UISnapshots: XCTestCase {
     
     // 菜单栏视图快照
     func test_MenuBarView() throws {
-        // Record once, then verify after that
-        let recordMode = false // Set to true to re-record, false to verify
+        // Use the global isRecording setting
         
         let audioManager = AudioManager.shared
         let settings = TunaSettings.shared
@@ -42,33 +41,48 @@ final class UISnapshots: XCTestCase {
         assertSnapshot(
             of: NSHostingController(rootView: view), 
             as: .image(size: .init(width: 400, height: 450)),
-            record: recordMode
+            record: SnapshotTesting.isRecording
         )
     }
     
     // 语音转写视图快照
     func test_TunaDictationView() throws {
-        // Record once, then verify after that
-        let recordMode = false // Set to true to re-record, false to verify
+        // Use the global isRecording setting
         
-        let view = TunaDictationView()
+        let view = TunaDictationView(animationsDisabled: true)
+            .transaction { $0.disablesAnimations = true }
+            .environment(\.colorScheme, .dark)
+        
         assertSnapshot(
             of: NSHostingController(rootView: view), 
             as: .image(size: .init(width: 400, height: 400)),
-            record: recordMode
+            record: SnapshotTesting.isRecording
         )
     }
     
     // 快速语音转写视图快照
     func test_QuickDictationView() throws {
-        // Use newly recorded snapshot
-        let recordMode = false // Set to true to re-record, false to verify
+        // Use the global isRecording setting
         
-        let view = QuickDictationView()
+        // 创建固定时间的NowProvider
+        let staticNowProvider = StaticNowProvider(TestConstants.previewDate)
+        
+        // 创建测试专用DictationManager
+        let testDictationManager = DictationManager.createForTesting(nowProvider: staticNowProvider)
+        testDictationManager.reset() // 确保状态重置
+        
+        // 创建使用测试依赖的QuickDictationView
+        let view = QuickDictationView(
+            dictationManager: testDictationManager,
+            animationsDisabled: true
+        )
+        .transaction { $0.disablesAnimations = true }
+        .environment(\.colorScheme, .dark) // 使用固定的颜色方案以避免系统设置差异
+        
         assertSnapshot(
             of: NSHostingController(rootView: view), 
             as: .image(size: .init(width: 500, height: 300)),
-            record: recordMode
+            record: SnapshotTesting.isRecording
         )
     }
     
@@ -80,14 +94,13 @@ final class UISnapshots: XCTestCase {
     
     // 设置视图快照
     func test_TunaSettingsView() throws {
-        // Record once, then verify after that
-        let recordMode = false // Set to true to re-record, false to verify
+        // Use the global isRecording setting
         
         let view = TunaSettingsView()
         assertSnapshot(
             of: NSHostingController(rootView: view), 
             as: .image(size: .init(width: 600, height: 600)),
-            record: recordMode
+            record: SnapshotTesting.isRecording
         )
     }
     

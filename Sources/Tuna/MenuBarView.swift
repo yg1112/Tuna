@@ -755,7 +755,7 @@ struct DictationView: View {
                     // 音频可视化效果
                     HStack(spacing: 2) {
                         ForEach(0..<15, id: \.self) { _ in
-                            AudioVisualBar()
+                            MenuAudioVisualBar()
                         }
                     }
                     .frame(height: 20)
@@ -805,7 +805,7 @@ struct DictationView: View {
 }
 
 // 音频可视化条
-struct AudioVisualBar: View {
+struct MenuAudioVisualBar: View {
     @State private var animation = false
     
     var body: some View {

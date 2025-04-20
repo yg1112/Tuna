@@ -32,8 +32,30 @@ extension Notification.Name {
 public class DictationManager: ObservableObject, DictationManagerProtocol {
     public static let shared = DictationManager()
     
+    // 允许替换单例以便测试
+    #if DEBUG
+    static func createForTesting(nowProvider: NowProvider = RealNowProvider()) -> DictationManager {
+        let manager = DictationManager(nowProvider: nowProvider)
+        return manager
+    }
+    
+    // 用于测试的重置方法
+    public func reset() {
+        state = .idle
+        progressMessage = ""
+        transcribedText = ""
+        isRecording = false
+        isPaused = false
+        breathingAnimation = false
+        recordingParts = []
+        processedSegments = []
+    }
+    #endif
+    
     private let logger = Logger(subsystem: "com.tuna.app", category: "DictationManager")
     private let tunaSettings = TunaSettings.shared
+    private let nowProvider: NowProvider
+    private let uuidProvider: UUIDProvider
     
     // 添加启动失败回调
     public var onStartFailure: (() -> Void)?
@@ -90,7 +112,10 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         SecureStore.currentAPIKey() ?? ""
     }
     
-    private init() {
+    private init(nowProvider: NowProvider = RealNowProvider(), uuidProvider: UUIDProvider = RealUUIDProvider()) {
+        self.nowProvider = nowProvider
+        self.uuidProvider = uuidProvider
+        
         logger.debug("DictationManager initialized")
         
         // 创建临时目录用于处理音频文件
@@ -166,7 +191,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             let oldRecorder = audioRecorder
             
             // 创建新的录音文件
-            let fileName = "dictation_\(Date().timeIntervalSince1970).wav"
+            let fileName = "dictation_\(nowProvider.now.timeIntervalSince1970).wav"
             recordingURL = tempDirectory?.appendingPathComponent(fileName)
             
             guard let recordingURL = recordingURL else {
@@ -232,7 +257,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         }
         
         // 创建新的录音文件
-        let fileName = "dictation_\(Date().timeIntervalSince1970).wav"
+        let fileName = "dictation_\(nowProvider.now.timeIntervalSince1970).wav"
         recordingURL = tempDirectory?.appendingPathComponent(fileName)
         
         guard let recordingURL = recordingURL else {
