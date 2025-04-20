@@ -1,12 +1,12 @@
 import Foundation
-import ServiceManagement
 import os.log
+import ServiceManagement
 
 /// Helper for managing app launch at login
 enum LaunchAtLogin {
     private static let logger = Logger(subsystem: "com.tuna.app", category: "LaunchAtLogin")
     private static let queue = DispatchQueue(label: "com.tuna.app.loginItem", qos: .userInitiated)
-    
+
     /// Enable launch at login
     static func enable() {
         queue.async {
@@ -21,7 +21,7 @@ enum LaunchAtLogin {
             fflush(stdout)
         }
     }
-    
+
     /// Disable launch at login
     static func disable() {
         queue.async {
@@ -36,11 +36,11 @@ enum LaunchAtLogin {
             fflush(stdout)
         }
     }
-    
+
     /// Check if launch at login is enabled
     static var isEnabled: Bool {
         queue.sync {
-            return SMAppService.mainApp.status == .enabled
+            SMAppService.mainApp.status == .enabled
         }
     }
-} 
+}

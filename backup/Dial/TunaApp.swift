@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct TunaApp: App {
     @StateObject private var audioManager = AudioManager.shared
-    
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
@@ -18,4 +18,4 @@ struct TunaApp: App {
         }
         .menuBarExtraStyle(.window)
     }
-} 
+}

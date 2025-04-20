@@ -4,7 +4,7 @@ struct DeviceButton: View {
     let device: AudioDevice
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text(device.name)
@@ -19,17 +19,17 @@ struct DeviceListItem: View {
     let isSelected: Bool
     let iconName: String
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack {
                 Image(systemName: iconName)
                     .foregroundColor(.secondary)
                     .frame(width: 16)
-                
+
                 Text(device.name)
                     .foregroundColor(.primary)
-                
+
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark")
@@ -50,7 +50,7 @@ struct DeviceSection: View {
     let selectedDevice: AudioDevice?
     let iconName: String
     let onSelect: (AudioDevice) -> Void
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
@@ -58,7 +58,7 @@ struct DeviceSection: View {
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
-            
+
             ForEach(devices) { device in
                 DeviceListItem(
                     device: device,
@@ -76,14 +76,14 @@ struct VolumeControl: View {
     @Binding var volume: Float
     let isInput: Bool
     @EnvironmentObject private var audioManager: AudioManager
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
-            
+
             HStack {
                 Slider(value: $volume, onEditingChanged: { _ in
                     audioManager.setVolume(volume, forInput: isInput)
@@ -99,7 +99,7 @@ struct VolumeControl: View {
 struct MenuBarView: View {
     @EnvironmentObject private var audioManager: AudioManager
     @Environment(\.colorScheme) private var colorScheme
-    
+
     var body: some View {
         VStack(spacing: 4) {
             // Input Devices Section
@@ -110,9 +110,9 @@ struct MenuBarView: View {
                 iconName: "mic",
                 onSelect: audioManager.selectInputDevice
             )
-            
+
             Divider()
-            
+
             // Output Devices Section
             DeviceSection(
                 title: "Output Devices",
@@ -121,9 +121,9 @@ struct MenuBarView: View {
                 iconName: "speaker.wave.3",
                 onSelect: audioManager.selectOutputDevice
             )
-            
+
             Divider()
-            
+
             // Volume Controls
             if audioManager.selectedInputDevice != nil {
                 VolumeControl(
@@ -132,7 +132,7 @@ struct MenuBarView: View {
                     isInput: true
                 )
             }
-            
+
             if audioManager.selectedOutputDevice != nil {
                 VolumeControl(
                     title: "Output Volume",
@@ -140,9 +140,9 @@ struct MenuBarView: View {
                     isInput: false
                 )
             }
-            
+
             Divider()
-            
+
             // Quit Button
             Button(action: {
                 NSApplication.shared.terminate(nil)

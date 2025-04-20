@@ -11,22 +11,22 @@ enum BannerType {
     case warning
     case success
     case info
-    
+
     var iconName: String {
         switch self {
-        case .error: return "exclamationmark.circle.fill"
-        case .warning: return "exclamationmark.triangle.fill"
-        case .success: return "checkmark.circle.fill"
-        case .info: return "info.circle.fill"
+            case .error: "exclamationmark.circle.fill"
+            case .warning: "exclamationmark.triangle.fill"
+            case .success: "checkmark.circle.fill"
+            case .info: "info.circle.fill"
         }
     }
-    
+
     var color: Color {
         switch self {
-        case .error: return .red
-        case .warning: return .orange
-        case .success: return .green
-        case .info: return Color.blue
+            case .error: .red
+            case .warning: .orange
+            case .success: .green
+            case .info: Color.blue
         }
     }
 }
@@ -38,9 +38,9 @@ struct TunaBanner: View {
     var action: (() -> Void)? = nil
     var actionLabel: String? = nil
     @Binding var isPresented: Bool
-    
+
     @State private var offset: CGFloat = -100
-    
+
     var body: some View {
         VStack {
             HStack(spacing: 12) {
@@ -48,17 +48,17 @@ struct TunaBanner: View {
                 Image(systemName: type.iconName)
                     .font(.system(size: 18))
                     .foregroundColor(type.color)
-                
+
                 // 消息文本
                 Text(message)
                     .font(.system(size: 14))
                     .foregroundColor(Color.white)
                     .multilineTextAlignment(.leading)
-                
+
                 Spacer()
-                
+
                 // 操作按钮（如果有）
-                if let actionLabel = actionLabel, let action = action {
+                if let actionLabel, let action {
                     Button(action: {
                         action()
                     }) {
@@ -72,7 +72,7 @@ struct TunaBanner: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
-                
+
                 // 关闭按钮
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.3)) {
@@ -99,7 +99,7 @@ struct TunaBanner: View {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     offset = 0
                 }
-                
+
                 // 设置自动关闭计时器（5秒）
                 DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                     if isPresented {
@@ -109,7 +109,7 @@ struct TunaBanner: View {
                     }
                 }
             }
-            
+
             Spacer()
         }
         .padding(.top, 8)
@@ -129,10 +129,10 @@ struct TunaBanner_Previews: PreviewProvider {
                 actionLabel: "Settings",
                 isPresented: .constant(true)
             )
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 0.1, green: 0.1, blue: 0.1))
     }
-} 
+}

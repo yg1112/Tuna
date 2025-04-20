@@ -9,28 +9,28 @@ struct CollapsibleCard<Content: View>: View {
     var title: String
     @Binding var isExpanded: Bool
     var content: () -> Content
-    
+
     // Constructor with Binding
     init(title: String, isExpanded: Binding<Bool>, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
-        self._isExpanded = isExpanded
+        _isExpanded = isExpanded
         self.content = content
     }
-    
+
     // Backward compatibility with static isExpanded value
     init(title: String, isExpanded: Bool = true, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
-        self._isExpanded = .constant(isExpanded)
+        _isExpanded = .constant(isExpanded)
         self.content = content
     }
-    
+
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             content()
                 .padding(.top, 6)
         } label: {
             Button(action: {
-                print("🔵 \(title) tapped")          // 调试日志
+                print("🔵 \(title) tapped") // 调试日志
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isExpanded.toggle()
                 }
@@ -49,7 +49,7 @@ struct CollapsibleCard<Content: View>: View {
         }
         .padding(Metrics.cardPad)
         .background(Colors.cardBg)
-        .allowsHitTesting(true)    // 明确允许点击
+        .allowsHitTesting(true) // 明确允许点击
         .cornerRadius(Metrics.cardR)
         .overlay(
             RoundedRectangle(cornerRadius: Metrics.cardR)
@@ -61,8 +61,8 @@ struct CollapsibleCard<Content: View>: View {
                 .frame(width: 3)
                 .opacity(isExpanded ? 1 : 0)
                 .allowsHitTesting(false)
-                .animation(.easeInOut(duration: 0.15), value: isExpanded)
-            ,alignment: .leading
+                .animation(.easeInOut(duration: 0.15), value: isExpanded),
+            alignment: .leading
         )
     }
 }
@@ -75,7 +75,7 @@ struct CollapsibleCard_Previews: PreviewProvider {
                     .font(Typography.body)
                     .padding(.top, 4)
             }
-            
+
             CollapsibleCard(title: "Collapsed Card", isExpanded: .constant(false)) {
                 Text("This content is hidden")
                     .font(Typography.body)
@@ -84,4 +84,4 @@ struct CollapsibleCard_Previews: PreviewProvider {
         }
         .padding()
     }
-} 
+}

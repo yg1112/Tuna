@@ -8,7 +8,7 @@ import SwiftUI
 // TunaCard 视图修饰器，提供统一的卡片样式
 struct TunaCard: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
-    
+
     func body(content: Content) -> some View {
         content
             .padding(16)
@@ -17,7 +17,7 @@ struct TunaCard: ViewModifier {
                     // 背景模糊效果
                     TunaTheme.panel
                         .blur(radius: 0)
-                    
+
                     // 卡片边框
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(TunaTheme.border, lineWidth: 1)
@@ -25,10 +25,12 @@ struct TunaCard: ViewModifier {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             )
             // 暗模式下添加阴影
-            .shadow(color: colorScheme == .dark ? .black.opacity(0.6) : .black.opacity(0.1), 
-                    radius: colorScheme == .dark ? 6 : 4,
-                    x: 0,
-                    y: colorScheme == .dark ? 2 : 1)
+            .shadow(
+                color: colorScheme == .dark ? .black.opacity(0.6) : .black.opacity(0.1),
+                radius: colorScheme == .dark ? 6 : 4,
+                x: 0,
+                y: colorScheme == .dark ? 2 : 1
+            )
     }
 }
 
@@ -56,14 +58,14 @@ struct TunaCardInfo: ViewModifier {
 // 视图扩展，为所有视图添加 tunaCard 修饰器
 extension View {
     func tunaCard() -> some View {
-        self.modifier(TunaCard())
+        modifier(TunaCard())
     }
-    
+
     func tunaCardHeader() -> some View {
-        self.modifier(TunaCardHeader())
+        modifier(TunaCardHeader())
     }
-    
+
     func tunaCardInfo() -> some View {
-        self.modifier(TunaCardInfo())
+        modifier(TunaCardInfo())
     }
-} 
+}

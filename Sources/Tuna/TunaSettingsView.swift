@@ -1,6 +1,6 @@
-import SwiftUI
 import AppKit
 import os.log
+import SwiftUI
 import UserNotifications
 
 // @module: SettingsUI
@@ -16,7 +16,7 @@ extension Color {
 // URL扩展方法 - 添加tilde路径简化
 extension URL {
     func abbreviatingWithTildeInPath() -> String {
-        let path = self.path
+        let path = path
         let homeDirectory = NSHomeDirectory()
         if path.hasPrefix(homeDirectory) {
             return "~" + path.dropFirst(homeDirectory.count)
@@ -29,15 +29,18 @@ struct ModernToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         HStack {
             configuration.label
-            
+
             Spacer()
-            
+
             ZStack {
                 Capsule()
-                    .fill(configuration.isOn ? Color(nsColor: .controlAccentColor) : Color.gray.opacity(0.3))
+                    .fill(
+                        configuration.isOn ? Color(nsColor: .controlAccentColor) : Color.gray
+                            .opacity(0.3)
+                    )
                     .frame(width: 40, height: 15)
                     .focusable(false)
-                
+
                 Circle()
                     .fill(Color.white)
                     .shadow(radius: 1)
@@ -60,17 +63,17 @@ struct GlassCard: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(.horizontal, 16) // 统一卡片内水平边距为16pt
-            .padding(.vertical, 16)   // 统一卡片内垂直边距为16pt
+            .padding(.vertical, 16) // 统一卡片内垂直边距为16pt
             .background(
                 ZStack {
                     // 毛玻璃背景 - 稍微提亮
                     Color(red: 0.18, green: 0.18, blue: 0.18)
-                    
+
                     // 微弱光晕效果模拟曲面反光
                     LinearGradient(
                         gradient: Gradient(colors: [
                             Color.white.opacity(0.08),
-                            Color.clear
+                            Color.clear,
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -88,7 +91,7 @@ struct GlassCard: ViewModifier {
 
 extension View {
     func glassCard() -> some View {
-        self.modifier(GlassCard())
+        modifier(GlassCard())
     }
 }
 
@@ -109,22 +112,22 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case appearance
     case advanced
     case support
-    
-    var id: String { self.rawValue }
-    
+
+    var id: String { rawValue }
+
     var icon: String {
         switch self {
-        case .general: return "gear"
-        case .dictation: return "mic"
-        case .audio: return "speaker.wave.3"
-        case .appearance: return "paintbrush"
-        case .advanced: return "wrench.and.screwdriver"
-        case .support: return "questionmark.circle"
+            case .general: "gear"
+            case .dictation: "mic"
+            case .audio: "speaker.wave.3"
+            case .appearance: "paintbrush"
+            case .advanced: "wrench.and.screwdriver"
+            case .support: "questionmark.circle"
         }
     }
-    
+
     var label: String {
-        self.rawValue.capitalized
+        rawValue.capitalized
     }
 }
 
@@ -138,7 +141,7 @@ struct TunaSettingsView: View {
     @ObservedObject private var settings = TunaSettings.shared
     @State private var selectedTab: SettingsTab = .general
     @ObservedObject private var audioManager = AudioManager.shared
-    
+
     var body: some View {
         HStack(spacing: 0) {
             // Sidebar
@@ -151,29 +154,29 @@ struct TunaSettingsView: View {
                         action: { selectedTab = tab }
                     )
                 }
-                
+
                 Spacer()
             }
             .frame(width: 120)
             .padding(.top, 16)
             .background(Color(.windowBackgroundColor).opacity(0.9))
-            
+
             // Content
             ScrollView {
                 VStack(alignment: .leading, spacing: Metrics.cardPad * 1.5) {
                     switch selectedTab {
-                    case .general:
-                        generalTabView
-                    case .dictation:
-                        dictationTabView
-                    case .audio:
-                        audioTabView
-                    case .appearance:
-                        appearanceTabView
-                    case .advanced:
-                        advancedTabView
-                    case .support:
-                        supportTabView
+                        case .general:
+                            generalTabView
+                        case .dictation:
+                            dictationTabView
+                        case .audio:
+                            audioTabView
+                        case .appearance:
+                            appearanceTabView
+                        case .advanced:
+                            advancedTabView
+                        case .support:
+                            supportTabView
                     }
                 }
                 .padding(Metrics.cardPad * 2)
@@ -181,9 +184,9 @@ struct TunaSettingsView: View {
         }
         .frame(minWidth: 630, minHeight: 300)
     }
-    
+
     // MARK: - Tab Views
-    
+
     private var generalTabView: some View {
         VStack(alignment: .leading, spacing: Metrics.cardPad * 1.5) {
             CollapsibleCard(title: "Launch on Startup") {
@@ -191,12 +194,14 @@ struct TunaSettingsView: View {
                     .font(Typography.body)
                     .padding(.top, 4)
             }
-            
+
             CollapsibleCard(title: "Check for Updates") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Current version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
-                        .font(Typography.body)
-                    
+                    Text(
+                        "Current version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")"
+                    )
+                    .font(Typography.body)
+
                     Button("Check Now") {
                         // Call update manager
                         // UpdateManager.checkNow()
@@ -206,18 +211,21 @@ struct TunaSettingsView: View {
             }
         }
     }
-    
+
     private var dictationTabView: some View {
         VStack(alignment: .leading, spacing: Metrics.cardPad * 1.5) {
             CollapsibleCard(title: "Shortcut (PRO)") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Enable global dictation shortcut", isOn: $settings.enableDictationShortcut)
-                        .font(Typography.body)
-                    
+                    Toggle(
+                        "Enable global dictation shortcut",
+                        isOn: $settings.enableDictationShortcut
+                    )
+                    .font(Typography.body)
+
                     HStack {
                         Text("Key combination:")
                             .font(Typography.body)
-                        
+
                         ShortcutTextField(
                             keyCombo: $settings.dictationShortcutKeyCombo,
                             placeholder: "Click to set shortcut"
@@ -227,12 +235,12 @@ struct TunaSettingsView: View {
                     .disabled(!settings.enableDictationShortcut)
                 }
             }
-            
+
             CollapsibleCard(title: "Magic Transform (PRO)") {
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle("Enable text transformation", isOn: $settings.magicEnabled)
                         .font(Typography.body)
-                    
+
                     Picker("Transformation style:", selection: $settings.magicPreset) {
                         ForEach(PresetStyle.allCases) { style in
                             Text(style.rawValue).tag(style)
@@ -243,7 +251,7 @@ struct TunaSettingsView: View {
                     .padding(.top, 4)
                 }
             }
-            
+
             CollapsibleCard(title: "Engine", isExpanded: false) {
                 VStack(alignment: .leading, spacing: 8) {
                     SecureField("Whisper API Key", text: .constant(""))
@@ -253,13 +261,13 @@ struct TunaSettingsView: View {
                 }
                 .padding(.top, 4)
             }
-            
+
             CollapsibleCard(title: "Transcription Output", isExpanded: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Format:")
                             .font(Typography.body)
-                        
+
                         Picker("", selection: $settings.transcriptionFormat) {
                             Text("Text (TXT)").tag("txt")
                             Text("Subtitles (SRT)").tag("srt")
@@ -270,12 +278,15 @@ struct TunaSettingsView: View {
                         .labelsHidden()
                         .frame(width: 280)
                     }
-                    
+
                     HStack {
                         Text("Save directory:")
                             .font(Typography.body)
-                        
-                        Button(settings.transcriptionOutputDirectory?.lastPathComponent ?? "Choose...") {
+
+                        Button(
+                            settings.transcriptionOutputDirectory?
+                                .lastPathComponent ?? "Choose..."
+                        ) {
                             // Open directory picker
                             // let panel = NSOpenPanel()
                             // panel.canChooseDirectories = true
@@ -286,30 +297,36 @@ struct TunaSettingsView: View {
                         }
                         .frame(width: 180, alignment: .leading)
                     }
-                    
-                    Toggle("Auto-copy transcription to clipboard", isOn: $settings.autoCopyTranscriptionToClipboard)
-                        .font(Typography.body)
+
+                    Toggle(
+                        "Auto-copy transcription to clipboard",
+                        isOn: $settings.autoCopyTranscriptionToClipboard
+                    )
+                    .font(Typography.body)
                 }
                 .padding(.top, 4)
             }
         }
     }
-    
+
     private var audioTabView: some View {
         VStack(alignment: .leading, spacing: Metrics.cardPad * 1.5) {
             CollapsibleCard(title: "Smart Swaps") {
-                Toggle("Automatically change audio devices based on context", isOn: $settings.enableSmartSwitching)
-                    .font(Typography.body)
-                    .padding(.top, 4)
+                Toggle(
+                    "Automatically change audio devices based on context",
+                    isOn: $settings.enableSmartSwitching
+                )
+                .font(Typography.body)
+                .padding(.top, 4)
             }
-            
+
             CollapsibleCard(title: "Audio Devices") {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Output:")
                             .font(Typography.body)
                             .frame(width: 60, alignment: .leading)
-                        
+
                         Picker("Output device", selection: $settings.preferredOutputDeviceUID) {
                             ForEach(audioManager.outputDevices, id: \.uid) { device in
                                 Text(device.name).tag(device.uid)
@@ -317,12 +334,12 @@ struct TunaSettingsView: View {
                         }
                         .labelsHidden()
                     }
-                    
+
                     HStack {
                         Text("Input:")
                             .font(Typography.body)
                             .frame(width: 60, alignment: .leading)
-                        
+
                         Picker("Input device", selection: $settings.preferredInputDeviceUID) {
                             ForEach(audioManager.inputDevices, id: \.uid) { device in
                                 Text(device.name).tag(device.uid)
@@ -330,12 +347,12 @@ struct TunaSettingsView: View {
                         }
                         .labelsHidden()
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Volume:")
                             .font(Typography.body)
-                        
-                        Slider(value: .constant(0.8), in: 0...1)
+
+                        Slider(value: .constant(0.8), in: 0 ... 1)
                             .frame(maxWidth: 280)
                     }
                     .padding(.top, 4)
@@ -344,7 +361,7 @@ struct TunaSettingsView: View {
             }
         }
     }
-    
+
     private var appearanceTabView: some View {
         VStack(alignment: .leading, spacing: Metrics.cardPad * 1.5) {
             CollapsibleCard(title: "Theme") {
@@ -356,21 +373,21 @@ struct TunaSettingsView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.top, 4)
             }
-            
+
             CollapsibleCard(title: "Appearance") {
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Glass strength:")
                             .font(Typography.body)
-                        
-                        Slider(value: .constant(0.7), in: 0...1)
+
+                        Slider(value: .constant(0.7), in: 0 ... 1)
                             .frame(maxWidth: 280)
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Font size:")
                             .font(Typography.body)
-                        
+
                         Picker("", selection: .constant("system")) {
                             Text("Small").tag("small")
                             Text("System").tag("system")
@@ -380,7 +397,7 @@ struct TunaSettingsView: View {
                         .frame(maxWidth: 280)
                         .labelsHidden()
                     }
-                    
+
                     Toggle("Reduce motion", isOn: .constant(false))
                         .font(Typography.body)
                 }
@@ -388,7 +405,7 @@ struct TunaSettingsView: View {
             }
         }
     }
-    
+
     private var advancedTabView: some View {
         VStack(alignment: .leading, spacing: Metrics.cardPad * 1.5) {
             CollapsibleCard(title: "Beta Features") {
@@ -396,13 +413,13 @@ struct TunaSettingsView: View {
                     .font(Typography.body)
                     .padding(.top, 4)
             }
-            
+
             CollapsibleCard(title: "Debug") {
                 VStack(alignment: .leading, spacing: 12) {
                     Button("Export Debug Log") {
                         // DebugLog.export()
                     }
-                    
+
                     Button("Reset All Settings") {
                         // Add confirmation alert
                         // Settings.resetAll()
@@ -413,7 +430,7 @@ struct TunaSettingsView: View {
             }
         }
     }
-    
+
     private var supportTabView: some View {
         VStack(alignment: .leading, spacing: Metrics.cardPad * 1.5) {
             CollapsibleCard(title: "About Tuna") {
@@ -421,14 +438,16 @@ struct TunaSettingsView: View {
                     Image(systemName: "waveform")
                         .font(.system(size: 32))
                         .foregroundColor(Colors.accent)
-                    
+
                     Text("Tuna - Your audio assistant")
                         .font(Typography.title)
-                    
-                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
-                        .font(Typography.caption)
-                        .foregroundColor(.secondary)
-                    
+
+                    Text(
+                        "Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")"
+                    )
+                    .font(Typography.caption)
+                    .foregroundColor(.secondary)
+
                     Button("Contact Us") {
                         if let url = URL(string: "mailto:support@tuna.app") {
                             NSWorkspace.shared.open(url)
@@ -447,4 +466,4 @@ struct TunaSettingsView_Previews: PreviewProvider {
     static var previews: some View {
         TunaSettingsView()
     }
-} 
+}

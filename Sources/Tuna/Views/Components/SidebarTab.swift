@@ -10,14 +10,14 @@ struct SidebarTab: View {
     var label: String
     var isSelected: Bool
     var action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 22))
                     .frame(width: 22, height: 22)
-                
+
                 Text(label)
                     .sidebarItemStyle(isSelected: isSelected)
             }
@@ -38,7 +38,7 @@ struct SidebarTab_Previews: PreviewProvider {
                 isSelected: true,
                 action: {}
             )
-            
+
             SidebarTab(
                 icon: "mic",
                 label: "Dictation",
@@ -50,4 +50,4 @@ struct SidebarTab_Previews: PreviewProvider {
         .background(Color(.windowBackgroundColor))
         .previewLayout(.sizeThatFits)
     }
-} 
+}

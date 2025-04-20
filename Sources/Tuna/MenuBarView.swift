@@ -1,8 +1,8 @@
-import SwiftUI
 import AppKit
 import CoreAudio
 import CoreAudio.AudioHardware
 import os
+import SwiftUI
 
 // 存储 About 窗口的全局变量
 var aboutWindowReference: NSWindowController?
@@ -11,35 +11,43 @@ var aboutWindowReference: NSWindowController?
 extension MenuBarView {
     static func activateDictationTab() {
         print("🔍 [DEBUG] MenuBarView.activateDictationTab() 被调用")
-        Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] activateDictationTab 被调用")
-        
+        Logger(subsystem: "ai.tuna", category: "Shortcut")
+            .notice("[DIRECT] activateDictationTab 被调用")
+
         // 使用TabRouter.switchTo切换标签
         TabRouter.switchToTab(.whispen)
         print("🔍 [DEBUG] 已调用TabRouter.switchToTab(.whispen)")
-        
+
         // 找到当前 popover 里的 MenuBarView
         if let window = AppDelegate.shared?.popover.contentViewController?.view.window,
-           let host = window.contentView?.subviews.first(where: { $0 is NSHostingView<MenuBarView> })
-                as? NSHostingView<MenuBarView> {
-
-            print("🔍 [DEBUG] 找到了MenuBarView实例，检查当前tab是: \(host.rootView.router.currentTab.rawValue)")
+           let host = window.contentView?.subviews
+               .first(where: { $0 is NSHostingView<MenuBarView> })
+               as? NSHostingView<MenuBarView>
+        {
+            print(
+                "🔍 [DEBUG] 找到了MenuBarView实例，检查当前tab是: \(host.rootView.router.currentTab.rawValue)"
+            )
             print("🔍 [DEBUG] 该实例的router ID: \(ObjectIdentifier(host.rootView.router))")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.currentTab.rawValue)")
-            
+            Logger(subsystem: "ai.tuna", category: "Shortcut")
+                .notice(
+                    "[DIRECT] 找到了MenuBarView实例，当前tab是: \(host.rootView.router.currentTab.rawValue)"
+                )
+
             // 确保路由状态正确后，启动录音
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 print("🔍 [DEBUG] 延时0.3秒后启动录音")
-                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("延时0.3秒后启动录音")
+                Logger(subsystem: "ai.tuna", category: "Shortcut").notice("延时0.3秒后启动录音")
                 DictationManager.shared.startRecording()
             }
         } else {
             print("⚠️ [WARNING] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").warning("[DIRECT] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
-            
+            Logger(subsystem: "ai.tuna", category: "Shortcut")
+                .warning("[DIRECT] 找不到MenuBarView实例，已通过TabRouter.switchTo切换")
+
             // 即使找不到MenuBarView实例，也尝试启动录音
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 print("🔍 [DEBUG] 找不到实例，延时0.5秒后启动录音")
-                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("找不到实例，延时0.5秒后启动录音")
+                Logger(subsystem: "ai.tuna", category: "Shortcut").notice("找不到实例，延时0.5秒后启动录音")
                 DictationManager.shared.startRecording()
             }
         }
@@ -53,7 +61,7 @@ struct MenuBarView: View {
     @StateObject var router = TabRouter.shared
     @StateObject var dictationManager = DictationManager.shared
     @StateObject var statsStore = StatsStore.shared
-    
+
     @State private var outputButtonHovered = false
     @State private var inputButtonHovered = false
     @State private var statusAppeared = false
@@ -61,12 +69,12 @@ struct MenuBarView: View {
     @State private var isPinned = false
     @State private var isExpanded = true
     @State private var debugMessage: String = "" // 添加调试消息状态
-    
+
     // 添加共享的卡片宽度常量
     let cardWidth: CGFloat = 300
-    
+
     private let logger = Logger(subsystem: "ai.tuna", category: "UI")
-    
+
     var body: some View {
         TunaMenuBarView(
             audioManager: audioManager,
@@ -82,74 +90,92 @@ struct MenuBarView: View {
             print("[DEBUG] MenuBarView appeared – observer added")
             print("🖼 router id in MenuBarView.onAppear:", ObjectIdentifier(router))
             print("🟡 router.current =", router.current, "router id =", ObjectIdentifier(router))
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("MenuBarView appeared – observer added")
+            Logger(subsystem: "ai.tuna", category: "Shortcut")
+                .notice("MenuBarView appeared – observer added")
             // 确保Smart Swaps在UI加载后被应用
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                let smartSwapsEnabled = UserDefaults.standard.bool(forKey: "enableSmartDeviceSwapping")
+                let smartSwapsEnabled = UserDefaults.standard
+                    .bool(forKey: "enableSmartDeviceSwapping")
                 if smartSwapsEnabled {
                     NotificationCenter.default.post(
                         name: NSNotification.Name("smartSwapsStatusChanged"),
-                        object: nil, 
+                        object: nil,
                         userInfo: ["enabled": true]
                     )
                 }
             }
-            
+
             // 检查系统设置
             showVolumeControls = settings.showVolumeSliders
-            
+
             // 检查固定状态
             isPinned = UserDefaults.standard.bool(forKey: "popoverPinned")
-            
+
             // 添加调试信息
             print("🔍 [DEBUG] MenuBarView.onAppear - 开始监听switchToTab通知")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 MenuBarView.onAppear - 开始监听switchToTab通知")
-            
+            Logger(subsystem: "ai.tuna", category: "Shortcut")
+                .notice("🔍 MenuBarView.onAppear - 开始监听switchToTab通知")
+
             // 添加切换选项卡通知监听
             NotificationCenter.default.addObserver(
                 forName: Notification.Name.switchToTab,
                 object: nil,
-                queue: .main) { notification in
+                queue: .main
+            ) { notification in
                 if let tab = notification.userInfo?["tab"] as? String {
                     print("🔍 [DEBUG] MenuBarView 收到切换选项卡通知: \(tab)")
-                    Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 MenuBarView 收到切换选项卡通知: \(tab)")
-                    
+                    Logger(subsystem: "ai.tuna", category: "Shortcut")
+                        .notice("🔍 MenuBarView 收到切换选项卡通知: \(tab)")
+
                     withAnimation {
                         // 使用TabRouter.switchTo统一切换标签
                         TabRouter.switchTo(tab)
-                        print("switchToTab -> \(tab), router id: \(ObjectIdentifier(self.router))")
-                        
+                        print(
+                            "switchToTab -> \(tab), router id: \(ObjectIdentifier(router))"
+                        )
+
                         // 如果切换到dictation选项卡，自动启动录音
                         if tab == "dictation" {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from MenuBarView")
-                                self.dictationManager.startRecording()
+                                Logger(subsystem: "ai.tuna", category: "Shortcut")
+                                    .notice("[R] call startRecording() from MenuBarView")
+                                dictationManager.startRecording()
                                 print("🎙 通过MenuBarView启动录音")
                             }
                         }
                     }
                 } else {
                     print("❌ [ERROR] MenuBarView 收到切换选项卡通知，但tab参数为nil")
-                    Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ MenuBarView 收到切换选项卡通知，但tab参数为nil")
+                    Logger(subsystem: "ai.tuna", category: "Shortcut")
+                        .error("❌ MenuBarView 收到切换选项卡通知，但tab参数为nil")
                 }
             }
-            
+
             // 添加dictationDebugMessage通知监听
             NotificationCenter.default.addObserver(
                 forName: NSNotification.Name("dictationDebugMessage"),
                 object: nil,
-                queue: .main) { notification in
+                queue: .main
+            ) { notification in
                 if let message = notification.userInfo?["message"] as? String {
                     print("🔍 [DEBUG] MenuBarView 收到dictationDebugMessage通知: \(message)")
-                    self.debugMessage = message
+                    debugMessage = message
                 }
             }
         }
         .onDisappear {
             // 移除通知监听
             print("🔍 [DEBUG] MenuBarView.onDisappear - 移除通知监听器")
-            NotificationCenter.default.removeObserver(self, name: Notification.Name.switchToTab, object: nil)
-            NotificationCenter.default.removeObserver(self, name: NSNotification.Name("dictationDebugMessage"), object: nil)
+            NotificationCenter.default.removeObserver(
+                self,
+                name: Notification.Name.switchToTab,
+                object: nil
+            )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSNotification.Name("dictationDebugMessage"),
+                object: nil
+            )
         }
     }
 }
@@ -161,40 +187,40 @@ struct DevicePreferenceRow: View {
     let deviceName: String
     let onSelect: () -> Void
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: onSelect) {
-        HStack {
+            HStack {
                 // 图标
                 Image(systemName: iconName)
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.8))
                     .frame(width: 20)
-                
+
                 // 标题
                 Text(title)
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.8))
-                
+
                 Spacer()
-                
+
                 // 设备名称
                 Text(deviceName)
-                            .font(.system(size: 13))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                
+                    .font(.system(size: 13))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
                 // 下拉图标
                 Image(systemName: "chevron.down")
                     .font(.system(size: 11))
                     .foregroundColor(.white.opacity(0.7))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
             .background(isHovered ? Color.white.opacity(0.1) : Color.clear)
             .cornerRadius(6)
-                }
-                .buttonStyle(PlainButtonStyle())
+        }
+        .buttonStyle(PlainButtonStyle())
         .focusable(false)
         .onHover { hovering in
             isHovered = hovering
@@ -212,16 +238,16 @@ struct TunaMenuBarView: View {
     let isOutputHovered: Bool
     let isInputHovered: Bool
     let cardWidth: CGFloat
-    
+
     // 固定尺寸
-    private let fixedWidth: CGFloat = 400  // 使用固定宽度400
+    private let fixedWidth: CGFloat = 400 // 使用固定宽度400
     // 去除固定高度，改为自适应
-    
+
     @State private var showingAboutWindow = false
     @State private var isPinned = false // 添加固定状态
-    
+
     @Environment(\.colorScheme) var colorScheme
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // 1. 顶部区域 - 标题和标签选择
@@ -231,9 +257,9 @@ struct TunaMenuBarView: View {
                     Text("Tuna")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(TunaTheme.textPri)
-                    
+
                     Spacer()
-                    
+
                     // 添加固定/取消固定按钮
                     Button(action: {
                         isPinned.toggle()
@@ -263,12 +289,12 @@ struct TunaMenuBarView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                
+
                 // 添加Stats Ribbon
                 StatsRibbonView(store: statsStore)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
-                
+
                 // Tab 切换栏 - 使用新的设计
                 HStack(spacing: 0) {
                     // Devices 标签
@@ -278,7 +304,7 @@ struct TunaMenuBarView: View {
                         action: { router.currentTab = .devices }
                     )
                     .frame(maxWidth: .infinity)
-                    
+
                     // Whispen 标签
                     NewTabButton(
                         title: TunaTab.whispen.rawValue,
@@ -290,39 +316,39 @@ struct TunaMenuBarView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             }
-            
+
             // 2. 中间内容区域 - 使用GeometryReader动态调整高度的可滚动区域
             ScrollView {
                 VStack(spacing: 0) {
                     switch router.currentTab {
-                    case .devices:
-                        // 设备卡片区域
-                        VStack(spacing: 12) {
-                            // 添加Smart Swaps状态指示器
-                            SmartSwapsStatusIndicator()
-                                .padding(.bottom, 4)
-                            
-                            OutputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
-                            )
-                            
-                            InputDeviceCard(
-                                audioManager: audioManager,
-                                settings: settings
-                            )
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        
-                    case .whispen:
-                        DictationView()
-                            .environmentObject(dictationManager) // 明确注入DictationManager
-                            .environmentObject(router) // 确保router被正确传递
+                        case .devices:
+                            // 设备卡片区域
+                            VStack(spacing: 12) {
+                                // 添加Smart Swaps状态指示器
+                                SmartSwapsStatusIndicator()
+                                    .padding(.bottom, 4)
+
+                                OutputDeviceCard(
+                                    audioManager: audioManager,
+                                    settings: settings
+                                )
+
+                                InputDeviceCard(
+                                    audioManager: audioManager,
+                                    settings: settings
+                                )
+                            }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
+
+                        case .whispen:
+                            DictationView()
+                                .environmentObject(dictationManager) // 明确注入DictationManager
+                                .environmentObject(router) // 确保router被正确传递
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
                     }
-                    
+
                     // 添加一个空间占位符，确保所有标签页内容至少占据相同的高度
                     // 这样可以保证底部按钮位置一致
                     Spacer(minLength: 50)
@@ -331,14 +357,14 @@ struct TunaMenuBarView: View {
             }
             .frame(height: 360) // 固定高度，确保足够显示两个设备卡片
             .scrollIndicators(.hidden) // 隐藏所有滚动指示器
-            
+
             Divider() // 添加分隔线，视觉上区分内容区和底部按钮区
                 .background(TunaTheme.border)
-            
+
             // 3. 底部按钮栏 - 固定位置
             HStack(spacing: 21) {
                 Spacer()
-                
+
                 // 退出按钮
                 Button(action: {
                     NSApplication.shared.terminate(nil)
@@ -351,7 +377,7 @@ struct TunaMenuBarView: View {
                 .buttonStyle(PlainButtonStyle())
                 .focusable(false)
                 .help("退出应用")
-                
+
                 // 关于按钮
                 Button(action: {
                     showAboutWindow()
@@ -364,7 +390,7 @@ struct TunaMenuBarView: View {
                 .buttonStyle(PlainButtonStyle())
                 .focusable(false)
                 .help("关于")
-                
+
                 // 设置按钮
                 Button(action: {
                     showSettingsWindow()
@@ -394,13 +420,18 @@ struct TunaMenuBarView: View {
         )
         .onAppear {
             print("🖼 router id in TunaMenuBarView.onAppear:", ObjectIdentifier(router))
-            print("🟡 TunaMenuBarView.body router.current =", router.current, "router id =", ObjectIdentifier(router))
+            print(
+                "🟡 TunaMenuBarView.body router.current =",
+                router.current,
+                "router id =",
+                ObjectIdentifier(router)
+            )
             print("ROUTER-DBG [3]", ObjectIdentifier(router), router.current)
-            
+
             // 当视图出现时，恢复固定状态
             let savedPinState = UserDefaults.standard.bool(forKey: "popoverPinned")
             if savedPinState {
-                self.isPinned = savedPinState
+                isPinned = savedPinState
                 // 通知AppDelegate恢复固定状态
                 NotificationCenter.default.post(
                     name: NSNotification.Name("togglePinned"),
@@ -409,52 +440,64 @@ struct TunaMenuBarView: View {
                 )
                 print("\u{001B}[36m[UI]\u{001B}[0m Restored pin status: \(savedPinState)")
             }
-            
+
             // 添加AutoSize Popover
             if let hostingView = NSApplication.shared.windows.first?.contentView {
                 AppDelegate.shared?.popover.contentSize = hostingView.intrinsicContentSize
             }
-            
+
             // 添加调试信息
             print("🔍 [DEBUG] TunaMenuBarView.onAppear - 开始监听switchToTab通知")
-            Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 TunaMenuBarView.onAppear - 开始监听switchToTab通知")
-            
+            Logger(subsystem: "ai.tuna", category: "Shortcut")
+                .notice("🔍 TunaMenuBarView.onAppear - 开始监听switchToTab通知")
+
             // 添加通知监听
             NotificationCenter.default.addObserver(
                 forName: Notification.Name.switchToTab,
                 object: nil,
-                queue: .main) { notification in
+                queue: .main
+            ) { notification in
                 if let tab = notification.userInfo?["tab"] as? String {
                     print("🔍 [DEBUG] TunaMenuBarView 收到切换选项卡通知: \(tab)")
-                    Logger(subsystem:"ai.tuna",category:"Shortcut").notice("🔍 TunaMenuBarView 收到切换选项卡通知: \(tab)")
-                    
+                    Logger(subsystem: "ai.tuna", category: "Shortcut")
+                        .notice("🔍 TunaMenuBarView 收到切换选项卡通知: \(tab)")
+
                     withAnimation {
                         // 使用TabRouter.switchTo统一切换标签
                         TabRouter.switchTo(tab)
-                        print("TunaMenuBarView switchToTab -> \(tab), router id: \(ObjectIdentifier(self.router))")
-                        
+                        print(
+                            "TunaMenuBarView switchToTab -> \(tab), router id: \(ObjectIdentifier(router))"
+                        )
+
                         // 如果切换到dictation选项卡，自动启动录音
                         if tab == "dictation" {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                Logger(subsystem:"ai.tuna",category:"Shortcut").notice("[R] call startRecording() from TunaMenuBarView")
-                                self.dictationManager.startRecording()  // 使用self.dictationManager代替DictationManager.shared
+                                Logger(subsystem: "ai.tuna", category: "Shortcut")
+                                    .notice("[R] call startRecording() from TunaMenuBarView")
+                                dictationManager
+                                    .startRecording() // 使用self.dictationManager代替DictationManager.shared
                                 print("🎙 尝试通过TunaMenuBarView启动录音")
                             }
                         }
                     }
                 } else {
                     print("❌ [ERROR] TunaMenuBarView 收到切换选项卡通知，但tab参数为nil")
-                    Logger(subsystem:"ai.tuna",category:"Shortcut").error("❌ TunaMenuBarView 收到切换选项卡通知，但tab参数为nil")
+                    Logger(subsystem: "ai.tuna", category: "Shortcut")
+                        .error("❌ TunaMenuBarView 收到切换选项卡通知，但tab参数为nil")
                 }
             }
         }
         .onDisappear {
             // 移除通知监听
             print("🔍 [DEBUG] TunaMenuBarView.onDisappear - 移除通知监听器")
-            NotificationCenter.default.removeObserver(self, name: Notification.Name.switchToTab, object: nil)
+            NotificationCenter.default.removeObserver(
+                self,
+                name: Notification.Name.switchToTab,
+                object: nil
+            )
         }
     }
-    
+
     // 显示关于窗口
     private func showAboutWindow() {
         if aboutWindowReference == nil {
@@ -467,19 +510,19 @@ struct TunaMenuBarView: View {
             window.title = "About Tuna"
             window.center()
             window.isReleasedWhenClosed = false
-            
+
             let aboutView = AboutCardView()
             let hostingView = NSHostingView(rootView: aboutView)
             window.contentView = hostingView
-            
+
             aboutWindowReference = NSWindowController(window: window)
         }
-        
+
         NSApp.activate(ignoringOtherApps: true)
         aboutWindowReference?.showWindow(nil)
         aboutWindowReference?.window?.makeKeyAndOrderFront(nil)
     }
-    
+
     // 显示设置窗口
     private func showSettingsWindow() {
         NotificationCenter.default.post(name: NSNotification.Name("showSettings"), object: nil)
@@ -491,9 +534,9 @@ struct NewTabButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     @Environment(\.colorScheme) var colorScheme
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 0) {
@@ -505,7 +548,7 @@ struct NewTabButton: View {
                     .padding(.vertical, 8)
                     .foregroundColor(isSelected ? TunaTheme.textPri : TunaTheme.textSec)
                     .background(isSelected ? TunaTheme.accent.opacity(0.18) : Color.clear)
-                
+
                 // 选中指示器
                 if isSelected {
                     Capsule()
@@ -529,18 +572,18 @@ struct NewTabButton: View {
 // Smart Swaps 状态指示器组件
 struct SmartSwapsStatusIndicator: View {
     @ObservedObject private var settings = TunaSettings.shared
-    
+
     var body: some View {
         if settings.enableSmartSwitching {
             HStack {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 11))
                     .foregroundColor(TunaTheme.accent)
-                
+
                 Text("Smart Device Switching: On")
                     .font(.system(size: 12))
                     .foregroundColor(TunaTheme.textSec)
-                
+
                 Spacer()
             }
             .padding(.vertical, 4)
@@ -558,7 +601,7 @@ struct DictationView: View {
     @EnvironmentObject var dictationManager: DictationManager
     @State private var showSavePanel = false
     @State private var statusMessage = ""
-    
+
     var body: some View {
         VStack(spacing: 20) {
             // 顶部标题区域 - 现代化设计
@@ -566,16 +609,16 @@ struct DictationView: View {
                 Text("语音转文字")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
-                
+
                 Spacer()
-                
-                if dictationManager.isRecording && !dictationManager.isPaused {
+
+                if dictationManager.isRecording, !dictationManager.isPaused {
                     // 录音指示器
                     HStack(spacing: 4) {
                         Circle()
                             .fill(Color.red)
                             .frame(width: 8, height: 8)
-                        
+
                         Text("录音中")
                             .font(.system(size: 12))
                             .foregroundColor(.white.opacity(0.8))
@@ -586,7 +629,7 @@ struct DictationView: View {
                     .cornerRadius(10)
                 }
             }
-            
+
             // 如果有状态消息，显示错误提示
             if !statusMessage.isEmpty {
                 Text(statusMessage)
@@ -597,11 +640,15 @@ struct DictationView: View {
                     .background(Color.black.opacity(0.2))
                     .cornerRadius(6)
             }
-            
+
             // 文本输出框和清除按钮
             ZStack(alignment: .topTrailing) {
                 ScrollView {
-                    Text(dictationManager.transcribedText.isEmpty ? "Transcription will appear here..." : dictationManager.transcribedText)
+                    Text(
+                        dictationManager.transcribedText
+                            .isEmpty ? "Transcription will appear here..." : dictationManager
+                            .transcribedText
+                    )
                     .font(.system(size: 14))
                     .foregroundColor(dictationManager.transcribedText.isEmpty ? .gray : .white)
                     .padding(8)
@@ -612,15 +659,23 @@ struct DictationView: View {
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                    .stroke(
-                        dictationManager.isRecording && !dictationManager.isPaused ? 
-                        Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
-                        Color.white.opacity(dictationManager.breathingAnimation ? 0.7 : 0.3), // 非录音时保持呼吸动画
-                        lineWidth: dictationManager.isRecording && !dictationManager.isPaused ? 2.0 : (dictationManager.breathingAnimation ? 2.0 : 0.5)
-                    )
-                    .scaleEffect(dictationManager.isRecording && !dictationManager.isPaused ? 1.0 : (dictationManager.breathingAnimation ? 1.025 : 1.0)) // 录音时不需要缩放效果
+                        .stroke(
+                            dictationManager.isRecording && !dictationManager.isPaused ?
+                                Color.white.opacity(0.8) : // 录音时显示常亮的珍珠白色边框
+                                Color.white.opacity(
+                                    dictationManager.breathingAnimation ? 0.7 : 0.3
+                                ),
+                            // 非录音时保持呼吸动画
+                            lineWidth: dictationManager.isRecording && !dictationManager
+                                .isPaused ? 2.0 : (dictationManager.breathingAnimation ? 2.0 : 0.5)
+                        )
+                        .scaleEffect(
+                            dictationManager.isRecording && !dictationManager
+                                .isPaused ? 1.0 :
+                                (dictationManager.breathingAnimation ? 1.025 : 1.0)
+                        ) // 录音时不需要缩放效果
                 )
-                
+
                 // 清除按钮
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -636,7 +691,7 @@ struct DictationView: View {
                 .focusable(false)
                 .opacity(dictationManager.transcribedText.isEmpty ? 0 : 1)
             }
-            
+
             // 调整按钮布局 - 使录制按钮在左侧，复制/导出按钮在右侧
             HStack(spacing: 20) {
                 // 录制按钮 - 放在左边
@@ -655,20 +710,37 @@ struct DictationView: View {
                     }
                 }) {
                     HStack(spacing: 5) {
-                        Image(systemName: dictationManager.isRecording ? (dictationManager.isPaused ? "play.circle" : "pause.circle") : "mic.circle")
-                            .font(.system(size: 18))
-                        Text(dictationManager.isRecording ? (dictationManager.isPaused ? "Continue" : "Pause") : "Record")
-                            .font(.system(size: 13))
+                        Image(
+                            systemName: dictationManager
+                                .isRecording ?
+                                (dictationManager.isPaused ? "play.circle" : "pause.circle") :
+                                "mic.circle"
+                        )
+                        .font(.system(size: 18))
+                        Text(
+                            dictationManager
+                                .isRecording ? (dictationManager.isPaused ? "Continue" : "Pause") :
+                                "Record"
+                        )
+                        .font(.system(size: 13))
                     }
                     .frame(height: 24)
                     .padding(.horizontal, 10)
-                    .background(dictationManager.isRecording && !dictationManager.isPaused ? Color.red.opacity(0.8) : Color.blue.opacity(0.7))
+                    .background(
+                        dictationManager.isRecording && !dictationManager.isPaused ? Color
+                            .red.opacity(0.8) : Color.blue.opacity(0.7)
+                    )
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .help(dictationManager.isRecording ? (dictationManager.isPaused ? "Continue recording" : "Pause recording") : "Start recording")
-                
+                .help(
+                    dictationManager
+                        .isRecording ?
+                        (dictationManager.isPaused ? "Continue recording" : "Pause recording") :
+                        "Start recording"
+                )
+
                 // 停止按钮 - 只在录音过程中显示
                 if dictationManager.isRecording {
                     Button(action: {
@@ -692,10 +764,10 @@ struct DictationView: View {
                     .help("Stop recording")
                     .transition(.scale)
                 }
-                
+
                 // 右侧按钮组 - 复制和导出
                 Spacer()
-                
+
                 // 复制按钮
                 Button(action: {
                     let pasteboard = NSPasteboard.general
@@ -718,7 +790,7 @@ struct DictationView: View {
                 .disabled(dictationManager.transcribedText.isEmpty)
                 .opacity(dictationManager.transcribedText.isEmpty ? 0.5 : 1)
                 .help("Copy text to clipboard")
-                
+
                 // 保存按钮
                 Button(action: {
                     saveTranscription()
@@ -740,21 +812,28 @@ struct DictationView: View {
                 .opacity(dictationManager.transcribedText.isEmpty ? 0.5 : 1)
                 .help("Save transcription to a file")
             }
-            
+
             // 状态指示区域
             VStack(spacing: 4) {
                 // 显示状态或进度文本
-                Text(dictationManager.progressMessage.isEmpty ? 
-                     (dictationManager.isRecording ? (dictationManager.isPaused ? "Paused" : "Recording...") : "Ready") : 
-                     dictationManager.progressMessage)
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                
-                if dictationManager.isRecording && !dictationManager.isPaused {
+                Text(
+                    dictationManager.progressMessage.isEmpty ?
+                        (
+                            dictationManager
+                                .isRecording ?
+                                (dictationManager.isPaused ? "Paused" : "Recording...") :
+                                "Ready"
+                        ) :
+                        dictationManager.progressMessage
+                )
+                .font(.system(size: 12))
+                .foregroundColor(.gray)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                if dictationManager.isRecording, !dictationManager.isPaused {
                     // 音频可视化效果
                     HStack(spacing: 2) {
-                        ForEach(0..<15, id: \.self) { _ in
+                        ForEach(0 ..< 15, id: \.self) { _ in
                             MenuAudioVisualBar()
                         }
                     }
@@ -767,20 +846,20 @@ struct DictationView: View {
         .onAppear {
             // 启动呼吸动画
             dictationManager.breathingAnimation = true
-            
+
             // 注册录音失败回调
             dictationManager.onStartFailure = {
-                self.statusMessage = "⚠️ 无法启动听写，请确认已授权麦克风权限并检查系统设置。"
+                statusMessage = "⚠️ 无法启动听写，请确认已授权麦克风权限并检查系统设置。"
             }
         }
         .onDisappear {
             // 清除回调
             dictationManager.onStartFailure = nil
             // 清除状态消息
-            self.statusMessage = ""
+            statusMessage = ""
         }
     }
-    
+
     // 保存转录到文件
     private func saveTranscription() {
         // 创建保存面板
@@ -790,12 +869,18 @@ struct DictationView: View {
         savePanel.isExtensionHidden = false
         savePanel.title = "Save Transcription"
         savePanel.message = "Choose a location to save the transcription"
-        savePanel.nameFieldStringValue = "Transcription-\(Date().formatted(.dateTime.year().month().day().hour().minute()))"
-        
+        savePanel
+            .nameFieldStringValue =
+            "Transcription-\(Date().formatted(.dateTime.year().month().day().hour().minute()))"
+
         savePanel.begin { response in
             if response == .OK, let url = savePanel.url {
                 do {
-                    try dictationManager.transcribedText.write(to: url, atomically: true, encoding: .utf8)
+                    try dictationManager.transcribedText.write(
+                        to: url,
+                        atomically: true,
+                        encoding: .utf8
+                    )
                 } catch {
                     print("Failed to save transcription: \(error.localizedDescription)")
                 }
@@ -807,7 +892,7 @@ struct DictationView: View {
 // 音频可视化条
 struct MenuAudioVisualBar: View {
     @State private var animation = false
-    
+
     var body: some View {
         RoundedRectangle(cornerRadius: 2)
             .fill(Color.white.opacity(0.7))
@@ -815,7 +900,7 @@ struct MenuAudioVisualBar: View {
             .animation(
                 Animation.easeInOut(duration: 0.2)
                     .repeatForever()
-                    .delay(Double.random(in: 0...0.3)),
+                    .delay(Double.random(in: 0 ... 0.3)),
                 value: animation
             )
             .onAppear {
@@ -828,16 +913,16 @@ struct MenuAudioVisualBar: View {
 struct OutputDeviceCard: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-    
+
     @State private var showingDeviceList = false
     @State private var isHovered = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 标题栏
             Text("Output Device")
                 .tunaCardHeader()
-            
+
             // 设备选择器
             VStack(alignment: .leading, spacing: 10) {
                 // 设备选择按钮
@@ -857,7 +942,7 @@ struct OutputDeviceCard: View {
                                 .opacity(0.7)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        
+
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12))
                             .foregroundColor(TunaTheme.textPri)
@@ -873,7 +958,7 @@ struct OutputDeviceCard: View {
                 .onHover { hovering in
                     isHovered = hovering
                 }
-                
+
                 // 设备列表（仅在显示时显示）
                 if showingDeviceList {
                     OutputDeviceList(
@@ -881,19 +966,24 @@ struct OutputDeviceCard: View {
                         isShowing: $showingDeviceList
                     )
                 }
-                
+
                 // 仅当首选项启用且有选定设备时显示音量滑块
-                if settings.showVolumeSliders, let device = audioManager.selectedOutputDevice, !device.name.isEmpty {
+                if settings.showVolumeSliders, let device = audioManager.selectedOutputDevice,
+                   !device.name.isEmpty
+                {
                     Divider()
                         .background(TunaTheme.border)
                         .padding(.vertical, 6)
-                    
+
                     HStack {
                         // 音量图标
-                        Image(systemName: audioManager.outputVolume < 0.1 ? "speaker.slash" : "speaker.wave.2")
-                            .font(.system(size: 14))
-                            .foregroundColor(TunaTheme.textSec)
-                        
+                        Image(
+                            systemName: audioManager
+                                .outputVolume < 0.1 ? "speaker.slash" : "speaker.wave.2"
+                        )
+                        .font(.system(size: 14))
+                        .foregroundColor(TunaTheme.textSec)
+
                         // 音量滑块 - 使用设备音量而非直接绑定到 audioManager.outputVolume
                         Slider(
                             value: Binding(
@@ -908,10 +998,10 @@ struct OutputDeviceCard: View {
                                     }
                                 }
                             ),
-                            in: 0...1
+                            in: 0 ... 1
                         )
                         .accentColor(TunaTheme.accent)
-                        
+
                         // 数值显示
                         Text("\(Int(audioManager.outputVolume * 100))%")
                             .font(.system(size: 12))
@@ -930,7 +1020,7 @@ struct OutputDeviceCard: View {
 struct OutputDeviceList: View {
     @ObservedObject var audioManager: AudioManager
     @Binding var isShowing: Bool
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 1) {
@@ -946,7 +1036,7 @@ struct OutputDeviceList: View {
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            
+
                             if audioManager.selectedOutputDevice?.uid == device.uid {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 12))
@@ -977,18 +1067,18 @@ struct OutputDeviceList: View {
 struct InputDeviceCard: View {
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-    
+
     @State private var showingDeviceList = false
     @State private var isHovered = false
     @State private var micLevel: Float = 0.0
     @State private var micLevelTimer: Timer?
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 标题栏
             Text("Input Device")
                 .tunaCardHeader()
-            
+
             // 设备选择器
             VStack(alignment: .leading, spacing: 10) {
                 // 设备选择按钮
@@ -1008,7 +1098,7 @@ struct InputDeviceCard: View {
                                 .opacity(0.7)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        
+
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12))
                             .foregroundColor(TunaTheme.textPri)
@@ -1024,7 +1114,7 @@ struct InputDeviceCard: View {
                 .onHover { hovering in
                     isHovered = hovering
                 }
-                
+
                 // 设备列表（仅在显示时显示）
                 if showingDeviceList {
                     InputDeviceList(
@@ -1032,23 +1122,23 @@ struct InputDeviceCard: View {
                         isShowing: $showingDeviceList
                     )
                 }
-                
+
                 // 麦克风电平指示器
                 if let _ = audioManager.selectedInputDevice {
                     Divider()
                         .background(TunaTheme.border)
                         .padding(.vertical, 6)
-                    
+
                     HStack {
                         // 麦克风图标
                         Image(systemName: "mic")
                             .font(.system(size: 14))
                             .foregroundColor(TunaTheme.textSec)
-                        
+
                         // 电平指示器
                         MicLevelIndicator(level: micLevel)
                             .frame(height: 8)
-                        
+
                         // 仅当首选项启用时显示音量滑块
                         if settings.showMicrophoneLevelMeter {
                             // 麦克风音量滑块 - 使用设备音量而非直接绑定到 audioManager.inputVolume
@@ -1065,10 +1155,10 @@ struct InputDeviceCard: View {
                                         }
                                     }
                                 ),
-                                in: 0...1
+                                in: 0 ... 1
                             )
                             .accentColor(TunaTheme.accent)
-                            
+
                             // 数值显示
                             Text("\(Int(audioManager.inputVolume * 100))%")
                                 .font(.system(size: 12))
@@ -1089,19 +1179,19 @@ struct InputDeviceCard: View {
             stopMicLevelTimer()
         }
     }
-    
+
     private func startMicLevelTimer() {
         micLevelTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
             withAnimation(.linear(duration: 0.1)) {
                 if audioManager.selectedInputDevice != nil {
-                    micLevel = Float.random(in: 0.05...0.3)
+                    micLevel = Float.random(in: 0.05 ... 0.3)
                 } else {
                     micLevel = 0.0
                 }
             }
         }
     }
-    
+
     private func stopMicLevelTimer() {
         micLevelTimer?.invalidate()
         micLevelTimer = nil
@@ -1112,7 +1202,7 @@ struct InputDeviceCard: View {
 struct InputDeviceList: View {
     @ObservedObject var audioManager: AudioManager
     @Binding var isShowing: Bool
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 1) {
@@ -1128,7 +1218,7 @@ struct InputDeviceList: View {
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            
+
                             if audioManager.selectedInputDevice?.uid == device.uid {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 12))
@@ -1158,7 +1248,7 @@ struct InputDeviceList: View {
 // 麦克风电平指示器 - 更新使用新的主题
 struct MicLevelIndicator: View {
     let level: Float
-    
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
@@ -1166,7 +1256,7 @@ struct MicLevelIndicator: View {
                 Rectangle()
                     .fill(TunaTheme.border.opacity(0.5))
                     .cornerRadius(4)
-                
+
                 // 电平条
                 Rectangle()
                     .fill(TunaTheme.accent)
@@ -1191,14 +1281,19 @@ struct ColorfulCardView<Content: View>: View {
     let iconName: String
     let color: Color
     let content: () -> Content
-    
-    init(title: String, iconName: String, color: Color, @ViewBuilder content: @escaping () -> Content) {
+
+    init(
+        title: String,
+        iconName: String,
+        color: Color,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.title = title
         self.iconName = iconName
         self.color = color
         self.content = content
     }
-    
+
     var body: some View {
         VStack(spacing: 8) {
             // 标题栏
@@ -1206,19 +1301,19 @@ struct ColorfulCardView<Content: View>: View {
                 Image(systemName: iconName)
                     .font(.system(size: 12))
                     .foregroundColor(color)
-                
+
                 Text(title)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(color)
-                
+
                 Spacer()
             }
-            
+
             // 内容区域
             content()
-            }
+        }
         .padding(10)
-            .background(Color.black.opacity(0.2))
+        .background(Color.black.opacity(0.2))
         .cornerRadius(12)
     }
 }
@@ -1227,7 +1322,7 @@ struct ColorfulCardView<Content: View>: View {
 struct VisualEffectView: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
-    
+
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
@@ -1235,7 +1330,7 @@ struct VisualEffectView: NSViewRepresentable {
         view.state = .active
         return view
     }
-    
+
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
@@ -1246,25 +1341,25 @@ struct DeviceCard: View {
     let device: AudioDevice
     let isInput: Bool
     @ObservedObject var audioManager: AudioManager
-    
+
     @State private var volume: Double = 0
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 设备信息
-                            HStack {
+            HStack {
                 Image(systemName: isInput ? "mic" : "speaker.wave.2")
                     .font(.system(size: 16))
-                        .foregroundColor(.white)
-                
+                    .foregroundColor(.white)
+
                 Text(device.name)
                     .font(.system(size: 14))
-                        .foregroundColor(.white)
+                    .foregroundColor(.white)
                     .lineLimit(1)
-                        
-                        Spacer()
+
+                Spacer()
             }
-            
+
             // 音量控制
             BidirectionalSlider(value: $volume)
                 .frame(height: 60)
@@ -1290,7 +1385,7 @@ struct DeviceCard: View {
 // 空的 StatsView 实现，仅用于向后兼容
 struct StatsView: View {
     @ObservedObject var audioManager: AudioManager
-    
+
     var body: some View {
         // 这是一个空实现，仅用于向后兼容
         EmptyView()

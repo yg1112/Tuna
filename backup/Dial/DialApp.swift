@@ -3,7 +3,7 @@ import SwiftUI
 @main
 struct DialApp: App {
     @StateObject private var audioManager = AudioManager.shared
-    
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
@@ -16,4 +16,4 @@ struct DialApp: App {
                 .frame(width: 28)
         }
     }
-} 
+}

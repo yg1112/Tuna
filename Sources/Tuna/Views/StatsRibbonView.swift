@@ -9,13 +9,13 @@ import SwiftUI
 struct StatPill: View {
     let value: Int
     let label: String
-    
+
     var body: some View {
         VStack(spacing: 2) {
             Text("\(value)")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(TunaTheme.textPri)
-            
+
             Text(label)
                 .font(.system(size: 11))
                 .foregroundColor(TunaTheme.textSec)
@@ -31,7 +31,7 @@ struct StatPill: View {
 /// 统计数据横幅视图
 struct StatsRibbonView: View {
     @ObservedObject var store: StatsStore
-    
+
     var body: some View {
         HStack(spacing: 8) {
             StatPill(value: store.consecutiveDays, label: "days in")
@@ -40,7 +40,7 @@ struct StatsRibbonView: View {
         }
         .padding(.vertical, 2)
     }
-    
+
     /// 创建预览用实例
     static func preview() -> some View {
         StatsRibbonView(store: StatsStore.preview())
@@ -56,4 +56,4 @@ struct StatsRibbonView_Previews: PreviewProvider {
         .background(Color.black.opacity(0.1))
         .previewLayout(.sizeThatFits)
     }
-} 
+}

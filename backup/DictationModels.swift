@@ -13,7 +13,7 @@ public protocol DictationManagerProtocol: ObservableObject {
     var state: DictationState { get set }
     var progressMessage: String { get set }
     var transcribedText: String { get set }
-    
+
     func startRecording()
     func pauseRecording()
     func stopRecording()
@@ -24,6 +24,6 @@ public struct DictationView: View {
     public var body: some View {
         Text("DictationView")
     }
-    
+
     public init() {}
-} 
+}
