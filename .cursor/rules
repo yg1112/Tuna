@@ -18,7 +18,7 @@ context:
   include_files:
     - Sources/Tuna/MenuBarView.swift
     - Sources/Tuna/TabRouter.swift
-snippets_dir: .cursor/snippets 
+snippets_dir: .cursor/snippets
 
 rules:
   cursor_context_auto_update:
@@ -72,5 +72,27 @@ rules:
           if grep -r "CollapsibleCard.*isExpanded:\s*false" . --include="*.swift"; then
             echo "⚠️ Found hard-coded isExpanded: false in CollapsibleCard"
             echo "Please bind to a @Published property instead"
+            exit 1
+          fi
+          
+  test_resources_sync:
+    description: "Keep TunaTests path and snapshot resources in sync; never leave failing snapshots"
+    trigger:
+      on_change:
+        - "Tests/TunaTests/**/*.swift"
+        - "Tests/TunaTests/__Snapshots__/**/*"
+        - "Package.swift"
+    steps:
+      - run: |
+          # Verify test target configuration
+          if ! grep -q 'path: "Tests/TunaTests"' Package.swift; then
+            echo "⚠️ Test target path missing in Package.swift"
+            echo "Add path: \"Tests/TunaTests\" to the testTarget configuration"
+            exit 1
+          fi
+          
+          if ! grep -q 'resources: \[.process("__Snapshots__")\]' Package.swift; then
+            echo "⚠️ Snapshot resources missing in Package.swift"
+            echo "Add resources: [.process(\"__Snapshots__\")] to the testTarget configuration"
             exit 1
           fi 
