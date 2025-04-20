@@ -120,5 +120,19 @@ make test      # 运行所有测试
 
 ## 🔑 许可证
 
-此项目基于MIT许可证发布。 
+此项目基于MIT许可证发布。
+
+## Branch Hygiene
+
+The repository automatically maintains branch cleanliness through:
+
+1. Automatic deletion of head branches after merge (enabled via GitHub's *Automatically delete head branches*)
+2. Automatic cleanup of branches that are:
+   - Fully merged into main
+   - Not updated in the last 30 days
+
+Exception branches that are protected from automatic deletion:
+- `main`
+- `feature/clean-ui-v2`
+- `integration/ui-v2-backend-stable`
 

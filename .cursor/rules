@@ -28,6 +28,10 @@ require_yamllint_pass = true
 require_ui_presence_tests = ["Shortcut","Magic Transform","Engine","Transcription Output"]
 snapshot_tests_must_update = true
 
+# Branch hygiene settings
+auto_delete_branch_after_merge = true
+cleanup_stale_branches_days = 30
+
 rules:
   cursor_context_auto_update:
     description: "Keep .cursorscratchpad and docs/GPT_CONTEXT.md in sync with source changes"
