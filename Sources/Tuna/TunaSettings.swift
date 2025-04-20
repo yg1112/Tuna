@@ -360,6 +360,20 @@ class TunaSettings: ObservableObject {
         }
     }
     
+    // Engine card expansion state
+    @Published var isEngineOpen: Bool = false {
+        didSet {
+            if oldValue != isEngineOpen && !isUpdating {
+                isUpdating = true
+                defaults.set(isEngineOpen, forKey: "isEngineOpen")
+                logger.debug("Saved engine card state: \(self.isEngineOpen)")
+                print("[SETTINGS] Engine card state: \(self.isEngineOpen ? "expanded" : "collapsed")")
+                fflush(stdout)
+                isUpdating = false
+            }
+        }
+    }
+    
     // 添加语音转录语言设置
     @Published var transcriptionLanguage: String {
         didSet {
@@ -544,6 +558,9 @@ class TunaSettings: ObservableObject {
         self.enableDictationShortcut = defaults.bool(forKey: "enableDictationShortcut")
         self.dictationShortcutKeyCombo = defaults.string(forKey: "dictationShortcutKeyCombo") ?? "cmd+u"
         self.showDictationPageOnShortcut = defaults.bool(forKey: "showDictationPageOnShortcut")
+        
+        // 初始化Engine卡片状态
+        self.isEngineOpen = defaults.bool(forKey: "isEngineOpen")
         
         // 初始化默认音频设备设置
         self.defaultOutputDeviceUID = defaults.string(forKey: "defaultOutputDeviceUID") ?? ""
