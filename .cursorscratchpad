@@ -665,3 +665,29 @@ fix(menu‑bar): wire status‑item button target/action and add popover tests
 
 ### 提交信息
 "fix(settings): eliminate duplicate controls and ensure state consistency in DictationSettingsView"
+
+## Module: BranchProtection
+- Status: ✅ Complete
+- Created: 2024-03-21
+- Files:
+  - Scripts/apply-branch-protection.sh
+  - Makefile (updated)
+- Features:
+  - [x] Branch protection script created
+  - [x] Makefile task added
+  - [x] Protection rules configured for main branch
+- Protection Rules:
+  - Required status checks (strict)
+  - Pull request reviews required
+  - Stale review dismissal
+  - Admin enforcement
+  - Linear history required
+  - Force pushes disabled
+  - Branch deletion disabled
+
+## Recent Changes
+- 🆕 Added branch protection script and Makefile task
+- 🔄 Updated Makefile with new apply-branch-protection target
+
+## Known Issues
+- None

@@ -7,8 +7,9 @@ models:
 after_apply:
   - run: swift build
   - run: swift test
+  - run: ./scripts/branch-clean.sh --auto
 branch_prefix: dev-
-branch_pattern: '[a-z0-9-]+'
+branch_pattern: 'dev-[a-z0-9-]+'
 skip_markers:
   start: "// cursor:skip-start"
   end: "// cursor:skip-end"

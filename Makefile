@@ -1,4 +1,4 @@
-.PHONY: bootstrap lint snapshot test clean all watch-ci
+.PHONY: bootstrap lint snapshot test clean all watch-ci apply-branch-protection
 
 all: bootstrap test
 
@@ -19,3 +19,7 @@ clean:
 
 watch-ci:
 	@Scripts/ci-watch.sh $(PR) 
+
+apply-branch-protection:
+	@echo "🔒 Applying branch protection rules..."
+	@bash Scripts/apply-branch-protection.sh 
