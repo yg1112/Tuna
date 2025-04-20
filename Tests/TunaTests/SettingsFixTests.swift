@@ -5,6 +5,12 @@ import ViewInspector
 
 // 不再需要Inspectable扩展，ViewInspector最新版本不需要显式声明
 
+// 添加SettingsUIState类定义
+class SettingsUIState: ObservableObject {
+    @Published var isEngineOpen: Bool = false
+    @Published var isTranscriptionOpen: Bool = false
+}
+
 class SettingsFixTests: XCTestCase {
     
     override func setUp() {
