@@ -1,4 +1,4 @@
-.PHONY: bootstrap lint snapshot test clean all
+.PHONY: bootstrap lint snapshot test clean all watch-ci
 
 all: bootstrap test
 
@@ -15,4 +15,7 @@ test:
 	@echo "🧪 test" && set -o pipefail && swift test --parallel
 
 clean:
-	@echo "🧽 clean" && rm -rf .build 
+	@echo "🧽 clean" && rm -rf .build
+
+watch-ci:
+	@Scripts/ci-watch.sh $(PR)

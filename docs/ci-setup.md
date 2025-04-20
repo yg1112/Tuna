@@ -36,6 +36,7 @@ make bootstrap && make test
 - `make snapshot`：仅运行快照测试
 - `make test`：运行所有测试
 - `make clean`：清理构建产物
+- `make watch-ci PR=<pr_number>`：监控PR的CI状态并在成功时自动合并
 
 ## CI 流程
 
@@ -50,6 +51,22 @@ make bootstrap && make test
 7. 运行单元测试
 8. 上传测试结果
 
+## 自动化 CI 监控
+
+项目包含自动监控和合并PR的工具。要使用此功能：
+
+```bash
+export GITHUB_TOKEN=ghp_*****  # 需要 repo 权限的GitHub个人访问令牌
+make watch-ci PR=123  # 替换为实际PR编号
+```
+
+脚本将：
+1. 监控指定PR的CI状态
+2. 在CI成功时自动合并PR（使用squash策略）
+3. 如果CI失败，脚本将退出并显示错误信息
+
+这对于快速合并小型变更和修复特别有用，避免频繁检查CI状态。
+
 ## 自定义 CI 设置
 
 要自定义 CI 设置，可以编辑以下文件：
@@ -57,9 +74,11 @@ make bootstrap && make test
 - `.github/workflows/ci.yml`：GitHub Actions 工作流配置
 - `Scripts/ci-setup.sh`：CI 环境设置脚本
 - `Scripts/patch-tcc-db.sh`：TCC 数据库补丁脚本（用于权限管理）
+- `Scripts/ci-watch.sh`：CI监控和自动合并脚本
 
 ## 注意事项
 
 - SnapshotTesting 库通过 SwiftPM 自动获取，无需额外安装步骤
 - 快照测试可能在不同环境下产生差异，允许在 CI 中失败但会上传差异结果
-- TCC 数据库补丁脚本可能需要管理员权限才能运行 
+- TCC 数据库补丁脚本可能需要管理员权限才能运行
+- 使用 `watch-ci` 命令需要有效的 GitHub Token 和足够的权限
