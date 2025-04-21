@@ -1,0 +1,1 @@
+Compilation Errors: 1. Circular reference in AudioManager.swift 2. Duplicate declarations (VisualEffectView, AudioBuddyApp.swift) 3. Missing implementations (MagicTransformManager.run, TunaSettingsWindow frame) 4. Actor isolation warnings in DictationManager

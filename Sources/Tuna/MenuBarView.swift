@@ -1331,25 +1331,6 @@ struct ColorfulCardView<Content: View>: View {
     }
 }
 
-// 视觉效果视图
-struct VisualEffectView: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = self.material
-        view.blendingMode = self.blendingMode
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = self.material
-        nsView.blendingMode = self.blendingMode
-    }
-}
-
 struct DeviceCard: View {
     let device: AudioDevice
     let isInput: Bool
