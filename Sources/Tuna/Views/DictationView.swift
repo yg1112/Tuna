@@ -3,6 +3,8 @@ import SwiftUI
 struct DictationView: View {
     @EnvironmentObject var dictationManager: DictationManager
     @EnvironmentObject var settings: TunaSettings
+    @State private var error: Error?
+    @State private var showError = false
     
     var body: some View {
         VStack {
@@ -10,37 +12,99 @@ struct DictationView: View {
                 .font(.headline)
                 .padding()
             
-            if dictationManager.isRecording {
-                Text("Recording...")
-                    .foregroundColor(.red)
-            }
+            // Status display
+            Text(dictationManager.state.displayText)
+                .foregroundColor(statusColor)
+                .padding(.bottom)
             
+            // Recording button
             Button(action: {
-                if dictationManager.isRecording {
-                    dictationManager.stopRecording()
-                } else {
-                    dictationManager.startRecording()
+                Task {
+                    do {
+                        try await dictationManager.toggle()
+                    } catch {
+                        self.error = error
+                        self.showError = true
+                    }
                 }
             }) {
-                Image(systemName: dictationManager.isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                Image(systemName: buttonImageName)
                     .resizable()
                     .frame(width: 44, height: 44)
-                    .foregroundColor(dictationManager.isRecording ? .red : .blue)
+                    .foregroundColor(buttonColor)
             }
             .buttonStyle(.plain)
             .padding()
             
-            Text(dictationManager.transcribedText)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // Transcribed text
+            ScrollView {
+                Text(dictationManager.transcribedText)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: .infinity)
         }
         .padding()
         .frame(width: 300)
+        .alert("Error", isPresented: $showError) {
+            Button("OK") {
+                showError = false
+            }
+        } message: {
+            Text(error?.localizedDescription ?? "An unknown error occurred")
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var statusColor: Color {
+        switch dictationManager.state {
+        case .recording:
+            return .red
+        case .paused:
+            return .orange
+        case .processing:
+            return .blue
+        case .error:
+            return .red
+        case .idle:
+            return .primary
+        }
+    }
+    
+    private var buttonImageName: String {
+        switch dictationManager.state {
+        case .recording:
+            return "stop.circle.fill"
+        case .paused:
+            return "play.circle.fill"
+        case .processing:
+            return "clock.circle.fill"
+        case .error:
+            return "exclamationmark.circle.fill"
+        case .idle:
+            return "mic.circle.fill"
+        }
+    }
+    
+    private var buttonColor: Color {
+        switch dictationManager.state {
+        case .recording:
+            return .red
+        case .paused:
+            return .orange
+        case .processing:
+            return .blue
+        case .error:
+            return .red
+        case .idle:
+            return .blue
+        }
     }
 }
 
 #Preview {
     DictationView()
-        .environmentObject(DictationManager())
-        .environmentObject(TunaSettings())
+        .environmentObject(DictationManager.shared)
+        .environmentObject(TunaSettings.shared)
 } 

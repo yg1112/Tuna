@@ -8,8 +8,12 @@ class AudioManager: NSObject, ObservableObject {
     @Published var selectedInputDevice: AudioDevice?
     @Published var outputDevices: [AudioDevice] = []
     @Published var inputDevices: [AudioDevice] = []
-    @Published private(set) var inputVolume: Float = 0.0
-    @Published private(set) var outputVolume: Float = 0.0
+    @Published var inputVolume: Float = 0.0
+    @Published var outputVolume: Float = 0.0
+    
+    // Historical devices for mode switching
+    @Published var historicalInputDevices: [AudioDevice] = []
+    @Published var historicalOutputDevices: [AudioDevice] = []
     
     @objc dynamic func getInputVolume() -> Float {
         guard let device = selectedInputDevice else { return 0.0 }
@@ -38,6 +42,23 @@ class AudioManager: NSObject, ObservableObject {
             self.setInputVolume(volume)
         } else {
             self.setOutputVolume(volume)
+        }
+    }
+    
+    // Added device selection methods
+    func selectInputDevice(_ device: AudioDevice) {
+        guard let existingDevice = inputDevices.first(where: { $0.id == device.id }) else { return }
+        selectedInputDevice = existingDevice
+        if !historicalInputDevices.contains(where: { $0.id == device.id }) {
+            historicalInputDevices.append(device)
+        }
+    }
+    
+    func selectOutputDevice(_ device: AudioDevice) {
+        guard let existingDevice = outputDevices.first(where: { $0.id == device.id }) else { return }
+        selectedOutputDevice = existingDevice
+        if !historicalOutputDevices.contains(where: { $0.id == device.id }) {
+            historicalOutputDevices.append(device)
         }
     }
     

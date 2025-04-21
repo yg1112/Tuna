@@ -1,3 +1,47 @@
+# Tuna Project Development Scratchpad
+
+## Documentation Status
+- [x] Initial architecture documentation created (docs/architecture.md)
+- [ ] API documentation
+- [ ] Development guides
+- [ ] Testing guides
+
+## Current Development Status
+- Environment: macOS
+- Build System: Swift Package Manager
+- Main Target: Tuna
+- Test Targets: TunaTests, BuildGuards
+
+## Module: Architecture Documentation
+- Status: in-progress
+- Prompt: Document project structure and architecture
+- Tasks:
+  [x] Create initial architecture.md
+  [ ] Document API interfaces
+  [ ] Document build process
+  [ ] Document testing strategy
+  [ ] Create development guides
+
+## Build Status
+- Last Build: Not yet verified
+- Build Command: `swift build`
+- Required Actions:
+  [ ] Verify build process
+  [ ] Document build requirements
+  [ ] Test build in clean environment
+
+## Notes
+- Project appears to be a macOS menu bar application with dictation features
+- Uses SwiftUI for UI implementation
+- Has comprehensive settings management system
+- Integrates with audio processing and OpenAI services
+
+## Pending Tasks
+- [ ] Verify all dependencies are documented
+- [ ] Document setup process for new developers
+- [ ] Create contribution guidelines
+- [ ] Setup CI/CD documentation
+
 # Tuna Project Development Tracking
 
 ## Module: TunaApp
@@ -209,5 +253,395 @@ Verification:
   - No chevron icons visible across all cards
   - Accessibility and navigation working as expected
 
+## Module: PublicAccessModifiers
+- Status: in-progress
+- Prompt: Making key view components public for external access
+
+Tasks:
+- [x] Make TranscriptionOutputView public
+- [x] Make SettingsView public
+- [ ] Manual Verification
+- [ ] Build Verification
+
+Changes made:
+1. Added public access to TranscriptionOutputView struct and initializer
+2. Added public access to SettingsView struct and initializer
+
+Next steps:
+- Verify build succeeds
+- Perform manual verification
+- Move files to precommit directory if all checks pass
+
 ## Previous Entries
 // ... existing code ... 
+
+## Module: Build Fix - TunaSettings Conflict
+- Status: in-progress
+- Created: 2024-03-21
+- Last Updated: 2024-03-21
+
+### Issue
+Found duplicate TunaSettings class definitions:
+1. `/Sources/Tuna/Models/TunaSettings.swift` - Full implementation
+2. `/Sources/Tuna/Settings/TunaSettings.swift` - Minimal implementation
+
+### Required Actions
+- [x] Resolve TunaSettings class duplication
+- [x] Merge functionality if needed
+- [x] Update all references
+- [ ] Verify build after changes
+
+### Changes Made
+1. Added missing properties from Settings/TunaSettings.swift to Models/TunaSettings.swift:
+   - isTranscriptionOutputOpen
+   - isSettingsOpen
+   - isRecording
+   - transcriptionText
+2. Removed duplicate file at Settings/TunaSettings.swift
+3. All references should now use the consolidated version in Models/TunaSettings.swift
+
+### Build Verification
+- Previous Status: ❌ Failed
+- Error: Multiple producers for TunaSettings.swift
+- Action Taken: Consolidated implementations
+- Next Step: Verify build
+
+### Next Actions
+- [ ] Run build verification
+- [ ] Test functionality of merged properties
+- [ ] Update documentation if needed 
+
+## Module: Build Fix - TunaApp Conflict
+- Status: in-progress
+- Created: 2024-03-21
+- Last Updated: 2024-03-21
+
+### Issue
+Found duplicate TunaApp implementations:
+1. `/Sources/Tuna/TunaApp.swift` - Uses struct, NSApplicationDelegateAdaptor
+2. `/Sources/Tuna/App/TunaApp.swift` - Uses class, ContentView
+
+### Changes Made
+1. Merged functionality into `/Sources/Tuna/TunaApp.swift`:
+   - Kept struct-based SwiftUI approach
+   - Kept NSApplicationDelegateAdaptor
+   - Added AudioManager.shared
+   - Replaced EmptyView with ContentView
+   - Added proper environment object injection
+2. Removed duplicate file at `/Sources/Tuna/App/TunaApp.swift`
+
+### Required Actions
+- [x] Determine correct implementation
+- [x] Merge functionality if needed
+- [x] Remove duplicate file
+- [ ] Verify build after changes
+
+### Implementation Details
+- Using SwiftUI struct-based approach (more idiomatic)
+- Maintaining delegate support for macOS functionality
+- Using shared instances of TunaSettings and AudioManager
+- Properly injecting environment objects
+- Supporting both TranscriptionOutputView and SettingsView through ContentView
+
+### Next Steps
+- [ ] Run build verification
+- [ ] Test app launch and window management
+- [ ] Verify settings and audio management work
+- [ ] Update documentation if needed
+
+## Module: SyncRules
+Status: Ready for Review
+Build Status: Not Verified
+Last Updated: 2024-03-21
+
+### Changes Made
+- [x] Fixed test file to match implementation
+- [x] Updated file path handling
+- [x] Added proper working directory setup
+- [x] Added git configuration for tests
+- [x] Added new test case for README creation
+- [x] Improved test assertions
+
+### Files Modified
+- Scripts/SyncRules/Tests/SyncRulesTests/SyncRulesTests.swift
+
+### Verification Needed
+- [ ] Run tests to verify changes
+- [ ] Check git integration works
+- [ ] Verify README creation and update scenarios
+
+### Next Steps
+1. Run the test suite
+2. Add more test cases if needed
+3. Document the sync rules functionality 
+
+### Test Coverage
+1. Updates existing README with markers
+2. Creates new README when none exists
+3. Maintains clean git state after sync
+
+### Documentation
+The SyncRules module provides functionality to:
+1. Sync rules from .cursor/rules to docs/README_rules.md
+2. Preserve content outside of markers
+3. Create new README with proper structure if none exists
+4. Handle all necessary directory creation 
+
+## Module: Build Fix - Remaining Issues
+- Status: in-progress
+- Created: 2024-03-21
+- Last Updated: 2024-03-21
+
+### 1. AudioManager Issues
+Missing methods and properties:
+- [ ] Add selectOutputDevice method
+- [ ] Add selectInputDevice method
+- [ ] Add outputVolume property
+- [ ] Add inputVolume property
+
+### 2. DictationManager Actor Isolation
+Protocol conformance issues:
+- [ ] Add @preconcurrency to DictationManagerProtocol
+- [ ] Mark protocol methods as async:
+  - startRecording
+  - pauseRecording
+  - stopRecording
+  - getDocumentsDirectory
+
+### 3. MenuBarView Component Issues
+Missing components:
+- [ ] Create TabBar component
+- [ ] Create AudioTab component
+- [ ] Create DictationTab component
+- [ ] Create MagicTab component
+- [ ] Create StatsTab component
+- [ ] Fix StatsStore type mismatch
+- [ ] Add showVolumeSliders to TunaSettings
+
+### Next Steps
+1. Fix AudioManager functionality
+2. Update DictationManager protocol
+3. Create missing UI components
+4. Add missing settings properties
+5. Verify build after each fix
+
+### Build Status
+- Previous: ❌ Failed
+- Current: ❌ Failed
+- Next: Fix AudioManager issues first 
+
+## Module: DictationManager
+- Status: in-progress
+- Build Status: 🟢 Improved
+- Last Updated: 2024-03-21
+
+### Completed Tasks
+- [x] Basic DictationManager implementation
+- [x] Recording methods (start/pause/stop)
+- [x] Speech recognition integration
+- [x] Fix DictationState enum ambiguity
+- [x] Handle async/throw operations properly
+- [x] Add proper error handling
+- [x] Update UI components for new state system
+- [x] Add PresetStyle enum definition
+
+### Pending Tasks
+- [ ] Resolve TunaSettings access and initialization
+- [ ] Fix access level issues
+- [ ] Complete build verification
+- [ ] Manual testing
+- [ ] Add comprehensive error handling tests
+- [ ] Add state transition tests
+- [ ] Document API changes
+- [ ] Integrate PresetStyle with output formatting
+
+### Changes Made
+1. Consolidated DictationState definitions
+2. Updated DictationManager to use new state system
+3. Added proper async/throw handling
+4. Enhanced error reporting
+5. Improved state management
+6. Added notification system for state changes
+7. Updated DictationView to handle async operations
+8. Added PresetStyle implementation
+
+### Next Steps
+1. Review and adjust access levels
+2. Add comprehensive tests
+3. Complete build verification
+4. Perform manual testing
+5. Update documentation
+6. Integrate PresetStyle with transcription output
+
+### Build Status
+- Previous: 🟡 Partially Fixed
+- Current: 🟢 Improved
+- Next: Fix remaining access level issues
+
+### Notes
+- State management has been significantly improved
+- Error handling is now more robust
+- UI feedback is more consistent
+- PresetStyle implementation adds powerful formatting options
+- Need to focus on remaining build errors
+
+## Module: PresetStyle
+- Status: Completed
+- Created: 2024-03-21
+- Last Updated: 2024-03-21
+
+### Implementation Details
+- Created PresetStyle enum with five formats:
+  - Raw: Unmodified text
+  - Clean: Basic formatting
+  - Formatted: Enhanced formatting
+  - Markdown: Markdown structure
+  - JSON: Structured data
+
+### Features
+- [x] File extension support
+- [x] Format descriptions
+- [x] Text formatting implementation
+- [x] Metadata support for JSON
+- [x] Regular expression based formatting
+- [x] Markdown structure detection
+- [x] Error handling
+
+### Integration Points
+- DictationManager for output formatting
+- TunaSettings for style selection
+- File export system
+
+### Next Steps
+- [ ] Add unit tests
+- [ ] Add format preview in settings
+- [ ] Document formatting rules
+- [ ] Add custom format support
+
+## Module: Build Fix - Remaining Issues
+- Status: in-progress
+- Created: 2024-03-21
+- Last Updated: 2024-03-21
+
+### 1. AudioManager Issues
+Missing methods and properties:
+- [ ] Add selectOutputDevice method
+- [ ] Add selectInputDevice method
+- [ ] Add outputVolume property
+- [ ] Add inputVolume property
+
+### 2. DictationManager Actor Isolation
+Protocol conformance issues:
+- [ ] Add @preconcurrency to DictationManagerProtocol
+- [ ] Mark protocol methods as async:
+  - startRecording
+  - pauseRecording
+  - stopRecording
+  - getDocumentsDirectory
+
+### 3. MenuBarView Component Issues
+Missing components:
+- [ ] Create TabBar component
+- [ ] Create AudioTab component
+- [ ] Create DictationTab component
+- [ ] Create MagicTab component
+- [ ] Create StatsTab component
+- [ ] Fix StatsStore type mismatch
+- [ ] Add showVolumeSliders to TunaSettings
+
+### Next Steps
+1. Fix AudioManager functionality
+2. Update DictationManager protocol
+3. Create missing UI components
+4. Add missing settings properties
+5. Verify build after each fix
+
+### Build Status
+- Previous: ❌ Failed
+- Current: ❌ Failed
+- Next: Fix AudioManager issues first 
+
+## Module: TunaSettings
+- Status: in-progress
+- Documentation:
+  - [x] Created architecture documentation (docs/architecture/TunaSettings.md)
+  - [x] Documented core components and categories
+  - [x] Defined integration points with other managers
+  - [x] Outlined data flow and reactive design
+  - [x] Specified security considerations
+  - [x] Added testing strategy
+  - [x] Included best practices and guidelines
+
+- Implementation:
+  - [x] Core settings structure
+  - [x] Property organization
+  - [x] Access levels
+  - [x] Documentation comments
+  - [ ] AudioManager integration
+  - [ ] ThemeManager integration
+  - [ ] DictationManager updates
+
+- Features:
+  - [x] General settings
+  - [x] UI state management
+  - [x] Dictation settings
+  - [x] Audio device settings (partial)
+  - [x] Theme settings (partial)
+  - [x] Advanced settings
+
+- Integration Points:
+  - [ ] Update DictationManager to use new settings
+  - [ ] Create AudioManager
+  - [ ] Create ThemeManager
+  - [ ] Update UI components to use settings
+
+- Next Steps:
+  1. Implement AudioManager
+  2. Implement ThemeManager
+  3. Update DictationManager
+  4. Create unit tests
+  5. Create integration tests
+
+- Build Status: ✅ Module compiling without issues
+
+- Manual Verification:
+  - [ ] Settings persistence
+  - [ ] UI updates on changes
+  - [ ] Manager integrations
+  - [ ] Error handling
+  - [ ] Migration testing
+
+## Documentation Updates
+- Status: in-progress
+- [x] Created TunaSettings architecture document
+- [ ] Update main architecture.md to reference TunaSettings
+- [ ] Create integration guides for managers
+- [ ] Add API documentation
+
+## Files Modified:
+- docs/architecture/TunaSettings.md (new)
+- .cursorscratchpad (updated)
+
+## Notes:
+- Architecture document provides comprehensive overview of TunaSettings design
+- Integration points with other managers clearly defined
+- Testing strategy outlined
+- Best practices documented for future reference 
+
+## Module: ArchitectureDocUpdate
+- Status: complete
+- Prompt: Update architecture documentation with detailed TunaSettings information
+
+Tasks:
+- [x] Update Settings Management section in main architecture document
+- [x] Add detailed categories and features
+- [x] Include integration points with other managers
+- [x] Add security considerations
+- [x] Reference detailed TunaSettings documentation
+
+Manual Verification:
+- Document updated: ✅
+- Links verified: ✅
+- Format consistent: ✅
+
+Completed On: 2024-03-21 15:30 

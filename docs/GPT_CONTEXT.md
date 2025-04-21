@@ -1260,3 +1260,12 @@ public struct AudioDevice: Identifiable, Hashable, Codable {
     }
 } 
 ```
+
+# Project Context for GPT
+
+## Recent Updates
+- [2024-03-21] Updated architecture documentation with comprehensive TunaSettings details
+  - Enhanced Settings Management section with detailed categories and features
+  - Added integration points with other managers
+  - Included security considerations and best practices
+  - Referenced detailed documentation
