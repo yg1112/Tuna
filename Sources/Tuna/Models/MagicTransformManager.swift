@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import TunaCore
 
 @MainActor
 final class MagicTransformManager: ObservableObject {

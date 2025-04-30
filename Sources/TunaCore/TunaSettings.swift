@@ -5,12 +5,12 @@ import ServiceManagement
 import SwiftUI
 
 // 添加UI实验模式枚举
-enum UIExperimentMode: String, CaseIterable, Identifiable {
+public enum UIExperimentMode: String, CaseIterable, Identifiable {
     case newUI1 = "Tuna UI"
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    var description: String {
+    public var description: String {
         switch self {
             case .newUI1:
                 "Standard Tuna user interface"
@@ -19,13 +19,13 @@ enum UIExperimentMode: String, CaseIterable, Identifiable {
 }
 
 // 添加操作模式枚举
-enum Mode: String, CaseIterable, Identifiable {
+public enum Mode: String, CaseIterable, Identifiable {
     case standard = "Standard"
     case experimental = "Experimental"
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    var description: String {
+    public var description: String {
         switch self {
             case .standard:
                 "The current stable mode"
@@ -36,20 +36,20 @@ enum Mode: String, CaseIterable, Identifiable {
 }
 
 // Magic Transform 相关定义
-enum PresetStyle: String, CaseIterable, Identifiable {
+public enum PresetStyle: String, CaseIterable, Identifiable {
     case abit = "ABit"
     case concise = "Concise"
     case custom = "Custom"
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 }
 
-struct PromptTemplate {
-    let id: PresetStyle
-    let system: String
+public struct PromptTemplate {
+    public let id: PresetStyle
+    public let system: String
 }
 
-extension PromptTemplate {
+public extension PromptTemplate {
     static let library: [PresetStyle: PromptTemplate] = [
         .abit: .init(id: .abit, system: "Rephrase to sound a bit more native."),
         .concise: .init(id: .concise, system: "Summarize concisely in ≤2 lines."),
@@ -57,8 +57,8 @@ extension PromptTemplate {
     ]
 }
 
-class TunaSettings: ObservableObject {
-    static let shared = TunaSettings()
+public class TunaSettings: ObservableObject {
+    public static let shared = TunaSettings()
     private let logger = Logger(subsystem: "ai.tuna", category: "Settings")
     private var isUpdating = false // 防止循环更新
 
@@ -67,7 +67,7 @@ class TunaSettings: ObservableObject {
     private let standardDefaults = UserDefaults.standard // 用于迁移旧数据
 
     // 当前操作模式
-    @Published var currentMode: Mode = .standard {
+    @Published public var currentMode: Mode = .standard {
         didSet {
             if oldValue != self.currentMode, !self.isUpdating {
                 self.isUpdating = true
@@ -81,7 +81,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 添加UI实验模式属性
-    @Published var uiExperimentMode: UIExperimentMode {
+    @Published public var uiExperimentMode: UIExperimentMode {
         didSet {
             if oldValue != self.uiExperimentMode, !self.isUpdating {
                 self.isUpdating = true
@@ -97,7 +97,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 智能设备切换
-    @Published var enableSmartSwitching: Bool {
+    @Published public var enableSmartSwitching: Bool {
         didSet {
             if oldValue != self.enableSmartSwitching, !self.isUpdating {
                 self.isUpdating = true
@@ -113,7 +113,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 视频会议偏好设备
-    @Published var preferredVideoChatOutputDeviceUID: String {
+    @Published public var preferredVideoChatOutputDeviceUID: String {
         didSet {
             if oldValue != self.preferredVideoChatOutputDeviceUID {
                 self.defaults.set(
@@ -132,7 +132,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var preferredVideoChatInputDeviceUID: String {
+    @Published public var preferredVideoChatInputDeviceUID: String {
         didSet {
             if oldValue != self.preferredVideoChatInputDeviceUID {
                 self.defaults.set(
@@ -152,7 +152,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 音乐偏好设备
-    @Published var preferredMusicOutputDeviceUID: String {
+    @Published public var preferredMusicOutputDeviceUID: String {
         didSet {
             if oldValue != self.preferredMusicOutputDeviceUID {
                 self.defaults.set(
@@ -168,7 +168,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 游戏偏好设备
-    @Published var preferredGamingOutputDeviceUID: String {
+    @Published public var preferredGamingOutputDeviceUID: String {
         didSet {
             if oldValue != self.preferredGamingOutputDeviceUID {
                 self.defaults.set(
@@ -183,7 +183,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var preferredGamingInputDeviceUID: String {
+    @Published public var preferredGamingInputDeviceUID: String {
         didSet {
             if oldValue != self.preferredGamingInputDeviceUID {
                 self.defaults.set(
@@ -199,7 +199,7 @@ class TunaSettings: ObservableObject {
     }
 
     // UI 设置
-    @Published var showVolumeSliders: Bool {
+    @Published public var showVolumeSliders: Bool {
         didSet {
             if oldValue != self.showVolumeSliders, !self.isUpdating {
                 self.isUpdating = true
@@ -214,7 +214,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var showMicrophoneLevelMeter: Bool {
+    @Published public var showMicrophoneLevelMeter: Bool {
         didSet {
             if oldValue != self.showMicrophoneLevelMeter, !self.isUpdating {
                 self.isUpdating = true
@@ -230,7 +230,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var useExperimentalUI: Bool {
+    @Published public var useExperimentalUI: Bool {
         didSet {
             if oldValue != self.useExperimentalUI, !self.isUpdating {
                 self.isUpdating = true
@@ -245,26 +245,20 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var launchAtLogin: Bool {
+    @Published public var launchAtLogin: Bool {
         didSet {
-            // 只在值真的改变时才更新
-            if oldValue != self.launchAtLogin {
-                // Save user preference
+            if oldValue != self.launchAtLogin, !self.isUpdating {
+                self.isUpdating = true
                 self.defaults.set(self.launchAtLogin, forKey: "launchAtLogin")
+                self.logger.debug("Saved launch at login: \(self.launchAtLogin)")
                 print("[SETTINGS] Launch at login: \(self.launchAtLogin ? "enabled" : "disabled")")
                 fflush(stdout)
-
-                // Apply system settings asynchronously
-                if self.launchAtLogin {
-                    LaunchAtLogin.enable()
-                } else {
-                    LaunchAtLogin.disable()
-                }
+                self.isUpdating = false
             }
         }
     }
 
-    @Published var preferredOutputDeviceUID: String {
+    @Published public var preferredOutputDeviceUID: String {
         didSet {
             if oldValue != self.preferredOutputDeviceUID {
                 self.defaults.set(self.preferredOutputDeviceUID, forKey: "preferredOutputDeviceUID")
@@ -273,7 +267,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var preferredInputDeviceUID: String {
+    @Published public var preferredInputDeviceUID: String {
         didSet {
             if oldValue != self.preferredInputDeviceUID {
                 self.defaults.set(self.preferredInputDeviceUID, forKey: "preferredInputDeviceUID")
@@ -283,7 +277,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 添加语音转录文件格式配置
-    @Published var transcriptionFormat: String {
+    @Published public var transcriptionFormat: String {
         didSet {
             if oldValue != self.transcriptionFormat, !self.isUpdating {
                 self.isUpdating = true
@@ -297,7 +291,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 自动复制转录内容到剪贴板
-    @Published var autoCopyTranscriptionToClipboard: Bool {
+    @Published public var autoCopyTranscriptionToClipboard: Bool {
         didSet {
             if oldValue != self.autoCopyTranscriptionToClipboard, !self.isUpdating {
                 self.isUpdating = true
@@ -319,7 +313,7 @@ class TunaSettings: ObservableObject {
     }
 
     // Dictation全局快捷键开关
-    @Published var enableDictationShortcut: Bool {
+    @Published public var enableDictationShortcut: Bool {
         didSet {
             if oldValue != self.enableDictationShortcut, !self.isUpdating {
                 self.isUpdating = true
@@ -341,7 +335,7 @@ class TunaSettings: ObservableObject {
     }
 
     // Dictation快捷键组合
-    @Published var dictationShortcutKeyCombo: String {
+    @Published public var dictationShortcutKeyCombo: String {
         didSet {
             if oldValue != self.dictationShortcutKeyCombo, !self.isUpdating {
                 self.isUpdating = true
@@ -368,7 +362,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 快捷键触发时显示听写页面
-    @Published var showDictationPageOnShortcut: Bool {
+    @Published public var showDictationPageOnShortcut: Bool {
         didSet {
             if oldValue != self.showDictationPageOnShortcut, !self.isUpdating {
                 self.isUpdating = true
@@ -395,7 +389,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 启用听写声音反馈
-    @Published var enableDictationSoundFeedback: Bool {
+    @Published public var enableDictationSoundFeedback: Bool {
         didSet {
             if oldValue != self.enableDictationSoundFeedback, !self.isUpdating {
                 self.isUpdating = true
@@ -417,24 +411,23 @@ class TunaSettings: ObservableObject {
     }
 
     // 转写输出目录
-    @Published var transcriptionOutputDirectory: URL? = nil {
+    @Published public var transcriptionOutputDirectory: URL? = nil {
         didSet {
             guard oldValue != self.transcriptionOutputDirectory else { return }
             self.isUpdating = true
             let pathString = self.transcriptionOutputDirectory?.absoluteString ?? ""
-            defaults.set(pathString, forKey: "transcriptionOutputDirectory")
-            logger.debug("Saved transcription output dir: \(pathString)")
+            self.defaults.set(pathString, forKey: "transcriptionOutputDirectory")
+            self.logger.debug("Saved transcription output dir: \(pathString)")
             self.isUpdating = false
         }
     }
 
-    /// Helper for UI display
-    var transcriptionOutputDirectoryDisplay: String {
-        transcriptionOutputDirectory?.lastPathComponent ?? "Not set"
+    public var transcriptionOutputDirectoryDisplay: String {
+        self.transcriptionOutputDirectory?.lastPathComponent ?? "Not set"
     }
 
     // 卡片展开状态 - 默认全部展开
-    @Published var isShortcutOpen: Bool = true {
+    @Published public var isShortcutOpen: Bool = true {
         didSet {
             if oldValue != self.isShortcutOpen {
                 self.defaults.set(self.isShortcutOpen, forKey: "isShortcutOpen")
@@ -442,7 +435,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isMagicTransformOpen: Bool = true {
+    @Published public var isMagicTransformOpen: Bool = true {
         didSet {
             if oldValue != self.isMagicTransformOpen {
                 self.defaults.set(self.isMagicTransformOpen, forKey: "isMagicTransformOpen")
@@ -450,7 +443,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isEngineOpen: Bool = true {
+    @Published public var isEngineOpen: Bool = true {
         didSet {
             if oldValue != self.isEngineOpen {
                 self.defaults.set(self.isEngineOpen, forKey: "isEngineOpen")
@@ -458,16 +451,19 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isTranscriptionOutputOpen: Bool = true {
+    @Published public var isTranscriptionOutputOpen: Bool = true {
         didSet {
             if oldValue != self.isTranscriptionOutputOpen {
-                self.defaults.set(self.isTranscriptionOutputOpen, forKey: "isTranscriptionOutputOpen")
+                self.defaults.set(
+                    self.isTranscriptionOutputOpen,
+                    forKey: "isTranscriptionOutputOpen"
+                )
             }
         }
     }
 
     // 其他卡片展开状态
-    @Published var isLaunchOpen: Bool = true {
+    @Published public var isLaunchOpen: Bool = true {
         didSet {
             if oldValue != self.isLaunchOpen {
                 self.defaults.set(self.isLaunchOpen, forKey: "isLaunchOpen")
@@ -475,7 +471,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isUpdatesOpen: Bool = true {
+    @Published public var isUpdatesOpen: Bool = true {
         didSet {
             if oldValue != self.isUpdatesOpen {
                 self.defaults.set(self.isUpdatesOpen, forKey: "isUpdatesOpen")
@@ -483,7 +479,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isSmartSwapsOpen: Bool = true {
+    @Published public var isSmartSwapsOpen: Bool = true {
         didSet {
             if oldValue != self.isSmartSwapsOpen {
                 self.defaults.set(self.isSmartSwapsOpen, forKey: "isSmartSwapsOpen")
@@ -491,7 +487,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isAudioDevicesOpen: Bool = true {
+    @Published public var isAudioDevicesOpen: Bool = true {
         didSet {
             if oldValue != self.isAudioDevicesOpen {
                 self.defaults.set(self.isAudioDevicesOpen, forKey: "isAudioDevicesOpen")
@@ -499,7 +495,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isThemeOpen: Bool = true {
+    @Published public var isThemeOpen: Bool = true {
         didSet {
             if oldValue != self.isThemeOpen {
                 self.defaults.set(self.isThemeOpen, forKey: "isThemeOpen")
@@ -507,7 +503,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isAppearanceOpen: Bool = true {
+    @Published public var isAppearanceOpen: Bool = true {
         didSet {
             if oldValue != self.isAppearanceOpen {
                 self.defaults.set(self.isAppearanceOpen, forKey: "isAppearanceOpen")
@@ -515,7 +511,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isBetaOpen: Bool = true {
+    @Published public var isBetaOpen: Bool = true {
         didSet {
             if oldValue != self.isBetaOpen {
                 self.defaults.set(self.isBetaOpen, forKey: "isBetaOpen")
@@ -523,7 +519,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isDebugOpen: Bool = true {
+    @Published public var isDebugOpen: Bool = true {
         didSet {
             if oldValue != self.isDebugOpen {
                 self.defaults.set(self.isDebugOpen, forKey: "isDebugOpen")
@@ -531,7 +527,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var isAboutOpen: Bool = true {
+    @Published public var isAboutOpen: Bool = true {
         didSet {
             if oldValue != self.isAboutOpen {
                 self.defaults.set(self.isAboutOpen, forKey: "isAboutOpen")
@@ -540,7 +536,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 添加语音转录语言设置
-    @Published var transcriptionLanguage: String {
+    @Published public var transcriptionLanguage: String {
         didSet {
             if oldValue != self.transcriptionLanguage, !self.isUpdating {
                 self.isUpdating = true
@@ -583,7 +579,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 默认音频输出设备
-    @Published var defaultOutputDeviceUID: String {
+    @Published public var defaultOutputDeviceUID: String {
         didSet {
             if oldValue != self.defaultOutputDeviceUID, !self.isUpdating {
                 self.isUpdating = true
@@ -597,7 +593,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 默认音频输入设备
-    @Published var defaultInputDeviceUID: String {
+    @Published public var defaultInputDeviceUID: String {
         didSet {
             if oldValue != self.defaultInputDeviceUID, !self.isUpdating {
                 self.isUpdating = true
@@ -611,7 +607,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 设备偏好属性 - 标准模式
-    @Published var preferredStandardInputDeviceName: String? {
+    @Published public var preferredStandardInputDeviceName: String? {
         didSet {
             self.defaults.setValue(
                 self.preferredStandardInputDeviceName,
@@ -623,7 +619,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var preferredStandardOutputDeviceName: String? {
+    @Published public var preferredStandardOutputDeviceName: String? {
         didSet {
             self.defaults.setValue(
                 self.preferredStandardOutputDeviceName,
@@ -636,7 +632,7 @@ class TunaSettings: ObservableObject {
     }
 
     // 设备偏好属性 - 实验模式
-    @Published var preferredExperimentalInputDeviceName: String? {
+    @Published public var preferredExperimentalInputDeviceName: String? {
         didSet {
             self.defaults.setValue(
                 self.preferredExperimentalInputDeviceName,
@@ -648,7 +644,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var preferredExperimentalOutputDeviceName: String? {
+    @Published public var preferredExperimentalOutputDeviceName: String? {
         didSet {
             self.defaults.setValue(
                 self.preferredExperimentalOutputDeviceName,
@@ -661,20 +657,20 @@ class TunaSettings: ObservableObject {
     }
 
     // Magic Transform 功能设置
-    @Published var magicEnabled: Bool {
+    @Published public var magicEnabled: Bool {
         didSet {
             if oldValue != self.magicEnabled, !self.isUpdating {
                 self.isUpdating = true
                 self.defaults.set(self.magicEnabled, forKey: "magicEnabled")
                 self.logger.debug("Saved magic enabled: \(self.magicEnabled)")
-                print("[SETTINGS] Magic transform: \(self.magicEnabled ? "enabled" : "disabled")")
+                print("[SETTINGS] Magic enabled: \(self.magicEnabled ? "enabled" : "disabled")")
                 fflush(stdout)
                 self.isUpdating = false
             }
         }
     }
 
-    @Published var magicPreset: PresetStyle {
+    @Published public var magicPreset: PresetStyle {
         didSet {
             if oldValue != self.magicPreset, !self.isUpdating {
                 self.isUpdating = true
@@ -687,7 +683,7 @@ class TunaSettings: ObservableObject {
         }
     }
 
-    @Published var magicCustomPrompt: String {
+    @Published public var magicCustomPrompt: String {
         didSet {
             if oldValue != self.magicCustomPrompt, !self.isUpdating {
                 self.isUpdating = true
@@ -745,7 +741,8 @@ class TunaSettings: ObservableObject {
         // 初始化语音转录设置
         self.transcriptionFormat = self.defaults.string(forKey: "dictationFormat") ?? "txt"
         if let saved = defaults.string(forKey: "transcriptionOutputDirectory"),
-           let url = URL(string: saved), !saved.isEmpty {
+           let url = URL(string: saved), !saved.isEmpty
+        {
             self.transcriptionOutputDirectory = url
         }
         self.autoCopyTranscriptionToClipboard = self.defaults
@@ -758,33 +755,34 @@ class TunaSettings: ObservableObject {
         self.showDictationPageOnShortcut = self.defaults.bool(forKey: "showDictationPageOnShortcut")
 
         // 初始化卡片展开状态 - 全部默认展开
-        self.isShortcutOpen = self.defaults.object(forKey: "isShortcutOpen") != nil ? 
+        self.isShortcutOpen = self.defaults.object(forKey: "isShortcutOpen") != nil ?
             self.defaults.bool(forKey: "isShortcutOpen") : true
-        self.isMagicTransformOpen = self.defaults.object(forKey: "isMagicTransformOpen") != nil ? 
+        self.isMagicTransformOpen = self.defaults.object(forKey: "isMagicTransformOpen") != nil ?
             self.defaults.bool(forKey: "isMagicTransformOpen") : true
-        self.isEngineOpen = self.defaults.object(forKey: "isEngineOpen") != nil ? 
+        self.isEngineOpen = self.defaults.object(forKey: "isEngineOpen") != nil ?
             self.defaults.bool(forKey: "isEngineOpen") : true
-        self.isTranscriptionOutputOpen = self.defaults.object(forKey: "isTranscriptionOutputOpen") != nil ? 
+        self.isTranscriptionOutputOpen = self.defaults
+            .object(forKey: "isTranscriptionOutputOpen") != nil ?
             self.defaults.bool(forKey: "isTranscriptionOutputOpen") : true
-        
+
         // 其他卡片展开状态初始化
-        self.isLaunchOpen = self.defaults.object(forKey: "isLaunchOpen") != nil ? 
+        self.isLaunchOpen = self.defaults.object(forKey: "isLaunchOpen") != nil ?
             self.defaults.bool(forKey: "isLaunchOpen") : true
-        self.isUpdatesOpen = self.defaults.object(forKey: "isUpdatesOpen") != nil ? 
+        self.isUpdatesOpen = self.defaults.object(forKey: "isUpdatesOpen") != nil ?
             self.defaults.bool(forKey: "isUpdatesOpen") : true
-        self.isSmartSwapsOpen = self.defaults.object(forKey: "isSmartSwapsOpen") != nil ? 
+        self.isSmartSwapsOpen = self.defaults.object(forKey: "isSmartSwapsOpen") != nil ?
             self.defaults.bool(forKey: "isSmartSwapsOpen") : true
-        self.isAudioDevicesOpen = self.defaults.object(forKey: "isAudioDevicesOpen") != nil ? 
+        self.isAudioDevicesOpen = self.defaults.object(forKey: "isAudioDevicesOpen") != nil ?
             self.defaults.bool(forKey: "isAudioDevicesOpen") : true
-        self.isThemeOpen = self.defaults.object(forKey: "isThemeOpen") != nil ? 
+        self.isThemeOpen = self.defaults.object(forKey: "isThemeOpen") != nil ?
             self.defaults.bool(forKey: "isThemeOpen") : true
-        self.isAppearanceOpen = self.defaults.object(forKey: "isAppearanceOpen") != nil ? 
+        self.isAppearanceOpen = self.defaults.object(forKey: "isAppearanceOpen") != nil ?
             self.defaults.bool(forKey: "isAppearanceOpen") : true
-        self.isBetaOpen = self.defaults.object(forKey: "isBetaOpen") != nil ? 
+        self.isBetaOpen = self.defaults.object(forKey: "isBetaOpen") != nil ?
             self.defaults.bool(forKey: "isBetaOpen") : true
-        self.isDebugOpen = self.defaults.object(forKey: "isDebugOpen") != nil ? 
+        self.isDebugOpen = self.defaults.object(forKey: "isDebugOpen") != nil ?
             self.defaults.bool(forKey: "isDebugOpen") : true
-        self.isAboutOpen = self.defaults.object(forKey: "isAboutOpen") != nil ? 
+        self.isAboutOpen = self.defaults.object(forKey: "isAboutOpen") != nil ?
             self.defaults.bool(forKey: "isAboutOpen") : true
 
         // 初始化默认音频设备设置
@@ -880,7 +878,7 @@ class TunaSettings: ObservableObject {
     }
 
     // Method to load default values
-    func loadDefaults() {
+    public func loadDefaults() {
         // Set default values
         UserDefaults.standard.set("system", forKey: "theme")
         UserDefaults.standard.set(0.7, forKey: "glassStrength")
@@ -919,6 +917,16 @@ class TunaSettings: ObservableObject {
         self.isDebugOpen = true
         self.isAboutOpen = true
     }
+
+    public var theme: String {
+        get { UserDefaults.standard.string(forKey: "theme") ?? "system" }
+        set { UserDefaults.standard.set(newValue, forKey: "theme") }
+    }
+
+    public var shortcutEnabled: Bool {
+        get { self.enableDictationShortcut }
+        set { self.enableDictationShortcut = newValue }
+    }
 }
 
 // MARK: - UI Settings Extension
@@ -930,12 +938,6 @@ class TunaSettings: ObservableObject {
 // @depends_on: TunaSettings.swift
 
 extension TunaSettings {
-    // Theme settings
-    var theme: String {
-        get { UserDefaults.standard.string(forKey: "theme") ?? "system" }
-        set { UserDefaults.standard.set(newValue, forKey: "theme") }
-    }
-
     var glassStrength: Double {
         get { UserDefaults.standard.double(forKey: "glassStrength") }
         set { UserDefaults.standard.set(newValue, forKey: "glassStrength") }
@@ -969,11 +971,6 @@ extension TunaSettings {
     }
 
     // Shortcut settings (aliases to existing properties)
-    var shortcutEnabled: Bool {
-        get { self.enableDictationShortcut }
-        set { self.enableDictationShortcut = newValue }
-    }
-
     var shortcutKey: String {
         get { self.dictationShortcutKeyCombo }
         set { self.dictationShortcutKeyCombo = newValue }
@@ -986,7 +983,7 @@ extension TunaSettings {
     }
 
     // Whisper API Key
-    var whisperAPIKey: String {
+    public var whisperAPIKey: String {
         get { UserDefaults.standard.string(forKey: "whisperAPIKey") ?? "" }
         set { UserDefaults.standard.set(newValue, forKey: "whisperAPIKey") }
     }

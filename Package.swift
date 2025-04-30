@@ -7,7 +7,10 @@ let package = Package(
         .macOS(.v13),
     ],
     products: [
-        .executable(name: "Tuna", targets: ["Tuna"]),
+        .executable(name: "Tuna", targets: ["TunaApp"]),
+        .executable(name: "SyncRules", targets: ["SyncRules"]),
+        .library(name: "TunaCore", targets: ["TunaCore"]),
+        .library(name: "TunaUI", targets: ["TunaUI"]),
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.13.0"),
@@ -15,8 +18,23 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "Tuna",
+            name: "SyncRules",
             dependencies: [],
+            path: "Scripts/SyncRules"
+        ),
+        .target(
+            name: "TunaCore",
+            dependencies: [],
+            path: "Sources/TunaCore"
+        ),
+        .target(
+            name: "TunaUI",
+            dependencies: ["TunaCore"],
+            path: "Sources/TunaUI"
+        ),
+        .executableTarget(
+            name: "TunaApp",
+            dependencies: ["TunaCore", "TunaUI"],
             path: "Sources/Tuna",
             resources: [
                 .process("Resources"),
@@ -28,7 +46,7 @@ let package = Package(
         .testTarget(
             name: "TunaTests",
             dependencies: [
-                "Tuna",
+                "TunaApp",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
                 .product(name: "ViewInspector", package: "ViewInspector"),
             ],
@@ -40,7 +58,7 @@ let package = Package(
         .testTarget(
             name: "MenuBarPopoverTests",
             dependencies: [
-                "Tuna",
+                "TunaApp",
             ],
             path: "Tests/MenuBarPopoverTests"
         ),

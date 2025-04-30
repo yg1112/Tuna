@@ -1,4 +1,5 @@
 import Foundation
+import TunaCore
 
 enum MagicTransformService {
     static func transform(_ raw: String, template: PromptTemplate) async throws -> String {

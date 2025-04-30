@@ -1,5 +1,7 @@
 import AppKit
 import SwiftUI
+import TunaCore
+import TunaUI
 
 // import Views -- 已移至 Tuna 模块
 
@@ -69,7 +71,11 @@ struct DictationSettingsView: View {
 
     // 引擎部分
     private var engineSection: some View {
-        CollapsibleCard(title: "Engine", isExpanded: self.$settings.isEngineOpen, collapsible: false) {
+        CollapsibleCard(
+            title: "Engine",
+            isExpanded: self.$settings.isEngineOpen,
+            collapsible: false
+        ) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     SecureField("OpenAI API Key", text: Binding(

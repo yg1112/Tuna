@@ -4,7 +4,7 @@
 
 import Foundation
 
-extension Notification.Name {
+public extension Notification.Name {
     // 快捷键设置相关通知
     static let dictationShortcutSettingsChanged = Notification
         .Name("dictationShortcutSettingsChanged")

@@ -1,6 +1,7 @@
 import AppKit
 import os.log
 import SwiftUI
+import TunaCore
 
 class MainWindowManager: NSObject {
     static let shared = MainWindowManager()

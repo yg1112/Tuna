@@ -1,31 +1,36 @@
-import AppKit
 import SwiftUI
+import TunaCore
 
 // @module: SettingsUI
 // @created_by_cursor: yes
 // @summary: Reusable collapsible card component with styled disclosure group
 // @depends_on: DesignTokens.swift
 
-struct CollapsibleCard<Content: View>: View {
-    let title: String
+public struct CollapsibleCard<Content: View>: View {
+    public let title: String
     @Binding var isExpanded: Bool
     let content: () -> Content
     let collapsible: Bool
 
-    init(title: String, isExpanded: Binding<Bool>, collapsible: Bool = true, @ViewBuilder content: @escaping () -> Content) {
+    public init(
+        title: String,
+        isExpanded: Binding<Bool>,
+        collapsible: Bool = true,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.title = title
         self._isExpanded = isExpanded
         self.content = content
         self.collapsible = collapsible
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(self.title)
                     .font(.headline)
                 Spacer()
-                if collapsible {
+                if self.collapsible {
                     Image(systemName: self.isExpanded ? "chevron.up" : "chevron.down")
                         .foregroundColor(.secondary)
                 }
@@ -33,7 +38,7 @@ struct CollapsibleCard<Content: View>: View {
             .padding(.vertical, 12)
             .contentShape(Rectangle())
             .onTapGesture {
-                if collapsible {
+                if self.collapsible {
                     withAnimation {
                         self.isExpanded.toggle()
                     }
@@ -41,7 +46,7 @@ struct CollapsibleCard<Content: View>: View {
             }
             .accessibilityIdentifier("\(self.title)Toggle")
 
-            if !collapsible || self.isExpanded {
+            if !self.collapsible || self.isExpanded {
                 self.content()
                     .padding(.top, 8)
                     .transition(.opacity)
@@ -53,10 +58,14 @@ struct CollapsibleCard<Content: View>: View {
     }
 }
 
-struct CollapsibleCard_Previews: PreviewProvider {
-    static var previews: some View {
+public struct CollapsibleCard_Previews: PreviewProvider {
+    public static var previews: some View {
         VStack {
-            CollapsibleCard(title: "Non-collapsible Card", isExpanded: .constant(true), collapsible: false) {
+            CollapsibleCard(
+                title: "Non-collapsible Card",
+                isExpanded: .constant(true),
+                collapsible: false
+            ) {
                 Text("This content is always visible")
                     .font(Typography.body)
                     .padding(.top, 4)

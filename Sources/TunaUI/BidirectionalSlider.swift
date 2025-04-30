@@ -1,7 +1,8 @@
 import SwiftUI
+import TunaCore
 
-struct BidirectionalSlider: View {
-    @Binding var value: Double
+public struct BidirectionalSlider: View {
+    @Binding public var value: Double
 
     // 简化常量定义
     private let minValue: Double = -50
@@ -15,7 +16,11 @@ struct BidirectionalSlider: View {
     // 拖动状态
     @State private var isDragging = false
 
-    var body: some View {
+    public init(value: Binding<Double>) {
+        self._value = value
+    }
+
+    public var body: some View {
         GeometryReader { geometry in
             // 主布局容器
             ZStack(alignment: .center) {

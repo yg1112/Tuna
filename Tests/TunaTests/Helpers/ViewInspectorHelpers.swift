@@ -1,6 +1,6 @@
 import SwiftUI
-@testable import Tuna
+@testable import TunaApp
 import ViewInspector
 
 // Enable inspection for ViewInspector testing
-extension TunaSettingsView: Inspectable {} 
+extension TunaSettingsView: Inspectable {}

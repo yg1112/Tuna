@@ -1,0 +1,25 @@
+{
+  "models": [
+    {
+      "id": "claude-3.5-sonnet",
+      "name": "Claude 3.5 Sonnet",
+      "provider": "anthropic",
+      "contextWindow": 200000,
+      "cost": {
+        "prompt": 3.00,
+        "completion": 15.00
+      }
+    },
+    {
+      "id": "gpt-4-turbo-preview",
+      "name": "GPT-4 Turbo Preview",
+      "provider": "openai",
+      "contextWindow": 128000,
+      "cost": {
+        "prompt": 10.00,
+        "completion": 30.00
+      }
+    }
+  ],
+  "defaultModel": "claude-3.5-sonnet"
+}

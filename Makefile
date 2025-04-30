@@ -1,4 +1,4 @@
-.PHONY: bootstrap lint snapshot test clean all watch-ci branch-hygiene format
+.PHONY: bootstrap lint snapshot test clean all watch-ci branch-hygiene format sync-rules
 
 all: bootstrap test
 
@@ -26,3 +26,6 @@ watch-ci:
 branch-hygiene:
 	@echo "Running branch hygiene checks..."
 	@./scripts/branch-hygiene.sh 
+
+sync-rules:
+	swift run SyncRules 

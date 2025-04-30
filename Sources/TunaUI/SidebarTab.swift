@@ -1,17 +1,25 @@
 import SwiftUI
+import TunaCore
 
 // @module: SettingsUI
 // @created_by_cursor: yes
 // @summary: Sidebar tab component with icon and label
 // @depends_on: DesignTokens.swift
 
-struct SidebarTab: View {
-    var icon: String
-    var label: String
-    var isSelected: Bool
-    var action: () -> Void
+public struct SidebarTab: View {
+    public var icon: String
+    public var label: String
+    public var isSelected: Bool
+    public var action: () -> Void
 
-    var body: some View {
+    public init(icon: String, label: String, isSelected: Bool, action: @escaping () -> Void) {
+        self.icon = icon
+        self.label = label
+        self.isSelected = isSelected
+        self.action = action
+    }
+
+    public var body: some View {
         Button(action: self.action) {
             VStack(spacing: 4) {
                 Image(systemName: self.icon)

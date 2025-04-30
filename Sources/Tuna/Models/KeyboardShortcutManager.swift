@@ -7,6 +7,7 @@ import Carbon
 import Cocoa
 import Foundation
 import os.log
+import TunaCore
 
 struct KeyCombo {
     let keyCode: UInt16

@@ -3,6 +3,7 @@ import Combine
 import Foundation
 import os.log
 import SwiftUI
+import TunaCore
 
 // import Views -- 已移至 Tuna 模块
 

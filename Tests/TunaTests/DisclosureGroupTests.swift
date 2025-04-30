@@ -1,5 +1,6 @@
 import SwiftUI
-@testable import Tuna
+@testable import TunaApp
+import TunaCore
 import ViewInspector
 import XCTest
 
@@ -10,7 +11,7 @@ final class DisclosureGroupTests: XCTestCase {
         TunaSettings.shared.isEngineOpen = false
         TunaSettings.shared.isTranscriptionOutputOpen = false
     }
-    
+
     func testEngineDisclosureExpansion() throws {
         // Create a settings view with preview settings
         let settingsView = TunaSettingsView()
