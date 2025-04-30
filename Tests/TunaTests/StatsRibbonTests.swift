@@ -1,5 +1,5 @@
 import SwiftUI
-@testable import Tuna
+@testable import TunaApp
 import XCTest
 
 final class StatsRibbonTests: XCTestCase {

@@ -4,19 +4,19 @@ import CoreAudio
 import Foundation
 import SwiftUI
 
-class AudioManager: ObservableObject {
-    static let shared = AudioManager()
+public class AudioManager: ObservableObject {
+    public static let shared = AudioManager()
 
-    @Published private(set) var outputDevices: [AudioDevice] = []
-    @Published private(set) var inputDevices: [AudioDevice] = []
-    @Published private(set) var selectedOutputDevice: AudioDevice?
-    @Published private(set) var selectedInputDevice: AudioDevice?
-    @Published private(set) var outputVolume: Float = 0.0
-    @Published private(set) var inputVolume: Float = 0.0
+    @Published public private(set) var outputDevices: [AudioDevice] = []
+    @Published public private(set) var inputDevices: [AudioDevice] = []
+    @Published public private(set) var selectedOutputDevice: AudioDevice?
+    @Published public private(set) var selectedInputDevice: AudioDevice?
+    @Published public private(set) var outputVolume: Float = 0.0
+    @Published public private(set) var inputVolume: Float = 0.0
     @Published private(set) var outputBalance: Float = 0.0
     @Published private(set) var inputBalance: Float = 0.0
-    @Published var historicalOutputDevices: [AudioDevice] = []
-    @Published var historicalInputDevices: [AudioDevice] = []
+    @Published public var historicalOutputDevices: [AudioDevice] = []
+    @Published public var historicalInputDevices: [AudioDevice] = []
     // 保留输出设备平衡锁定功能，删除输入设备平衡锁定
     @Published var isOutputBalanceLocked: Bool = false
     // 移除输入设备平衡锁定状态
@@ -459,7 +459,7 @@ class AudioManager: ObservableObject {
     }
 
     // 设置默认设备
-    func setDefaultDevice(_ device: AudioDevice, forInput: Bool) {
+    public func setDefaultDevice(_ device: AudioDevice, forInput: Bool) {
         print(
             "\u{001B}[35m[DEVICE]\u{001B}[0m Setting \(forInput ? "input" : "output") device: \(device.name)"
         )
@@ -1436,11 +1436,16 @@ class AudioManager: ObservableObject {
         removeVolumeListeners()
     }
 
-    func selectInputDevice(_ device: AudioDevice) {
+    public func findDevice(byUID uid: String, isInput: Bool) -> AudioDevice? {
+        let devices = isInput ? self.inputDevices : self.outputDevices
+        return devices.first { $0.uid == uid }
+    }
+
+    public func selectInputDevice(_ device: AudioDevice) {
         self.setDefaultDevice(device, forInput: true)
     }
 
-    func selectOutputDevice(_ device: AudioDevice) {
+    public func selectOutputDevice(_ device: AudioDevice) {
         self.setDefaultDevice(device, forInput: false)
     }
 
@@ -2017,20 +2022,6 @@ class AudioManager: ObservableObject {
         }
     }
 
-    // 根据 UID 查找音频设备
-    func findDevice(byUID uid: String, isInput: Bool) -> AudioDevice? {
-        let devices = isInput ? self.inputDevices : self.outputDevices
-
-        // 首先从当前可用设备中查找
-        if let device = devices.first(where: { $0.uid == uid }) {
-            return device
-        }
-
-        // 如果当前设备中没有找到，从历史设备中查找
-        let historicalDevices = isInput ? self.historicalInputDevices : self.historicalOutputDevices
-        return historicalDevices.first(where: { $0.uid == uid })
-    }
-
     // 在设置设备时初始化平衡控制支持
     private func initializeDeviceBalanceSupport(_ device: AudioDevice) -> AudioDevice {
         var mutableDevice = device
@@ -2039,7 +2030,7 @@ class AudioManager: ObservableObject {
     }
 
     // 设置设备音量
-    func setVolumeForDevice(device: AudioDevice, volume: Float, isInput: Bool) {
+    public func setVolumeForDevice(device: AudioDevice, volume: Float, isInput: Bool) {
         print(
             "\u{001B}[36m[音量变化]\u{001B}[0m 设置\(isInput ? "输入" : "输出")设备 '\(device.name)' 音量: \(Int(volume * 100))%"
         )

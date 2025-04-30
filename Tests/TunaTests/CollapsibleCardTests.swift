@@ -1,5 +1,6 @@
 import SwiftUI
-@testable import Tuna
+@testable import TunaApp
+import TunaUI
 import XCTest
 
 final class CollapsibleCardTests: XCTestCase {

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import TunaCore
 
 struct SilenceButton: View {
     @State private var isHovering = false

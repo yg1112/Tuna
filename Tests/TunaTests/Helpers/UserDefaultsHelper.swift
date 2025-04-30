@@ -8,12 +8,12 @@ class UserDefaultsHelper {
         let cardKeys = [
             "isShortcutOpen", "isMagicTransformOpen", "isEngineOpen", "isTranscriptionOutputOpen",
             "isLaunchOpen", "isUpdatesOpen", "isSmartSwapsOpen", "isAudioDevicesOpen",
-            "isThemeOpen", "isAppearanceOpen", "isBetaOpen", "isDebugOpen", "isAboutOpen"
+            "isThemeOpen", "isAppearanceOpen", "isBetaOpen", "isDebugOpen", "isAboutOpen",
         ]
         cardKeys.forEach { defaults.removeObject(forKey: $0) }
         defaults.synchronize()
     }
-    
+
     /// Reset all settings in UserDefaults
     static func resetAllSettings() {
         let defaults = UserDefaults.standard
@@ -22,28 +22,28 @@ class UserDefaultsHelper {
             "isShortcutOpen", "isMagicTransformOpen", "isEngineOpen", "isTranscriptionOutputOpen",
             "isLaunchOpen", "isUpdatesOpen", "isSmartSwapsOpen", "isAudioDevicesOpen",
             "isThemeOpen", "isAppearanceOpen", "isBetaOpen", "isDebugOpen", "isAboutOpen",
-            
+
             // Theme and appearance
             "theme", "glassStrength", "fontScale", "reduceMotion",
-            
+
             // Features
             "enableBeta", "whisperAPIKey", "enableSmartDeviceSwapping",
-            
+
             // Audio devices
             "selectedOutputDeviceUID", "selectedInputDeviceUID",
             "historicalOutputDevices", "historicalInputDevices",
             "backupOutputDeviceUID", "backupInputDeviceUID",
-            
+
             // Stats
             "stats_consecutiveDays", "stats_wordsFreed", "stats_smartSwaps", "stats_lastUsedDate",
-            
+
             // Audio modes
             "currentModeID", "audioModes",
-            
+
             // Other settings
-            "popoverPinned", "dictationApiKey"
+            "popoverPinned", "dictationApiKey",
         ]
         settingsKeys.forEach { defaults.removeObject(forKey: $0) }
         defaults.synchronize()
     }
-} 
+}

@@ -42,4 +42,8 @@ DerivedData/
 *.dSYM
 
 # never commit personal tokens
-*.token 
+*.token
+
+# Add patterns to ignore all .app and .bak artifacts recursively
+**/*.app*
+**/*.bak 

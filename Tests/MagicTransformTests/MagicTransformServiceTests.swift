@@ -1,4 +1,5 @@
-@testable import Tuna
+@testable import TunaApp
+import TunaCore
 import XCTest
 
 final class MagicTransformServiceTests: XCTestCase {

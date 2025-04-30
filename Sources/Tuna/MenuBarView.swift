@@ -3,6 +3,8 @@ import CoreAudio
 import CoreAudio.AudioHardware
 import os
 import SwiftUI
+import TunaCore
+import TunaUI
 
 // 存储 About 窗口的全局变量
 var aboutWindowReference: NSWindowController?

@@ -1,4 +1,5 @@
 import SwiftUI
+import TunaCore
 
 struct ModeSettingsView: View {
     @StateObject private var modeManager = AudioModeManager.shared

@@ -1,6 +1,7 @@
 import Combine
 import os.log
 import SwiftUI
+import TunaCore
 
 class AudioBuddyAppDelegate: NSObject, ObservableObject {
     var cancellables = Set<AnyCancellable>()

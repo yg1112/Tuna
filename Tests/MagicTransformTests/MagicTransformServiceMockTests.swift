@@ -1,5 +1,6 @@
 import Foundation
-@testable import Tuna
+@testable import TunaApp
+import TunaCore
 import XCTest
 
 // 模拟URL协议用于测试

@@ -1,4 +1,5 @@
 import SwiftUI
+import TunaCore
 
 // import Views -- 已移至 Tuna 模块
 

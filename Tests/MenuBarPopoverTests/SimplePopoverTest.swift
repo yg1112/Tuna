@@ -1,5 +1,5 @@
 import AppKit
-@testable import Tuna
+@testable import TunaApp
 import XCTest
 
 final class SimplePopoverTest: XCTestCase {

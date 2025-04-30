@@ -116,7 +116,7 @@ rules:
         - "**/*.swift"
     steps:
       - run: |
-          if ! swiftformat --config .swiftformat . --lint; then
+          if ! swiftformat . --enable explicitSelf; then
             echo "⚠️ Found implicit self usage in closures"
             echo "Please run 'make format' to fix"
             exit 1

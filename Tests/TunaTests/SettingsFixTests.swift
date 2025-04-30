@@ -1,5 +1,7 @@
 import SwiftUI
-@testable import Tuna
+@testable import TunaApp
+import TunaCore
+import TunaUI
 import ViewInspector
 import XCTest
 
@@ -17,7 +19,7 @@ class SettingsFixTests: XCTestCase {
         UserDefaultsHelper.resetAllSettings()
         TunaSettings.shared.loadDefaults()
     }
-    
+
     override func tearDown() {
         UserDefaultsHelper.resetAllSettings()
         super.tearDown()
@@ -136,17 +138,17 @@ class SettingsFixTests: XCTestCase {
     func testDictationFormatPersistence() {
         // Test default value
         XCTAssertEqual(TunaSettings.shared.transcriptionFormat, "txt")
-        
+
         // Test setting a new value
         TunaSettings.shared.transcriptionFormat = "json"
         XCTAssertEqual(TunaSettings.shared.transcriptionFormat, "json")
         XCTAssertEqual(UserDefaults.standard.string(forKey: "dictationFormat"), "json")
     }
-    
+
     func testThemePersistence() {
         // Test default value
         XCTAssertEqual(TunaSettings.shared.theme, "system")
-        
+
         // Test setting a new value
         TunaSettings.shared.theme = "dark"
         XCTAssertEqual(TunaSettings.shared.theme, "dark")
