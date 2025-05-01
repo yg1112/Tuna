@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "TunaCore", targets: ["TunaCore"]),
         .library(name: "TunaUI", targets: ["TunaUI"]),
         .library(name: "TunaAudio", targets: ["TunaAudio"]),
+        .library(name: "TunaSpeech", targets: ["TunaSpeech"]),
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.13.0"),
@@ -30,8 +31,13 @@ let package = Package(
         ),
         .target(
             name: "TunaAudio",
-            dependencies: ["TunaCore"],
+            dependencies: [],
             path: "Sources/TunaAudio"
+        ),
+        .target(
+            name: "TunaSpeech",
+            dependencies: ["TunaAudio", "TunaCore"],
+            path: "Sources/TunaSpeech"
         ),
         .target(
             name: "TunaUI",
@@ -40,7 +46,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "TunaApp",
-            dependencies: ["TunaCore", "TunaUI", "TunaAudio"],
+            dependencies: ["TunaCore", "TunaUI", "TunaAudio", "TunaSpeech"],
             path: "Sources/Tuna",
             resources: [
                 .process("Resources"),

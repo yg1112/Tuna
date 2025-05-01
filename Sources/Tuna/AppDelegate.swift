@@ -5,6 +5,8 @@ import os.log
 import SwiftUI
 import TunaAudio
 import TunaCore
+import TunaSpeech
+import TunaUI
 
 // 事件监视器 - 监听鼠标点击事件
 class EventMonitor {

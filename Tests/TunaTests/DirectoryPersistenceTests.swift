@@ -17,9 +17,8 @@ final class DirectoryPersistenceTests: XCTestCase {
         self.settings = TunaSettings(defaults: self.testDefaults)
         TunaSettings.shared = self.settings
 
-        // Create a temporary directory for testing
-        self.tempDirURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
+        // Create a fixed test directory path
+        self.tempDirURL = URL(fileURLWithPath: "/tmp/tuna_test_dir")
         try? FileManager.default.createDirectory(
             at: self.tempDirURL,
             withIntermediateDirectories: true
@@ -43,15 +42,15 @@ final class DirectoryPersistenceTests: XCTestCase {
         // Verify URL was saved to UserDefaults as absoluteString
         XCTAssertEqual(
             self.testDefaults.string(forKey: "transcriptionOutputDirectory"),
-            self.tempDirURL.absoluteString,
+            self.tempDirURL.standardized.absoluteString,
             "Directory URL should be saved as absoluteString in UserDefaults"
         )
 
-        // Create a new settings instance to verify persistence
+        // Create a new settings instance with the same UserDefaults to verify persistence
         let newSettings = TunaSettings(defaults: self.testDefaults)
         XCTAssertEqual(
             newSettings.transcriptionOutputDirectory?.absoluteString,
-            self.tempDirURL.absoluteString,
+            self.tempDirURL.standardized.absoluteString,
             "Directory URL should persist across instances"
         )
     }

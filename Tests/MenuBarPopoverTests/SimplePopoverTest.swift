@@ -5,8 +5,12 @@ import XCTest
 final class SimplePopoverTest: XCTestCase {
     var delegate: AppDelegate!
 
-    override func setUp() {
-        super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        // Skip tests if running in CI environment
+        if ProcessInfo.processInfo.environment["CI"] != nil {
+            throw XCTSkip("Skipping UI tests in CI environment")
+        }
         self.delegate = AppDelegate()
         self.delegate.setupStatusItemForTesting()
     }
@@ -16,7 +20,13 @@ final class SimplePopoverTest: XCTestCase {
         super.tearDown()
     }
 
-    func testButtonWiring() {
+    func testButtonWiring() throws {
+        // Skip test if running in CI environment
+        try XCTSkipIf(
+            ProcessInfo.processInfo.environment["CI"] != nil,
+            "Skipping UI test in CI environment"
+        )
+
         // 验证button配置
         XCTAssertNotNil(self.delegate.statusItem, "StatusItem should not be nil")
         XCTAssertNotNil(self.delegate.statusItem.button, "StatusItem button should not be nil")

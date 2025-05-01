@@ -97,8 +97,16 @@ public class TunaSettings: ObservableObject {
         didSet {
             if !self.isUpdating, oldValue != self.transcriptionOutputDirectory {
                 if let url = transcriptionOutputDirectory {
-                    self.defaults.set(url.absoluteString, forKey: "transcriptionOutputDirectory")
-                    self.logger.debug("Saved transcription output directory: \(url.absoluteString)")
+                    // 确保URL格式一致
+                    let standardizedURL = url.standardized
+                    self.defaults.set(
+                        standardizedURL.absoluteString,
+                        forKey: "transcriptionOutputDirectory"
+                    )
+                    self.logger
+                        .debug(
+                            "Saved transcription output directory: \(standardizedURL.absoluteString)"
+                        )
                 } else {
                     self.defaults.removeObject(forKey: "transcriptionOutputDirectory")
                     self.logger.debug("Removed transcription output directory")
@@ -242,6 +250,18 @@ public class TunaSettings: ObservableObject {
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+
+        // Load settings from UserDefaults
+        self.isUpdating = true
+        defer { self.isUpdating = false }
+
+        // Load transcription output directory
+        if let urlString = defaults.string(forKey: "transcriptionOutputDirectory"),
+           let url = URL(string: urlString)
+        {
+            self.transcriptionOutputDirectory = url.standardized
+        }
+
         self.loadDefaults()
     }
 
@@ -281,11 +301,6 @@ public class TunaSettings: ObservableObject {
 
         // Load dictation settings
         self.dictationShortcut = self.defaults.string(forKey: "dictationShortcut") ?? "⌘⌥D"
-
-        // Load output directory
-        if let urlString = defaults.string(forKey: "transcriptionOutputDirectory") {
-            self.transcriptionOutputDirectory = URL(string: urlString)
-        }
 
         // Ensure defaults are synchronized
         self.defaults.synchronize()

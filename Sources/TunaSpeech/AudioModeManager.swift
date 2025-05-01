@@ -4,21 +4,20 @@ import Foundation
 import os.log
 import SwiftUI
 import TunaAudio
-import TunaCore
 
 /// Manages audio modes in the application
-class AudioModeManager: ObservableObject {
-    static let shared = AudioModeManager()
+public class AudioModeManager: ObservableObject {
+    public static let shared = AudioModeManager()
 
     private let logger = Logger(subsystem: "com.tuna.app", category: "AudioModeManager")
     private let audioManager = AudioManager.shared
     private var cancellables = Set<AnyCancellable>()
 
     /// All available audio modes
-    @Published var modes: [AudioMode] = []
+    @Published public var modes: [AudioMode] = []
 
     /// Currently selected mode ID
-    @Published var currentModeID: String? {
+    @Published public var currentModeID: String? {
         didSet {
             if let modeID = currentModeID {
                 UserDefaults.standard.set(modeID, forKey: "currentModeID")
@@ -87,6 +86,8 @@ class AudioModeManager: ObservableObject {
             name: "Automatic",
             outputDeviceUID: audioManager.selectedOutputDevice?.uid ?? "",
             inputDeviceUID: self.audioManager.selectedInputDevice?.uid ?? "",
+            outputVolume: 0.5,
+            inputVolume: 0.5,
             isAutomatic: true
         )
         newModes.append(automaticMode)
@@ -99,7 +100,9 @@ class AudioModeManager: ObservableObject {
             let meetingMode = AudioMode(
                 name: "Meeting",
                 outputDeviceUID: macbookSpeaker.uid,
-                inputDeviceUID: defaultMic.uid
+                inputDeviceUID: defaultMic.uid,
+                outputVolume: 0.5,
+                inputVolume: 0.5
             )
             newModes.append(meetingMode)
         }
@@ -112,7 +115,9 @@ class AudioModeManager: ObservableObject {
             let studyMode = AudioMode(
                 name: "Study",
                 outputDeviceUID: headphones.uid,
-                inputDeviceUID: headphones.uid
+                inputDeviceUID: headphones.uid,
+                outputVolume: 0.5,
+                inputVolume: 0.5
             )
             newModes.append(studyMode)
         }
@@ -126,7 +131,7 @@ class AudioModeManager: ObservableObject {
             let entertainmentMode = AudioMode(
                 name: "Entertainment",
                 outputDeviceUID: externalSpeaker.uid,
-                inputDeviceUID: "", // No input device
+                inputDeviceUID: "",
                 outputVolume: 0.7
             )
             newModes.append(entertainmentMode)
@@ -152,14 +157,14 @@ class AudioModeManager: ObservableObject {
     }
 
     /// Add a new audio mode
-    func addMode(_ mode: AudioMode) {
+    public func addMode(_ mode: AudioMode) {
         self.modes.append(mode)
         self.saveModes()
         self.logger.debug("Added new audio mode: \(mode.name)")
     }
 
     /// Update an existing audio mode
-    func updateMode(_ mode: AudioMode) {
+    public func updateMode(_ mode: AudioMode) {
         if let index = modes.firstIndex(where: { $0.id == mode.id }) {
             self.modes[index] = mode
             self.saveModes()
@@ -173,7 +178,7 @@ class AudioModeManager: ObservableObject {
     }
 
     /// Delete an audio mode
-    func deleteMode(withID id: String) {
+    public func deleteMode(withID id: String) {
         // Don't allow deleting automatic mode
         if id == "automatic" {
             self.logger.warning("Attempt to delete automatic mode rejected")
@@ -191,94 +196,76 @@ class AudioModeManager: ObservableObject {
     }
 
     /// Get audio mode by ID
-    func getMode(byID id: String) -> AudioMode? {
+    public func getMode(byID id: String) -> AudioMode? {
         self.modes.first { $0.id == id }
     }
 
     /// Apply audio mode settings
-    func applyMode(_ mode: AudioMode) {
+    public func applyMode(_ mode: AudioMode) {
         self.logger.debug("Applying audio mode: \(mode.name)")
 
-        // Set output device
-        if !mode.outputDeviceUID.isEmpty {
-            if let device = audioManager.findDevice(byUID: mode.outputDeviceUID, isInput: false) {
-                self.audioManager.selectOutputDevice(device)
+        // Set output device and volume
+        if !mode.outputDeviceUID.isEmpty,
+           let device = audioManager.outputDevices.first(where: { $0.uid == mode.outputDeviceUID })
+        {
+            self.audioManager.selectOutputDevice(device)
+            if let volume = mode.outputVolume {
                 self.audioManager.setVolumeForDevice(
                     device: device,
-                    volume: mode.outputVolume,
+                    volume: volume,
                     isInput: false
                 )
-                self.logger.debug("Set output device: \(device.name), volume: \(mode.outputVolume)")
+                self.logger.debug("Set output device: \(device.name), volume: \(volume)")
             } else {
-                self.logger.warning("Output device not found: \(mode.outputDeviceUID)")
+                self.logger.debug("Set output device: \(device.name), using default volume")
             }
+        } else {
+            self.logger.warning("Output device not found: \(mode.outputDeviceUID)")
         }
 
-        // Set input device
-        if !mode.inputDeviceUID.isEmpty {
-            if let device = audioManager.findDevice(byUID: mode.inputDeviceUID, isInput: true) {
-                self.audioManager.selectInputDevice(device)
+        // Set input device and volume
+        if !mode.inputDeviceUID.isEmpty,
+           let device = audioManager.inputDevices.first(where: { $0.uid == mode.inputDeviceUID })
+        {
+            self.audioManager.selectInputDevice(device)
+            if let volume = mode.inputVolume {
                 self.audioManager.setVolumeForDevice(
                     device: device,
-                    volume: mode.inputVolume,
+                    volume: volume,
                     isInput: true
                 )
-                self.logger.debug("Set input device: \(device.name), volume: \(mode.inputVolume)")
+                self.logger.debug("Set input device: \(device.name), volume: \(volume)")
             } else {
-                self.logger.warning("Input device not found: \(mode.inputDeviceUID)")
+                self.logger.debug("Set input device: \(device.name), using default volume")
             }
+        } else {
+            self.logger.warning("Input device not found: \(mode.inputDeviceUID)")
         }
     }
 
-    /// Update current mode's device volumes
-    func updateCurrentModeVolumes() {
-        guard let currentModeID,
-              let index = modes.firstIndex(where: { $0.id == currentModeID })
-        else {
-            return
-        }
-
-        // Update volume values
-        self.modes[index].outputVolume = self.audioManager.outputVolume
-        self.modes[index].inputVolume = self.audioManager.inputVolume
-
-        self.saveModes()
-        self.logger
-            .debug(
-                "Updated current mode volumes: output=\(self.audioManager.outputVolume), input=\(self.audioManager.inputVolume)"
-            )
-    }
-
-    /// Check if automatic mode switch is needed
+    /// Check for automatic mode switch based on device changes
     private func checkForAutomaticModeSwitch() {
-        // Only check if automatic mode is selected
-        if self.currentModeID != "automatic" {
+        // Only proceed if we have an automatic mode
+        guard let automaticMode = self.modes.first(where: { $0.isAutomatic }) else {
             return
         }
 
-        // Update automatic mode device settings
-        if let index = modes.firstIndex(where: { $0.id == "automatic" }) {
-            var automaticMode = self.modes[index]
+        // Update automatic mode with current devices
+        var updatedMode = automaticMode
+        updatedMode.outputDeviceUID = self.audioManager.selectedOutputDevice?.uid ?? ""
+        updatedMode.inputDeviceUID = self.audioManager.selectedInputDevice?.uid ?? ""
 
-            // Update to current devices
-            if let outputDevice = audioManager.selectedOutputDevice {
-                automaticMode.outputDeviceUID = outputDevice.uid
-                automaticMode.outputVolume = self.audioManager.outputVolume
-            }
+        // Update the mode
+        self.updateMode(updatedMode)
 
-            if let inputDevice = audioManager.selectedInputDevice {
-                automaticMode.inputDeviceUID = inputDevice.uid
-                automaticMode.inputVolume = self.audioManager.inputVolume
-            }
-
-            self.modes[index] = automaticMode
-            self.saveModes()
-            self.logger.debug("Updated automatic mode device settings")
+        // If we're in automatic mode, apply the updated settings
+        if self.currentModeID == automaticMode.id {
+            self.applyMode(updatedMode)
         }
     }
 
-    /// Create a custom mode
-    func createCustomMode(
+    /// Create a new audio mode with the given settings
+    public func createMode(
         name: String,
         outputDeviceUID: String,
         inputDeviceUID: String,
@@ -292,9 +279,51 @@ class AudioModeManager: ObservableObject {
             outputVolume: outputVolume,
             inputVolume: inputVolume
         )
-
         self.addMode(newMode)
         return newMode
+    }
+
+    /// Create a custom audio mode
+    public func createCustomMode(
+        name: String,
+        outputDeviceUID: String,
+        inputDeviceUID: String,
+        outputVolume: Float = 0.5,
+        inputVolume: Float = 0.5
+    ) -> AudioMode {
+        let mode = AudioMode(
+            name: name,
+            outputDeviceUID: outputDeviceUID,
+            inputDeviceUID: inputDeviceUID,
+            outputVolume: outputVolume,
+            inputVolume: inputVolume
+        )
+        self.addMode(mode)
+        return mode
+    }
+
+    /// Update volumes for current mode
+    public func updateCurrentModeVolumes() {
+        guard let currentMode = self.modes.first(where: { $0.id == self.currentModeID })
+        else { return }
+
+        // Get current volumes
+        let outputVolume = self.audioManager.selectedOutputDevice?.getVolume() ?? 0.5
+        let inputVolume = self.audioManager.selectedInputDevice?.getVolume() ?? 0.5
+
+        // Create updated mode
+        let updatedMode = AudioMode(
+            id: currentMode.id,
+            name: currentMode.name,
+            outputDeviceUID: currentMode.outputDeviceUID,
+            inputDeviceUID: currentMode.inputDeviceUID,
+            outputVolume: outputVolume,
+            inputVolume: inputVolume,
+            isAutomatic: currentMode.isAutomatic
+        )
+
+        // Update mode
+        self.updateMode(updatedMode)
     }
 }
 

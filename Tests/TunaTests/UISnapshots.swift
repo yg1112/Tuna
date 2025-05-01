@@ -3,9 +3,23 @@ import SwiftUI
 @testable import TunaApp
 import TunaAudio
 import TunaCore
+import TunaSpeech
 import TunaUI
 import ViewInspector
 import XCTest
+
+// Add StaticNowProvider
+struct StaticNowProvider: NowProvider {
+    let fixedDate: Date
+
+    init(fixedDate: Date) {
+        self.fixedDate = fixedDate
+    }
+
+    func now() -> Date {
+        self.fixedDate
+    }
+}
 
 final class UISnapshots: XCTestCase {
     override func setUp() {
@@ -48,15 +62,15 @@ final class UISnapshots: XCTestCase {
     // 语音转写视图快照
     func test_TunaDictationView() throws {
         // 创建固定时间的NowProvider
-        let staticNowProvider = StaticNowProvider(TestConstants.previewDate)
+        let staticNowProvider = StaticNowProvider(fixedDate: TestConstants.previewDate)
 
         // 创建测试专用DictationManager
-        let testDictationManager = DictationManager.createForTesting(nowProvider: staticNowProvider)
-        testDictationManager.reset() // 确保状态重置
+        let dictationManager = DictationManager.createForTesting(nowProvider: staticNowProvider)
+        dictationManager.reset() // 确保状态重置
 
         // 创建使用测试依赖的QuickDictationView
         let view = QuickDictationView(
-            dictationManager: testDictationManager,
+            dictationManager: dictationManager,
             animationsDisabled: true
         )
         .transaction { $0.disablesAnimations = true }

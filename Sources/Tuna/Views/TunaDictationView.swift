@@ -1,5 +1,7 @@
 import SwiftUI
 import TunaCore
+import TunaSpeech
+import TunaUI
 
 // import Views -- 已移至 Tuna 模块
 
@@ -439,7 +441,7 @@ struct QuickDictationView: View {
                     try self.dictationManager.transcribedText.write(
                         to: url,
                         atomically: true,
-                        encoding: .utf8
+                        encoding: String.Encoding.utf8
                     )
 
                     // 显示成功消息
@@ -1326,7 +1328,7 @@ struct AudioVisualBar: View {
             // 使用确定性的高度模式
             let baseHeights: [CGFloat] = [5, 10, 15, 20, 15, 10, 5, 8, 12, 18, 14, 10, 6, 10, 15]
             let index = Int(
-                nowProvider.now.timeIntervalSince1970
+                nowProvider.now().timeIntervalSince1970
                     .truncatingRemainder(dividingBy: 15)
             )
             self.height = baseHeights[index]

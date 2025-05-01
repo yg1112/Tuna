@@ -5,6 +5,8 @@ import os.log
 import SwiftUI
 import TunaAudio
 import TunaCore
+import TunaSpeech
+import TunaUI
 
 class MainWindowManager: NSObject {
     static let shared = MainWindowManager()

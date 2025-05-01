@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import TunaCore
+import TunaSpeech
 import TunaUI
 
 // import Views -- 已移至 Tuna 模块

@@ -6,38 +6,14 @@ import SwiftUI
 import TunaAudio
 import TunaCore
 
-// import Views -- 已移至 Tuna 模块
-
-// 添加错误枚举
-public enum DictationError: Error, LocalizedError {
-    case noAPIKey
-    case audioFileReadError
-    case transcriptionFailed(Error)
-
-    public var errorDescription: String? {
-        switch self {
-            case .noAPIKey:
-                "No API key provided. Please add your OpenAI API key in Settings."
-            case .audioFileReadError:
-                "Could not read audio file."
-            case let .transcriptionFailed(error):
-                "Transcription failed: \(error.localizedDescription)"
-        }
-    }
-}
-
-// 添加通知名称扩展
-extension Notification.Name {
-    static let dictationAPIKeyMissing = Notification.Name("dictationAPIKeyMissing")
-    static let dictationAPIKeyUpdated = Notification.Name("dictationAPIKeyUpdated")
-}
-
+/// Manages audio dictation and transcription
 public class DictationManager: ObservableObject, DictationManagerProtocol {
     public static let shared = DictationManager()
 
     // 允许替换单例以便测试
     #if DEBUG
-    static func createForTesting(nowProvider: NowProvider = RealNowProvider()) -> DictationManager {
+    public static func createForTesting(nowProvider: NowProvider = RealNowProvider())
+    -> DictationManager {
         let manager = DictationManager(nowProvider: nowProvider)
         return manager
     }
@@ -207,7 +183,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
             let oldRecorder = self.audioRecorder
 
             // 创建新的录音文件
-            let fileName = "dictation_\(nowProvider.now.timeIntervalSince1970).wav"
+            let fileName = "dictation_\(nowProvider.now().timeIntervalSince1970).wav"
             recordingURL = self.tempDirectory?.appendingPathComponent(fileName)
 
             guard let recordingURL else {
@@ -273,7 +249,7 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
         }
 
         // 创建新的录音文件
-        let fileName = "dictation_\(nowProvider.now.timeIntervalSince1970).wav"
+        let fileName = "dictation_\(nowProvider.now().timeIntervalSince1970).wav"
         recordingURL = self.tempDirectory?.appendingPathComponent(fileName)
 
         guard let recordingURL else {
@@ -735,14 +711,11 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                         self.logger.debug("Current segment transcribed successfully")
 
                         // 检查是否启用了自动复制功能，如果是则复制当前转录文本到剪贴板
-                        if self.tunaSettings.autoCopyTranscriptionToClipboard, !self
-                            .transcribedText.isEmpty
-                        {
-                            let pasteboard = NSPasteboard.general
-                            pasteboard.clearContents()
-                            pasteboard.setString(self.transcribedText, forType: .string)
-                            self.logger.debug("Auto-copied segment transcription to clipboard")
-                            self.progressMessage = "Paused - content transcribed and copied"
+                        if self.tunaSettings.autoCopyTranscriptionToClipboard {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(self.transcribedText, forType: .string)
+                            self.logger.debug("Auto-copied transcription to clipboard")
+                            self.progressMessage = "Transcription completed and copied to clipboard"
                         }
 
                     case let .failure(error):
@@ -1038,17 +1011,12 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 "Transcription completed (\(wordCount) words) - click Save to save"
 
             // 检查是否启用了自动复制功能，如果是则复制到剪贴板
-            if TunaSettings.shared.autoCopyTranscriptionToClipboard, !self.transcribedText.isEmpty {
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(self.transcribedText, forType: .string)
+            if self.tunaSettings.autoCopyTranscriptionToClipboard {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(self.transcribedText, forType: .string)
                 self.logger.debug("Auto-copied transcription to clipboard")
-                self.progressMessage =
-                    "Transcription completed (\(wordCount) words) and copied to clipboard"
+                self.progressMessage = "Transcription completed and copied to clipboard"
             }
-
-            // Magic Transform 功能集成
-            Task { await MagicTransformManager.shared.run(raw: self.transcribedText) }
         }
 
         self.breathingAnimation = false
@@ -1065,5 +1033,11 @@ public class DictationManager: ObservableObject, DictationManagerProtocol {
                 userInfo: ["message": message]
             )
         }
+    }
+
+    // Fix updateAPIKey implementation
+    public func updateAPIKey(_ key: String) {
+        try? SecureStore.save(key: SecureStore.defaultAccount, value: key)
+        NotificationCenter.default.post(name: .dictationAPIKeyUpdated, object: nil)
     }
 }

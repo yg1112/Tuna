@@ -8,6 +8,7 @@ import Cocoa
 import Foundation
 import os.log
 import TunaCore
+import TunaSpeech
 
 struct KeyCombo {
     let keyCode: UInt16

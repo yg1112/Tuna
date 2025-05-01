@@ -5,6 +5,7 @@ import os
 import SwiftUI
 import TunaAudio
 import TunaCore
+import TunaSpeech
 import TunaUI
 
 // 存储 About 窗口的全局变量
@@ -895,7 +896,7 @@ struct DictationView: View {
                     try self.dictationManager.transcribedText.write(
                         to: url,
                         atomically: true,
-                        encoding: .utf8
+                        encoding: String.Encoding.utf8
                     )
                 } catch {
                     print("Failed to save transcription: \(error.localizedDescription)")

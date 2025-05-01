@@ -7,15 +7,15 @@ import Foundation
 import Security
 
 /// 安全存储工具，封装Keychain API以安全存储敏感信息如API密钥
-enum SecureStore {
+public enum SecureStore {
     /// 服务标识符，用于在Keychain中唯一标识存储的条目
     private static let service = "ai.tuna.openai"
 
     /// 默认账户名
-    static let defaultAccount = "default"
+    public static let defaultAccount = "default"
 
     /// Keychain错误类型
-    enum KeychainError: Error {
+    public enum KeychainError: Error {
         case duplicateItem
         case itemNotFound
         case unexpectedStatus(OSStatus)
@@ -25,7 +25,7 @@ enum SecureStore {
     /// - Parameters:
     ///   - key: 要存储的密钥标识符
     ///   - value: 要存储的值
-    static func save(key: String, value: String) throws {
+    public static func save(key: String, value: String) throws {
         // 创建一个查询以检查项目是否已存在
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -56,7 +56,7 @@ enum SecureStore {
     /// 从Keychain安全加载值
     /// - Parameter key: 要加载的密钥标识符
     /// - Returns: 存储的值，如果未找到则返回nil
-    static func load(key: String) -> String? {
+    public static func load(key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: self.service,
@@ -80,7 +80,7 @@ enum SecureStore {
 
     /// 从Keychain删除存储的值
     /// - Parameter key: 要删除的密钥标识符
-    static func delete(key: String) throws {
+    public static func delete(key: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: self.service,
@@ -98,7 +98,7 @@ enum SecureStore {
     /// 辅助函数：获取当前OpenAI API密钥
     /// 首先尝试从Keychain获取，然后尝试从环境变量获取
     /// - Returns: API密钥，如果都没有找到则返回nil
-    static func currentAPIKey() -> String? {
+    public static func currentAPIKey() -> String? {
         // 首先检查Keychain中是否有存储的密钥
         if let key = load(key: defaultAccount), !key.isEmpty {
             return key
