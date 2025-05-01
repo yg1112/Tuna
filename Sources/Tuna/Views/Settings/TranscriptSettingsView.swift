@@ -2,13 +2,14 @@ import SwiftUI
 import TunaCore
 
 struct TranscriptSettingsView: View {
+    @EnvironmentObject var state: AppState
     @ObservedObject var settings: TunaSettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Magic Transform 设置
             VStack(alignment: .leading, spacing: 12) {
-                Toggle("Enable Magic Transform", isOn: self.$settings.magicEnabled)
+                Toggle("Enable Magic Transform", isOn: self.$state.settings.isMagicEnabled)
                     .toggleStyle(SwitchToggleStyle(tint: Color.blue))
 
                 Picker("Style", selection: self.$settings.magicPreset) {
@@ -17,7 +18,7 @@ struct TranscriptSettingsView: View {
                     Text("Custom").tag(PresetStyle.custom)
                 }
                 .pickerStyle(.segmented)
-                .disabled(!self.settings.magicEnabled)
+                .disabled(!self.state.settings.isMagicEnabled)
 
                 if self.settings.magicPreset == .custom {
                     TextEditor(text: self.$settings.magicCustomPrompt)
@@ -29,7 +30,7 @@ struct TranscriptSettingsView: View {
                             RoundedRectangle(cornerRadius: 4)
                                 .stroke(Color.secondary.opacity(0.5), lineWidth: 1)
                         )
-                        .disabled(!self.settings.magicEnabled)
+                        .disabled(!self.state.settings.isMagicEnabled)
                 }
             }
             .padding()

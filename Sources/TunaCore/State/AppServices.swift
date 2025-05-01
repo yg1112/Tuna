@@ -39,6 +39,7 @@ public struct LiveSpeechService: SpeechServiceProtocol {
 
 public protocol SettingsServiceProtocol {
     func load() -> AppSettings
+    func save(_ settings: AppSettings)
 }
 
 public struct LiveSettingsService: SettingsServiceProtocol {
@@ -49,7 +50,15 @@ public struct LiveSettingsService: SettingsServiceProtocol {
     }
 
     public func load() -> AppSettings {
-        AppSettings(mode: self.settings.currentMode)
+        AppSettings(
+            mode: self.settings.currentMode,
+            isMagicEnabled: self.settings.magicEnabled
+        )
+    }
+
+    public func save(_ settings: AppSettings) {
+        self.settings.currentMode = settings.mode
+        self.settings.magicEnabled = settings.isMagicEnabled
     }
 }
 
