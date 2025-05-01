@@ -1,6 +1,8 @@
 import SwiftUI
 @testable import TunaApp
+import TunaAudio
 import TunaCore
+import ViewInspector
 import XCTest
 
 final class MainCardLayoutTests: XCTestCase {

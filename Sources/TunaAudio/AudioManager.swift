@@ -3,6 +3,7 @@ import Combine
 import CoreAudio
 import Foundation
 import SwiftUI
+import TunaCore
 
 public class AudioManager: ObservableObject {
     public static let shared = AudioManager()

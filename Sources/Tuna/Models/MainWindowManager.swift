@@ -1,6 +1,9 @@
 import AppKit
+import Combine
+import Foundation
 import os.log
 import SwiftUI
+import TunaAudio
 import TunaCore
 
 class MainWindowManager: NSObject {

@@ -2,8 +2,10 @@ import AppKit
 import SnapshotTesting
 import SwiftUI
 @testable import TunaApp
+import TunaAudio
 import TunaCore
 import TunaUI
+import ViewInspector
 import XCTest
 
 final class UISnapshots: XCTestCase {

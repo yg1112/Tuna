@@ -1,4 +1,8 @@
+import AppKit
+import Combine
+import Foundation
 import SwiftUI
+import TunaAudio
 import TunaCore
 
 struct ModeSettingsView: View {

@@ -1,5 +1,6 @@
 import SwiftUI
 @testable import TunaApp
+import TunaAudio
 import TunaCore
 import TunaUI
 import ViewInspector

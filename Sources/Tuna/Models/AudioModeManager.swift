@@ -3,6 +3,7 @@ import CoreAudio
 import Foundation
 import os.log
 import SwiftUI
+import TunaAudio
 import TunaCore
 
 /// Manages audio modes in the application

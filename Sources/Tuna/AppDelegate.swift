@@ -1,6 +1,9 @@
-import Cocoa
+import AppKit
+import Combine
+import Foundation
 import os.log
 import SwiftUI
+import TunaAudio
 import TunaCore
 
 // 事件监视器 - 监听鼠标点击事件

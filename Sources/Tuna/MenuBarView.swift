@@ -3,6 +3,7 @@ import CoreAudio
 import CoreAudio.AudioHardware
 import os
 import SwiftUI
+import TunaAudio
 import TunaCore
 import TunaUI
 
