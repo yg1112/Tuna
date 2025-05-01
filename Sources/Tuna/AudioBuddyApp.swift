@@ -47,14 +47,35 @@ struct AudioBuddyApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var audioBuddyDelegate = AudioBuddyAppDelegate()
 
+    // Add AppState
+    @StateObject private var appState: AppState
+    private let services: AppServices
+
     init() {
         print("\u{001B}[34m[APP]\u{001B}[0m Tuna app launched")
+
+        // Initialize services and state
+        let services = AppServices.createLive(
+            audioManager: AudioManager.shared,
+            dictationManager: DictationManager.shared,
+            settings: TunaSettings.shared
+        )
+        let state = AppState(
+            audio: services.audio.currentAudioState(),
+            speech: services.speech.currentSpeechState(),
+            settings: services.settings.load()
+        )
+
+        self._appState = StateObject(wrappedValue: state)
+        self.services = services
+
         fflush(stdout)
     }
 
     var body: some Scene {
         Settings {
             EmptyView()
+                .environmentObject(self.appState)
         }
         .onChange(of: NSApplication.shared.isActive) { isActive in
             if isActive {

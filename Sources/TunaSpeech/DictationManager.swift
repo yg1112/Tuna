@@ -4,7 +4,8 @@ import Foundation
 import os.log
 import SwiftUI
 import TunaAudio
-import TunaCore
+import TunaSpeech
+import TunaTypes
 
 /// Manages audio dictation and transcription
 public class DictationManager: ObservableObject, DictationManagerProtocol {

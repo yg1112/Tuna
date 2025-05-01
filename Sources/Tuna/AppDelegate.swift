@@ -80,6 +80,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 使用标准UserDefaults
     private let defaults = UserDefaults.standard
 
+    // Add AppState and services
+    private let services = AppServices.live
+    private lazy var appState: AppState = .init(
+        audio: services.audio.currentAudioState(),
+        speech: services.speech.currentSpeechState(),
+        settings: services.settings.load()
+    )
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("\u{001B}[34m[APP]\u{001B}[0m Application finished launching")
         fflush(stdout)
@@ -175,6 +183,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         .environmentObject(DictationManager.shared)
         .environmentObject(TabRouter.shared)
+        .environmentObject(self.appState)
         let hostingController = NSHostingController(rootView: contentView)
         self.popover.contentViewController = hostingController
 

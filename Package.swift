@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "TunaUI", targets: ["TunaUI"]),
         .library(name: "TunaAudio", targets: ["TunaAudio"]),
         .library(name: "TunaSpeech", targets: ["TunaSpeech"]),
+        .library(name: "TunaTypes", targets: ["TunaTypes"]),
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.13.0"),
@@ -25,18 +26,23 @@ let package = Package(
             path: "Scripts/SyncRules"
         ),
         .target(
-            name: "TunaCore",
+            name: "TunaTypes",
             dependencies: [],
+            path: "Sources/TunaTypes"
+        ),
+        .target(
+            name: "TunaCore",
+            dependencies: ["TunaTypes", "TunaAudio", "TunaSpeech"],
             path: "Sources/TunaCore"
         ),
         .target(
             name: "TunaAudio",
-            dependencies: [],
+            dependencies: ["TunaTypes"],
             path: "Sources/TunaAudio"
         ),
         .target(
             name: "TunaSpeech",
-            dependencies: ["TunaAudio", "TunaCore"],
+            dependencies: ["TunaTypes", "TunaAudio"],
             path: "Sources/TunaSpeech"
         ),
         .target(

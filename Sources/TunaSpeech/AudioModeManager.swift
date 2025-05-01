@@ -4,6 +4,7 @@ import Foundation
 import os.log
 import SwiftUI
 import TunaAudio
+import TunaTypes
 
 /// Manages audio modes in the application
 public class AudioModeManager: ObservableObject {
