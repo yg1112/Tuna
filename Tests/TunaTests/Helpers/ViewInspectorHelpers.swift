@@ -3,4 +3,5 @@ import SwiftUI
 import ViewInspector
 
 // Enable inspection for ViewInspector testing
-extension TunaSettingsView: Inspectable {}
+// Note: Inspectable protocol is no longer required as of ViewInspector 0.9.0+
+extension TunaSettingsView {}

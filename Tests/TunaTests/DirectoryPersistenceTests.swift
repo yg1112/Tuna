@@ -5,12 +5,17 @@ import XCTest
 final class DirectoryPersistenceTests: XCTestCase {
     private var testDefaults: UserDefaults!
     private var tempDirURL: URL!
+    private var settings: TunaSettings!
 
     override func setUp() {
         super.setUp()
         // Create a test-specific UserDefaults suite
         self.testDefaults = UserDefaults(suiteName: "TunaTests")
         self.testDefaults.removePersistentDomain(forName: "TunaTests")
+
+        // Create settings with test defaults
+        self.settings = TunaSettings(defaults: self.testDefaults)
+        TunaSettings.shared = self.settings
 
         // Create a temporary directory for testing
         self.tempDirURL = FileManager.default.temporaryDirectory
@@ -24,6 +29,8 @@ final class DirectoryPersistenceTests: XCTestCase {
     override func tearDown() {
         self.testDefaults.removePersistentDomain(forName: "TunaTests")
         self.testDefaults = nil
+        self.settings = nil
+        TunaSettings.shared = TunaSettings() // Reset shared instance
         try? FileManager.default.removeItem(at: self.tempDirURL)
         self.tempDirURL = nil
         super.tearDown()
@@ -31,8 +38,7 @@ final class DirectoryPersistenceTests: XCTestCase {
 
     func testDirectoryPersistence() throws {
         // Set the directory in settings
-        let settings = TunaSettings.shared
-        settings.transcriptionOutputDirectory = self.tempDirURL
+        self.settings.transcriptionOutputDirectory = self.tempDirURL
 
         // Verify URL was saved to UserDefaults as absoluteString
         XCTAssertEqual(
@@ -42,7 +48,7 @@ final class DirectoryPersistenceTests: XCTestCase {
         )
 
         // Create a new settings instance to verify persistence
-        let newSettings = TunaSettings.shared
+        let newSettings = TunaSettings(defaults: self.testDefaults)
         XCTAssertEqual(
             newSettings.transcriptionOutputDirectory?.absoluteString,
             self.tempDirURL.absoluteString,

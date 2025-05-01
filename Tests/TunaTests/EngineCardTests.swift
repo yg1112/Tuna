@@ -8,36 +8,38 @@ import XCTest
 final class EngineCardTests: XCTestCase {
     override func setUp() {
         super.setUp()
-        UserDefaultsHelper.resetAllSettings()
-        TunaSettings.shared.loadDefaults()
+        // Reset settings before each test
+        TunaSettings.shared.isEngineOpen = true // Non-collapsible cards are always expanded
     }
 
-    override func tearDown() {
-        UserDefaultsHelper.resetAllSettings()
-        super.tearDown()
-    }
+    func testEngineCardContent() throws {
+        // Create a settings view with preview settings
+        let dictationTabView = DictationTabView(settings: TunaSettings.shared)
 
-    func testEngineCardExpansionState() throws {
-        let testKey = "isEngineOpen"
+        // Find the Engine card by its ID
+        let engineCard = try dictationTabView.inspect()
+            .find(viewWithAccessibilityIdentifier: "EngineCard")
 
-        // Create a binding that uses UserDefaults
-        let binding = Binding<Bool>(
-            get: { UserDefaults.standard.bool(forKey: testKey) },
-            set: { UserDefaults.standard.set($0, forKey: testKey) }
+        // Verify the card is expanded and non-collapsible
+        XCTAssertTrue(TunaSettings.shared.isEngineOpen, "Engine card should be expanded")
+
+        // Verify content is always visible
+        let engineContent = try engineCard.find(viewWithAccessibilityIdentifier: "EngineContent")
+        XCTAssertNoThrow(
+            try engineContent.find(viewWithAccessibilityIdentifier: "EngineSettings"),
+            "Engine settings content should be visible"
         )
 
-        // Create the card with the binding
-        let card = CollapsibleCard(title: "Engine", isExpanded: binding) {
-            Text("Test Content")
-        }
+        // Verify header is present
+        XCTAssertNoThrow(
+            try engineCard.find(viewWithAccessibilityIdentifier: "EngineHeader"),
+            "Engine header should be visible"
+        )
 
-        // Initially, the card should be collapsed
-        XCTAssertFalse(UserDefaults.standard.bool(forKey: testKey))
-
-        // Expand the card
-        UserDefaults.standard.set(true, forKey: testKey)
-
-        // Verify the card is expanded
-        XCTAssertTrue(UserDefaults.standard.bool(forKey: testKey))
+        // Verify no chevron is present for non-collapsible card
+        XCTAssertThrowsError(
+            try engineCard.find(viewWithAccessibilityIdentifier: "EngineChevron"),
+            "Non-collapsible Engine card should not have a chevron"
+        )
     }
 }

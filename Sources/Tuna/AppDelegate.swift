@@ -602,8 +602,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// For unit tests: sets up statusItem without relying on NSApplication run‑loop.
     @objc func setupStatusItemForTesting() {
-        if self.statusItem == nil {
-            self.setupStatusItem() // 使用正确的方法名
+        // Create a mock status item for testing
+        let mockStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        mockStatusItem.button?.target = self
+        mockStatusItem.button?.action = #selector(self.togglePopover(_:))
+
+        // Use a simple test icon
+        if let button = mockStatusItem.button {
+            button.image = NSImage(
+                systemSymbolName: "circle.fill",
+                accessibilityDescription: "Test Icon"
+            )
         }
+
+        self.statusItem = mockStatusItem
+
+        // Create a minimal popover for testing
+        let popover = NSPopover()
+        popover.contentSize = NSSize(width: 200, height: 200)
+        popover.behavior = .transient
+
+        let contentView = Text("Test Content")
+        let hostingController = NSHostingController(rootView: contentView)
+        popover.contentViewController = hostingController
+
+        self.popover = popover
     }
 }

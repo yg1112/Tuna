@@ -7,80 +7,71 @@ import XCTest
 final class DisclosureGroupTests: XCTestCase {
     override func setUp() {
         super.setUp()
-        // Reset settings before each test
-        TunaSettings.shared.isEngineOpen = false
-        TunaSettings.shared.isTranscriptionOutputOpen = false
+        // Reset settings before each test - non-collapsible cards are always expanded
+        TunaSettings.shared.isEngineOpen = true
+        TunaSettings.shared.isTranscriptionOutputOpen = true
     }
 
     func testEngineDisclosureExpansion() throws {
-        // Create a settings view with preview settings
-        let settingsView = TunaSettingsView()
+        let dictationTabView = DictationTabView(settings: TunaSettings.shared)
 
-        // Get the dictation tab view
-        let dictationTab = try settingsView.inspect().find(viewWithId: "dictationTab")
-
-        // Find the Engine card by its ID
-        let engineCard = try dictationTab.find(viewWithId: "EngineCard")
-
-        // Initially the card should be collapsed
-        XCTAssertFalse(TunaSettings.shared.isEngineOpen)
-
-        // Simulate a tap on the header
-        try engineCard.button().tap()
-
-        // The card should now be expanded
-        XCTAssertTrue(TunaSettings.shared.isEngineOpen)
-
-        // Tap again to collapse
-        try engineCard.button().tap()
-
-        // The card should be collapsed again
-        XCTAssertFalse(TunaSettings.shared.isEngineOpen)
+        // Find the Engine card and verify its components
+        let engineCard = try dictationTabView.inspect()
+            .find(viewWithAccessibilityIdentifier: "EngineCard")
+        XCTAssertNoThrow(
+            try engineCard.find(viewWithAccessibilityIdentifier: "EngineHeader"),
+            "Engine header should be visible"
+        )
+        XCTAssertNoThrow(
+            try engineCard.find(viewWithAccessibilityIdentifier: "EngineContent"),
+            "Engine content should be visible"
+        )
+        XCTAssertThrowsError(
+            try engineCard.find(viewWithAccessibilityIdentifier: "EngineChevron"),
+            "Non-collapsible Engine card should not have a chevron"
+        )
     }
 
     func testTranscriptionOutputDisclosureExpansion() throws {
-        // Create a settings view with preview settings
-        let settingsView = TunaSettingsView()
+        let dictationTabView = DictationTabView(settings: TunaSettings.shared)
 
-        // Get the dictation tab view
-        let dictationTab = try settingsView.inspect().find(viewWithId: "dictationTab")
-
-        // Find the Transcription Output card by its ID
-        let transcriptionCard = try dictationTab.find(viewWithId: "TranscriptionOutputCard")
-
-        // Initially the card should be collapsed
-        XCTAssertFalse(TunaSettings.shared.isTranscriptionOutputOpen)
-
-        // Simulate a tap on the header
-        try transcriptionCard.button().tap()
-
-        // The card should now be expanded
-        XCTAssertTrue(TunaSettings.shared.isTranscriptionOutputOpen)
-
-        // Tap again to collapse
-        try transcriptionCard.button().tap()
-
-        // The card should be collapsed again
-        XCTAssertFalse(TunaSettings.shared.isTranscriptionOutputOpen)
+        // Find the Transcription Output card and verify its components
+        let transcriptionCard = try dictationTabView.inspect()
+            .find(viewWithAccessibilityIdentifier: "TranscriptionOutputCard")
+        XCTAssertNoThrow(
+            try transcriptionCard
+                .find(viewWithAccessibilityIdentifier: "TranscriptionOutputHeader"),
+            "Transcription output header should be visible"
+        )
+        XCTAssertNoThrow(
+            try transcriptionCard
+                .find(viewWithAccessibilityIdentifier: "TranscriptionOutputContent"),
+            "Transcription output content should be visible"
+        )
+        XCTAssertThrowsError(
+            try transcriptionCard
+                .find(viewWithAccessibilityIdentifier: "TranscriptionOutputChevron"),
+            "Non-collapsible Transcription Output card should not have a chevron"
+        )
     }
 
     func testNoChevronIconsPresent() throws {
-        // Create a settings view with preview settings
-        let settingsView = TunaSettingsView()
+        let dictationTabView = DictationTabView(settings: TunaSettings.shared)
 
-        // Get the dictation tab view
-        let dictationTab = try settingsView.inspect().find(viewWithId: "dictationTab")
+        // Verify that chevron icons are not present in any non-collapsible cards
+        let engineCard = try dictationTabView.inspect()
+            .find(viewWithAccessibilityIdentifier: "EngineCard")
+        XCTAssertThrowsError(
+            try engineCard.find(viewWithAccessibilityIdentifier: "EngineChevron"),
+            "Engine card should not have a chevron"
+        )
 
-        // Try to find any chevron icons
-        let upChevrons = try dictationTab.findAll(ViewType.Image.self).filter { image in
-            try image.actualImage().name() == "chevron.up"
-        }
-        let downChevrons = try dictationTab.findAll(ViewType.Image.self).filter { image in
-            try image.actualImage().name() == "chevron.down"
-        }
-
-        // Verify no chevrons are present
-        XCTAssertEqual(upChevrons.count, 0, "Should not find any up chevrons")
-        XCTAssertEqual(downChevrons.count, 0, "Should not find any down chevrons")
+        let transcriptionCard = try dictationTabView.inspect()
+            .find(viewWithAccessibilityIdentifier: "TranscriptionOutputCard")
+        XCTAssertThrowsError(
+            try transcriptionCard
+                .find(viewWithAccessibilityIdentifier: "TranscriptionOutputChevron"),
+            "Transcription Output card should not have a chevron"
+        )
     }
 }

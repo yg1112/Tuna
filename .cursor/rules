@@ -4,33 +4,50 @@ default_model: gpt-4o-mini             # cheap/free for planning
 models:
   planning: gpt-4o-mini
   coding: gpt-4o
+
 after_apply:
-  - run: swift build
-  - run: swift test
-branch_prefixes = ["dev-", "fix-", "feature/", "infra/"]
-disallow_random_branches = true
-auto_delete_branch_on_merge = true
-post_merge_hook = "make branch-hygiene"
-skip_markers:
-  start: "// cursor:skip-start"
-  end: "// cursor:skip-end"
+  - run: "swift build"
+  - run: "swift test --parallel"
+  - run: "bash -c '[ $(swift test --skip-build --list-tests | wc -l) -gt 0 ]'"
+
+branch_prefixes:
+  - "dev-"
+  - "fix-"
+  - "feature/"
+  - "infra/"
+
+# Branch settings
+settings:
+  disallow_random_branches: true
+  auto_delete_branch_on_merge: true
+  post_merge_hook: "make branch-hygiene"
+  skip_markers:
+    start: "// cursor:skip-start"
+    end: "// cursor:skip-end"
+
 context:
   include_files:
     - Sources/Tuna/MenuBarView.swift
     - Sources/Tuna/TabRouter.swift
-snippets_dir: .cursor/snippets
+  snippets_dir: .cursor/snippets
 
-# 添加新规则
-require_explicit_self = true
-run_make_format_on_write = true
-require_successful_swift_build = true
-require_yamllint_pass = true
-require_ui_presence_tests = ["Shortcut","Magic Transform","Engine","Transcription Output"]
-snapshot_tests_must_update = true
+# Additional rules
+requirements:
+  require_explicit_self: true
+  run_make_format_on_write: true
+  require_successful_swift_build: true
+  require_yamllint_pass: true
+  require_ui_presence_tests: 
+    - "Shortcut"
+    - "Magic Transform"
+    - "Engine"
+    - "Transcription Output"
+  snapshot_tests_must_update: true
 
 # Branch hygiene settings
-auto_delete_branch_after_merge = true
-cleanup_stale_branches_days = 30
+branch_hygiene:
+  auto_delete_branch_after_merge: true
+  cleanup_stale_branches_days: 30
 
 rules:
   cursor_context_auto_update:
@@ -128,4 +145,19 @@ rules:
       on_write:
         - "**/*.swift"
     steps:
-      - run: make format 
+      - run: make format
+
+  swift_tests:
+    name: SwiftTests
+    description: Run Swift tests in parallel and verify test count
+    trigger:
+      on_change:
+        - "**/*.swift"
+        - "Package.swift"
+    steps:
+      - name: Run parallel tests
+        run: swift test --parallel
+      - name: Verify test count
+        run: |
+          test_count=$(swift test --skip-build --list-tests | wc -l)
+          [ "$test_count" -gt 0 ] 

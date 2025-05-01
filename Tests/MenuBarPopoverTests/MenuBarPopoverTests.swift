@@ -3,21 +3,30 @@ import AppKit
 import XCTest
 
 final class MenuBarPopoverTests: XCTestCase {
+    var delegate: AppDelegate!
+
+    override func setUp() {
+        super.setUp()
+        self.delegate = AppDelegate()
+        self.delegate.setupStatusItemForTesting()
+    }
+
+    override func tearDown() {
+        self.delegate = nil
+        super.tearDown()
+    }
+
     func testStatusItemButtonWiredUp() throws {
-        let delegate = AppDelegate()
-        delegate.setupStatusItemForTesting() // implement below
-        let button = delegate.statusItem.button!
+        let button = self.delegate.statusItem.button!
         XCTAssertNotNil(button.target)
         XCTAssertEqual(button.action, #selector(AppDelegate.togglePopover(_:)))
     }
 
     func testTogglePopoverShowsPopover() throws {
-        let delegate = AppDelegate()
-        delegate.setupStatusItemForTesting()
-        delegate.togglePopover(nil) // simulate click
-        XCTAssertTrue(delegate.popover.isShown, "Popover should be visible after toggle")
+        self.delegate.togglePopover(nil) // simulate click
+        XCTAssertTrue(self.delegate.popover.isShown, "Popover should be visible after toggle")
         XCTAssertNotNil(
-            delegate.popover.contentViewController?.view.subviews.first,
+            self.delegate.popover.contentViewController?.view.subviews.first,
             "Popover should have visible content"
         )
     }
