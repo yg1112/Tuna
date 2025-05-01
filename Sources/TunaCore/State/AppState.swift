@@ -22,9 +22,11 @@ public struct SpeechState {
 
 public struct AppSettings {
     public var mode: Mode
+    public var isMagicEnabled: Bool
 
-    public init(mode: Mode) {
+    public init(mode: Mode, isMagicEnabled: Bool) {
         self.mode = mode
+        self.isMagicEnabled = isMagicEnabled
     }
 }
 
