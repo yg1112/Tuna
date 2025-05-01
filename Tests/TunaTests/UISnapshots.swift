@@ -9,9 +9,14 @@ import XCTest
 final class UISnapshots: XCTestCase {
     override func setUp() {
         super.setUp()
-        // 设置持续集成环境的参数 - 使用新API
-        // 注意：虽然isRecording是废弃API，但在移植到新API前仍需使用
-        SnapshotTesting.isRecording = ProcessInfo.processInfo.environment["RECORD_SNAPSHOTS"] == "1"
+        // Create snapshots directory if it doesn't exist
+        let fileURL = URL(fileURLWithPath: #file)
+        let snapshotsDir = fileURL.deletingLastPathComponent()
+            .appendingPathComponent("__Snapshots__")
+        try? FileManager.default.createDirectory(
+            at: snapshotsDir,
+            withIntermediateDirectories: true
+        )
     }
 
     // 辅助函数 - 将SwiftUI视图封装为NSView用于快照测试
@@ -23,8 +28,6 @@ final class UISnapshots: XCTestCase {
 
     // 菜单栏视图快照
     func test_MenuBarView() throws {
-        // Use the global isRecording setting
-
         let audioManager = AudioManager.shared
         let settings = TunaSettings.shared
         let router = TabRouter.shared
@@ -42,14 +45,12 @@ final class UISnapshots: XCTestCase {
         assertSnapshot(
             of: NSHostingController(rootView: view),
             as: .image(size: .init(width: 400, height: 450)),
-            record: SnapshotTesting.isRecording
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
     // 语音转写视图快照
     func test_TunaDictationView() throws {
-        // Use the global isRecording setting
-
         let view = TunaDictationView(animationsDisabled: true)
             .transaction { $0.disablesAnimations = true }
             .environment(\.colorScheme, .dark)
@@ -57,14 +58,12 @@ final class UISnapshots: XCTestCase {
         assertSnapshot(
             of: NSHostingController(rootView: view),
             as: .image(size: .init(width: 400, height: 400)),
-            record: SnapshotTesting.isRecording
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
     // 快速语音转写视图快照
     func test_QuickDictationView() throws {
-        // Use the global isRecording setting
-
         // 创建固定时间的NowProvider
         let staticNowProvider = StaticNowProvider(TestConstants.previewDate)
 
@@ -83,7 +82,7 @@ final class UISnapshots: XCTestCase {
         assertSnapshot(
             of: NSHostingController(rootView: view),
             as: .image(size: .init(width: 500, height: 300)),
-            record: SnapshotTesting.isRecording
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
@@ -92,19 +91,18 @@ final class UISnapshots: XCTestCase {
         let view = AboutCardView()
         assertSnapshot(
             of: NSHostingController(rootView: view),
-            as: .image(size: .init(width: 780, height: 700))
+            as: .image(size: .init(width: 780, height: 700)),
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
     // 设置视图快照
     func test_TunaSettingsView() throws {
-        // Use the global isRecording setting
-
         let view = TunaSettingsView()
         assertSnapshot(
             of: NSHostingController(rootView: view),
             as: .image(size: .init(width: 600, height: 600)),
-            record: SnapshotTesting.isRecording
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
@@ -116,7 +114,8 @@ final class UISnapshots: XCTestCase {
 
         assertSnapshot(
             of: NSHostingController(rootView: view),
-            as: .image(size: .init(width: 220, height: 70))
+            as: .image(size: .init(width: 220, height: 70)),
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
@@ -128,7 +127,8 @@ final class UISnapshots: XCTestCase {
 
         assertSnapshot(
             of: NSHostingController(rootView: view),
-            as: .image(size: .init(width: 270, height: 80))
+            as: .image(size: .init(width: 270, height: 80)),
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
@@ -144,7 +144,8 @@ final class UISnapshots: XCTestCase {
 
         assertSnapshot(
             of: NSHostingController(rootView: view),
-            as: .image(size: .init(width: 220, height: 120))
+            as: .image(size: .init(width: 220, height: 120)),
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 
@@ -158,7 +159,8 @@ final class UISnapshots: XCTestCase {
 
         assertSnapshot(
             of: NSHostingController(rootView: view),
-            as: .image(size: .init(width: 220, height: 60))
+            as: .image(size: .init(width: 220, height: 60)),
+            record: ProcessInfo.processInfo.environment["SNAPSHOT_RECORD"] == "1"
         )
     }
 }

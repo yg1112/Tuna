@@ -6,55 +6,93 @@ import TunaCore
 // @summary: Reusable collapsible card component with styled disclosure group
 // @depends_on: DesignTokens.swift
 
+private struct NonCollapsibleButtonStyle: ButtonStyle {
+    let collapsible: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(self.collapsible ? (configuration.isPressed ? 0.7 : 1.0) : 1.0)
+            .allowsHitTesting(self.collapsible)
+    }
+}
+
 public struct CollapsibleCard<Content: View>: View {
     public let title: String
-    @Binding var isExpanded: Bool
+    @Binding private var isExpandedBinding: Bool
     let content: () -> Content
     let collapsible: Bool
+
+    private var accessibilityPrefix: String {
+        // Remove spaces and special characters, keeping only alphanumeric
+        // Also ensure consistent casing for identifiers
+        self.title.components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined()
+            .replacingOccurrences(of: " ", with: "")
+    }
+
+    // Computed binding that forces true for non-collapsible cards
+    private var effectiveExpanded: Binding<Bool> {
+        Binding(
+            get: { self.collapsible ? self.isExpandedBinding : true },
+            set: { newValue in
+                if self.collapsible {
+                    self.isExpandedBinding = newValue
+                }
+            }
+        )
+    }
 
     public init(
         title: String,
         isExpanded: Binding<Bool>,
-        collapsible: Bool = true,
+        collapsible: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
-        self._isExpanded = isExpanded
+        self._isExpandedBinding = isExpanded
         self.content = content
         self.collapsible = collapsible
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(self.title)
-                    .font(.headline)
-                Spacer()
+            Button(action: {
                 if self.collapsible {
-                    Image(systemName: self.isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.secondary)
+                    self.effectiveExpanded.wrappedValue.toggle()
                 }
-            }
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                if self.collapsible {
-                    withAnimation {
-                        self.isExpanded.toggle()
+            }) {
+                HStack {
+                    Text(self.title)
+                        .font(.headline)
+                    Spacer()
+                    if self.collapsible {
+                        Image(systemName: "chevron.right")
+                            .rotationEffect(.degrees(self.effectiveExpanded.wrappedValue ? 90 : 0))
+                            .animation(
+                                .easeInOut(duration: 0.2),
+                                value: self.effectiveExpanded.wrappedValue
+                            )
+                            .accessibilityIdentifier("\(self.accessibilityPrefix)Chevron")
                     }
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(Color.clear)
             }
-            .accessibilityIdentifier("\(self.title)Toggle")
+            .buttonStyle(NonCollapsibleButtonStyle(collapsible: self.collapsible))
+            .accessibilityIdentifier("\(self.accessibilityPrefix)Header")
 
-            if !self.collapsible || self.isExpanded {
+            if self.effectiveExpanded.wrappedValue {
                 self.content()
-                    .padding(.top, 8)
-                    .transition(.opacity)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .accessibilityIdentifier("\(self.accessibilityPrefix)Content")
             }
         }
-        .padding(.horizontal)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(Color(.windowBackgroundColor))
         .cornerRadius(8)
+        .shadow(radius: 2)
+        .accessibilityIdentifier("\(self.accessibilityPrefix)Card")
     }
 }
 

@@ -28,28 +28,32 @@ class SettingsFixTests: XCTestCase {
     // MARK: - CollapsibleCard Tests
 
     func testCollapsibleCardToggle() throws {
-        // 测试CollapsibleCard的isExpanded功能
+        // Create a binding for a collapsible card
         var isExpanded = false
-
-        // 创建绑定
         let binding = Binding(
             get: { isExpanded },
             set: { isExpanded = $0 }
         )
 
-        // 创建一个CollapsibleCard实例
-        let card = CollapsibleCard(title: "Test Card", isExpanded: binding) {
+        // Create a collapsible card
+        let card = CollapsibleCard(
+            title: "Test Card",
+            isExpanded: binding,
+            collapsible: true // Explicitly set to collapsible
+        ) {
             Text("Content")
         }
 
-        // 验证初始状态是折叠的
-        XCTAssertFalse(isExpanded)
+        // Verify initial state is collapsed
+        XCTAssertFalse(isExpanded, "Card should start collapsed")
 
-        // 模拟点击展开
+        // Simulate button click to expand
         binding.wrappedValue = true
+        XCTAssertTrue(isExpanded, "Card should expand when clicked")
 
-        // 验证状态已更改
-        XCTAssertTrue(isExpanded)
+        // Simulate button click to collapse
+        binding.wrappedValue = false
+        XCTAssertFalse(isExpanded, "Card should collapse when clicked again")
     }
 
     // MARK: - SettingsUIState Tests

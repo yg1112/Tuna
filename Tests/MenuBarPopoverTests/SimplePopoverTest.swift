@@ -3,23 +3,30 @@ import AppKit
 import XCTest
 
 final class SimplePopoverTest: XCTestCase {
+    var delegate: AppDelegate!
+
+    override func setUp() {
+        super.setUp()
+        self.delegate = AppDelegate()
+        self.delegate.setupStatusItemForTesting()
+    }
+
+    override func tearDown() {
+        self.delegate = nil
+        super.tearDown()
+    }
+
     func testButtonWiring() {
-        // 创建AppDelegate实例
-        let delegate = AppDelegate()
-
-        // 初始化statusItem
-        delegate.setupStatusItemForTesting()
-
         // 验证button配置
-        XCTAssertNotNil(delegate.statusItem, "StatusItem should not be nil")
-        XCTAssertNotNil(delegate.statusItem.button, "StatusItem button should not be nil")
+        XCTAssertNotNil(self.delegate.statusItem, "StatusItem should not be nil")
+        XCTAssertNotNil(self.delegate.statusItem.button, "StatusItem button should not be nil")
 
         // 验证target和action设置
-        let button = delegate.statusItem.button
+        let button = self.delegate.statusItem.button
         XCTAssertNotNil(button?.target, "Button target should not be nil")
         XCTAssertEqual(
             button?.target as? AppDelegate,
-            delegate,
+            self.delegate,
             "Button target should be the AppDelegate"
         )
         XCTAssertEqual(

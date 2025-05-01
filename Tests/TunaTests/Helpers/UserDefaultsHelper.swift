@@ -1,4 +1,5 @@
 import Foundation
+import TunaCore
 
 /// Helper class to manage UserDefaults in tests
 class UserDefaultsHelper {
@@ -10,8 +11,18 @@ class UserDefaultsHelper {
             "isLaunchOpen", "isUpdatesOpen", "isSmartSwapsOpen", "isAudioDevicesOpen",
             "isThemeOpen", "isAppearanceOpen", "isBetaOpen", "isDebugOpen", "isAboutOpen",
         ]
+
+        // First remove all existing values
         cardKeys.forEach { defaults.removeObject(forKey: $0) }
+
+        // Then set all card states to true (expanded)
+        cardKeys.forEach { defaults.set(true, forKey: $0) }
+
+        // Force synchronize to ensure changes are written
         defaults.synchronize()
+
+        // Also reset the TunaSettings shared instance
+        TunaSettings.shared.loadDefaults()
     }
 
     /// Reset all settings in UserDefaults
@@ -43,7 +54,18 @@ class UserDefaultsHelper {
             // Other settings
             "popoverPinned", "dictationApiKey",
         ]
+
+        // First remove all settings
         settingsKeys.forEach { defaults.removeObject(forKey: $0) }
+
+        // Then set all card expansion states to true
+        let cardKeys = [
+            "isShortcutOpen", "isMagicTransformOpen", "isEngineOpen", "isTranscriptionOutputOpen",
+            "isLaunchOpen", "isUpdatesOpen", "isSmartSwapsOpen", "isAudioDevicesOpen",
+            "isThemeOpen", "isAppearanceOpen", "isBetaOpen", "isDebugOpen", "isAboutOpen",
+        ]
+        cardKeys.forEach { defaults.set(true, forKey: $0) }
+
         defaults.synchronize()
     }
 }

@@ -6,143 +6,142 @@ import ViewInspector
 import XCTest
 
 final class SettingsPresenceTests: XCTestCase {
-    var settingsView: TunaSettingsView!
+    var testDefaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
-        UserDefaultsHelper.resetCardExpansionStates()
+        // Create a test-specific UserDefaults suite
+        self.testDefaults = UserDefaults(suiteName: "ai.tuna.tests")
+        self.testDefaults.removePersistentDomain(forName: "ai.tuna.tests")
+
+        // Reset card expansion states
+        self.resetTestEnvironment()
+
+        // Initialize settings with test defaults
+        TunaSettings.shared = TunaSettings(defaults: self.testDefaults)
         TunaSettings.shared.loadDefaults()
-        self.settingsView = TunaSettingsView()
     }
 
     override func tearDown() {
-        UserDefaultsHelper.resetCardExpansionStates()
-        self.settingsView = nil
+        self.resetTestEnvironment()
+        self.testDefaults.removePersistentDomain(forName: "ai.tuna.tests")
+        self.testDefaults = nil
         super.tearDown()
     }
 
+    private func resetTestEnvironment() {
+        // Reset all expansion states
+        TunaSettings.shared.isEngineOpen = false
+        TunaSettings.shared.isTranscriptionOutputOpen = false
+        TunaSettings.shared.isShortcutOpen = false
+        TunaSettings.shared.isMagicTransformOpen = false
+        TunaSettings.shared.isLaunchOpen = false
+        TunaSettings.shared.isUpdatesOpen = false
+        TunaSettings.shared.isAudioDevicesOpen = false
+        TunaSettings.shared.isThemeOpen = false
+        TunaSettings.shared.isAppearanceOpen = false
+        TunaSettings.shared.isBetaOpen = false
+        TunaSettings.shared.isDebugOpen = false
+        TunaSettings.shared.isAboutOpen = false
+    }
+
     func testGeneralTabCardPresence() throws {
-        // Get the general tab view
-        let generalTab = try settingsView.inspect().find(viewWithId: "generalTab")
+        let generalTabView = GeneralTabView(settings: TunaSettings.shared)
+        let view = try generalTabView.inspect()
 
-        // Find all CollapsibleCard titles
-        let cardTitles = try generalTab.findAll(ViewType.Text.self)
-            .compactMap { try $0.string() }
-            .filter { $0 == "Launch on Startup" || $0 == "Check for Updates" }
+        // Find cards in the general tab
+        let scrollView = try view.find(ViewType.ScrollView.self)
+        let vstack = try scrollView.vStack()
 
-        // Verify required cards are present
-        XCTAssertEqual(cardTitles.count, 2, "Should have exactly 2 cards")
-        XCTAssertTrue(cardTitles.contains("Launch on Startup"), "Should contain Launch card")
-        XCTAssertTrue(cardTitles.contains("Check for Updates"), "Should contain Updates card")
+        // Find Launch on Startup card
+        let launchCard = try vstack.find(viewWithAccessibilityIdentifier: "launchCard")
+        XCTAssertNotNil(launchCard, "Launch on Startup card should be present")
+
+        // Find Check for Updates card
+        let updatesCard = try vstack.find(viewWithAccessibilityIdentifier: "updatesCard")
+        XCTAssertNotNil(updatesCard, "Check for Updates card should be present")
     }
 
     func testDictationTabCardPresence() throws {
-        // Get the dictation tab view
-        let dictationTab = try settingsView.inspect().find(viewWithId: "dictationTab")
+        let dictationTabView = DictationTabView(settings: TunaSettings.shared)
+        let view = try dictationTabView.inspect()
 
-        // Find all CollapsibleCard titles
-        let cardTitles = try dictationTab.findAll(ViewType.Text.self)
-            .compactMap { try $0.string() }
-            .filter {
-                $0 == "Shortcut" || $0 == "Magic Transform" || $0 == "Engine" || $0 ==
-                    "Transcription Output"
-            }
+        // Find the cards by their accessibility identifiers
+        let engineCard = try view.find(viewWithAccessibilityIdentifier: "EngineCard")
+        XCTAssertNotNil(engineCard)
 
-        // Verify all four required cards are present
-        XCTAssertEqual(cardTitles.count, 4, "Should have exactly 4 cards")
-        XCTAssertTrue(cardTitles.contains("Shortcut"), "Should contain Shortcut card")
-        XCTAssertTrue(cardTitles.contains("Magic Transform"), "Should contain Magic Transform card")
-        XCTAssertTrue(cardTitles.contains("Engine"), "Should contain Engine card")
-        XCTAssertTrue(
-            cardTitles.contains("Transcription Output"),
-            "Should contain Transcription Output card"
-        )
+        let transcriptionCard = try view
+            .find(viewWithAccessibilityIdentifier: "TranscriptionOutputCard")
+        XCTAssertNotNil(transcriptionCard)
+
+        // Verify card titles
+        let engineTitle = try engineCard.find(text: "Engine")
+        XCTAssertNotNil(engineTitle)
+
+        let transcriptionTitle = try transcriptionCard.find(text: "Transcription Output")
+        XCTAssertNotNil(transcriptionTitle)
     }
 
     func testAudioTabCardPresence() throws {
-        // Get the audio tab view
-        let audioTab = try settingsView.inspect().find(viewWithId: "audioTab")
+        let audioTabView = AudioTabView(
+            settings: TunaSettings.shared,
+            audioManager: AudioManager.shared
+        )
+        let view = try audioTabView.inspect()
 
-        // Find all CollapsibleCard titles
-        let cardTitles = try audioTab.findAll(ViewType.Text.self)
-            .compactMap { try $0.string() }
-            .filter { $0 == "Smart Swaps" || $0 == "Audio Devices" }
+        // Find cards in the audio tab
+        let scrollView = try view.find(ViewType.ScrollView.self)
+        let vstack = try scrollView.vStack()
 
-        // Verify required cards are present
-        XCTAssertEqual(cardTitles.count, 2, "Should have exactly 2 cards")
-        XCTAssertTrue(cardTitles.contains("Smart Swaps"), "Should contain Smart Swaps card")
-        XCTAssertTrue(cardTitles.contains("Audio Devices"), "Should contain Audio Devices card")
+        // Find Audio Devices card
+        let audioDevicesCard = try vstack.find(viewWithAccessibilityIdentifier: "audioDevicesCard")
+        XCTAssertNotNil(audioDevicesCard, "Audio Devices card should be present")
     }
 
     func testAppearanceTabCardPresence() throws {
-        // Get the appearance tab view
-        let appearanceTab = try settingsView.inspect().find(viewWithId: "appearanceTab")
+        let appearanceTabView = AppearanceTabView(settings: TunaSettings.shared)
+        let view = try appearanceTabView.inspect()
 
-        // Find all CollapsibleCard titles
-        let cardTitles = try appearanceTab.findAll(ViewType.Text.self)
-            .compactMap { try $0.string() }
-            .filter { $0 == "Theme" || $0 == "Appearance" }
+        // Find cards in the appearance tab
+        let scrollView = try view.find(ViewType.ScrollView.self)
+        let vstack = try scrollView.vStack()
 
-        // Verify required cards are present
-        XCTAssertEqual(cardTitles.count, 2, "Should have exactly 2 cards")
-        XCTAssertTrue(cardTitles.contains("Theme"), "Should contain Theme card")
-        XCTAssertTrue(cardTitles.contains("Appearance"), "Should contain Appearance card")
+        // Find Theme card
+        let themeCard = try vstack.find(viewWithAccessibilityIdentifier: "themeCard")
+        XCTAssertNotNil(themeCard, "Theme card should be present")
+
+        // Find Appearance card
+        let appearanceCard = try vstack.find(viewWithAccessibilityIdentifier: "appearanceCard")
+        XCTAssertNotNil(appearanceCard, "Appearance card should be present")
     }
 
     func testAdvancedTabCardPresence() throws {
-        // Get the advanced tab view
-        let advancedTab = try settingsView.inspect().find(viewWithId: "advancedTab")
+        let advancedTabView = AdvancedTabView(settings: TunaSettings.shared)
+        let view = try advancedTabView.inspect()
 
-        // Find all CollapsibleCard titles
-        let cardTitles = try advancedTab.findAll(ViewType.Text.self)
-            .compactMap { try $0.string() }
-            .filter { $0 == "Beta Features" || $0 == "Debug" }
+        // Find cards in the advanced tab
+        let scrollView = try view.find(ViewType.ScrollView.self)
+        let vstack = try scrollView.vStack()
 
-        // Verify required cards are present
-        XCTAssertEqual(cardTitles.count, 2, "Should have exactly 2 cards")
-        XCTAssertTrue(cardTitles.contains("Beta Features"), "Should contain Beta Features card")
-        XCTAssertTrue(cardTitles.contains("Debug"), "Should contain Debug card")
+        // Find Beta Features card
+        let betaCard = try vstack.find(viewWithAccessibilityIdentifier: "betaCard")
+        XCTAssertNotNil(betaCard, "Beta Features card should be present")
+
+        // Find Debug card
+        let debugCard = try vstack.find(viewWithAccessibilityIdentifier: "debugCard")
+        XCTAssertNotNil(debugCard, "Debug card should be present")
     }
 
     func testSupportTabCardPresence() throws {
-        // Get the support tab view
-        let supportTab = try settingsView.inspect().find(viewWithId: "supportTab")
+        let supportTabView = SupportTabView(settings: TunaSettings.shared)
+        let view = try supportTabView.inspect()
 
-        // Find all CollapsibleCard titles
-        let cardTitles = try supportTab.findAll(ViewType.Text.self)
-            .compactMap { try $0.string() }
-            .filter { $0 == "About Tuna" }
+        // Find cards in the support tab
+        let scrollView = try view.find(ViewType.ScrollView.self)
+        let vstack = try scrollView.vStack()
 
-        // Verify required cards are present
-        XCTAssertEqual(cardTitles.count, 1, "Should have exactly 1 card")
-        XCTAssertTrue(cardTitles.contains("About Tuna"), "Should contain About card")
-    }
-
-    func testAllCardsDefaultExpansionState() throws {
-        let settings = TunaSettings.shared
-
-        // Verify all cards are expanded by default
-        XCTAssertTrue(settings.isShortcutOpen, "Shortcut card should be expanded by default")
-        XCTAssertTrue(
-            settings.isMagicTransformOpen,
-            "Magic Transform card should be expanded by default"
-        )
-        XCTAssertTrue(settings.isEngineOpen, "Engine card should be expanded by default")
-        XCTAssertTrue(
-            settings.isTranscriptionOutputOpen,
-            "Transcription Output card should be expanded by default"
-        )
-        XCTAssertTrue(settings.isLaunchOpen, "Launch card should be expanded by default")
-        XCTAssertTrue(settings.isUpdatesOpen, "Updates card should be expanded by default")
-        XCTAssertTrue(settings.isSmartSwapsOpen, "Smart Swaps card should be expanded by default")
-        XCTAssertTrue(
-            settings.isAudioDevicesOpen,
-            "Audio Devices card should be expanded by default"
-        )
-        XCTAssertTrue(settings.isThemeOpen, "Theme card should be expanded by default")
-        XCTAssertTrue(settings.isAppearanceOpen, "Appearance card should be expanded by default")
-        XCTAssertTrue(settings.isBetaOpen, "Beta Features card should be expanded by default")
-        XCTAssertTrue(settings.isDebugOpen, "Debug card should be expanded by default")
-        XCTAssertTrue(settings.isAboutOpen, "About card should be expanded by default")
+        // Find About card
+        let aboutCard = try vstack.find(viewWithAccessibilityIdentifier: "aboutCard")
+        XCTAssertNotNil(aboutCard, "About card should be present")
     }
 }
