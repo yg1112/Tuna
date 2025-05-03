@@ -5,6 +5,8 @@ import SwiftUI
 import TunaAudio
 import TunaCore
 import TunaSpeech
+import TunaTypes
+import TunaUI
 
 struct ModeSettingsView: View {
     @StateObject private var modeManager = AudioModeManager.shared
@@ -14,6 +16,10 @@ struct ModeSettingsView: View {
     @State private var selectedOutputUID = ""
     @State private var selectedInputUID = ""
     @State private var editingMode: AudioMode?
+    @State private var deviceNames: [String: String] = [:]
+    @State private var inputDevices: [any AudioDevice] = []
+    @State private var outputDevices: [any AudioDevice] = []
+    @State private var modes: [AudioMode] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -24,8 +30,17 @@ struct ModeSettingsView: View {
             Divider()
 
             // 模式列表
-            List {
-                ForEach(self.modeManager.modes) { mode in
+            List(selection: Binding(
+                get: { self.modeManager.currentMode },
+                set: { newMode in
+                    if let newMode {
+                        Task {
+                            await self.handleModeSelection(newMode)
+                        }
+                    }
+                }
+            )) {
+                ForEach(self.modes) { mode in
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(mode.name)
@@ -65,54 +80,40 @@ struct ModeSettingsView: View {
 
                         Spacer()
 
-                        // 编辑按钮
-                        Button(action: {
-                            self.editingMode = mode
-                            self.selectedOutputUID = mode.outputDeviceUID
-                            self.selectedInputUID = mode.inputDeviceUID
-                            self.newModeName = mode.name
-                        }) {
-                            Image(systemName: "pencil")
-                                .foregroundColor(.blue)
+                        if mode.id == self.modeManager.currentModeID {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.accentColor)
                         }
-                        .buttonStyle(BorderlessButtonStyle())
-                        .disabled(mode.isAutomatic) // 不允许编辑自动模式
-
-                        // 删除按钮
-                        Button(action: {
-                            self.modeManager.deleteMode(withID: mode.id)
-                        }) {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
-                        }
-                        .buttonStyle(BorderlessButtonStyle())
-                        .disabled(mode.isAutomatic) // 不允许删除自动模式
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        self.modeManager.currentModeID = mode.id
+                        Task {
+                            await self.handleModeSelection(mode)
+                        }
                     }
                 }
             }
-            .frame(minHeight: 200)
+            .frame(height: 200)
 
             Divider()
 
             // 添加新模式按钮
             Button(action: {
-                self.newModeName = ""
-                self.selectedOutputUID = self.audioManager.selectedOutputDevice?.uid ?? ""
-                self.selectedInputUID = self.audioManager.selectedInputDevice?.uid ?? ""
-                self.isAddingNewMode = true
-                self.editingMode = nil
-            }) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Add New Mode")
+                Task {
+                    let inputDevice = await audioManager.selectedInputDevice
+                    let outputDevice = await audioManager.selectedOutputDevice
+
+                    Task { @MainActor in
+                        self.newModeName = ""
+                        self.selectedOutputUID = outputDevice?.uid ?? ""
+                        self.selectedInputUID = inputDevice?.uid ?? ""
+                        self.isAddingNewMode = true
+                        self.editingMode = nil
+                    }
                 }
-                .padding(.horizontal)
+            }) {
+                Label("Add Mode", systemImage: "plus")
             }
-            .padding(.vertical, 8)
 
             Spacer()
         }
@@ -123,6 +124,46 @@ struct ModeSettingsView: View {
         .sheet(item: self.$editingMode) { mode in
             self.modeEditorView(isNew: false)
         }
+        .onAppear {
+            Task {
+                await self.loadDevices()
+                await self.loadModes()
+            }
+        }
+    }
+
+    private func loadDevices() async {
+        let inputs = await audioManager.inputDevices
+        let outputs = await audioManager.outputDevices
+
+        Task { @MainActor in
+            self.inputDevices = inputs
+            self.outputDevices = outputs
+
+            // Update device names
+            var names: [String: String] = [:]
+            for device in inputs + outputs {
+                names[device.uid] = device.name
+            }
+            self.deviceNames = names
+        }
+    }
+
+    private func loadModes() async {
+        Task { @MainActor in
+            self.modes = self.modeManager.modes
+        }
+    }
+
+    private func handleModeSelection(_ mode: AudioMode) async {
+        await self.modeManager.applyMode(mode)
+    }
+
+    private func getDeviceName(uid: String, isInput: Bool) -> String {
+        if uid.isEmpty {
+            return "None"
+        }
+        return self.deviceNames[uid] ?? "Unknown Device"
     }
 
     private func modeEditorView(isNew: Bool) -> some View {
@@ -162,39 +203,12 @@ struct ModeSettingsView: View {
                 Spacer()
 
                 Button(isNew ? "Add" : "Save") {
-                    if isNew {
-                        // 添加新模式
-                        let outputVolume = self.audioManager.findDevice(
-                            byUID: self.selectedOutputUID,
-                            isInput: false
-                        )?.getVolume() ?? 0.5
-                        let inputVolume = self.audioManager.findDevice(
-                            byUID: self.selectedInputUID,
-                            isInput: true
-                        )?.getVolume() ?? 0.5
-
-                        let newMode = self.modeManager.createCustomMode(
-                            name: self.newModeName,
-                            outputDeviceUID: self.selectedOutputUID,
-                            inputDeviceUID: self.selectedInputUID,
-                            outputVolume: outputVolume,
-                            inputVolume: inputVolume
+                    Task {
+                        await self.handleModeEdit(
+                            newMode: isNew ? self.createNewMode() : nil,
+                            editingMode: self.editingMode
                         )
-
-                        // 自动切换到新模式
-                        self.modeManager.currentModeID = newMode.id
-                    } else if let mode = editingMode {
-                        // 更新现有模式
-                        var updatedMode = mode
-                        updatedMode.name = self.newModeName
-                        updatedMode.outputDeviceUID = self.selectedOutputUID
-                        updatedMode.inputDeviceUID = self.selectedInputUID
-
-                        self.modeManager.updateMode(updatedMode)
                     }
-
-                    self.isAddingNewMode = false
-                    self.editingMode = nil
                 }
                 .keyboardShortcut(.return)
                 .disabled(self.newModeName.isEmpty)
@@ -205,46 +219,41 @@ struct ModeSettingsView: View {
         .frame(width: 400, height: 400)
     }
 
+    @ViewBuilder
     private func devicePicker(for isInput: Bool, selection: Binding<String>) -> some View {
-        let devices = isInput ? self.audioManager.inputDevices : self.audioManager.outputDevices
-        let historicalDevices = isInput ? self.audioManager.historicalInputDevices : self
-            .audioManager
-            .historicalOutputDevices
-
-        return Picker("", selection: selection) {
-            Text("None").tag("")
-
-            if !devices.isEmpty {
-                Section(header: Text("Available Devices")) {
-                    ForEach(devices) { device in
-                        Text(device.name).tag(device.uid)
-                    }
-                }
-            }
-
-            if !historicalDevices.isEmpty {
-                Section(header: Text("Historical Devices")) {
-                    ForEach(historicalDevices) { device in
-                        if !devices.contains(where: { $0.uid == device.uid }) {
-                            Text("\(device.name) (Unavailable)").tag(device.uid)
-                        }
-                    }
-                }
+        let devices = isInput ? self.inputDevices : self.outputDevices
+        Picker("Select Device", selection: selection) {
+            ForEach(devices, id: \.uid) { device in
+                Text(device.name).tag(device.uid)
             }
         }
-        .pickerStyle(DefaultPickerStyle())
-        .labelsHidden()
     }
 
-    private func getDeviceName(uid: String, isInput: Bool) -> String {
-        if uid.isEmpty {
-            return "None"
-        }
+    private func createNewMode() async -> AudioMode {
+        let outputDevice = self.outputDevices.first(where: { $0.uid == self.selectedOutputUID })
+        let inputDevice = self.inputDevices.first(where: { $0.uid == self.selectedInputUID })
+        let outputVolume = outputDevice?.getVolume() ?? 0.5
+        let inputVolume = inputDevice?.getVolume() ?? 0.5
+        return self.modeManager.createCustomMode(
+            name: self.newModeName,
+            outputDeviceUID: self.selectedOutputUID,
+            inputDeviceUID: self.selectedInputUID,
+            outputVolume: outputVolume,
+            inputVolume: inputVolume
+        )
+    }
 
-        if let device = audioManager.findDevice(byUID: uid, isInput: isInput) {
-            return device.name
+    private func handleModeEdit(newMode: AudioMode?, editingMode: AudioMode?) async {
+        if let newMode {
+            await self.handleModeSelection(newMode)
+        } else if let mode = editingMode {
+            var updatedMode = mode
+            updatedMode.name = self.newModeName
+            updatedMode.outputDeviceUID = self.selectedOutputUID
+            updatedMode.inputDeviceUID = self.selectedInputUID
+            self.modeManager.updateMode(updatedMode)
         }
-
-        return "Unknown Device"
+        self.isAddingNewMode = false
+        self.editingMode = nil
     }
 }

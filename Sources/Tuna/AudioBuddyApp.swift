@@ -6,7 +6,10 @@ import SwiftUI
 import TunaAudio
 import TunaCore
 import TunaSpeech
+import TunaTypes
+import TunaUI
 
+@MainActor
 class AudioBuddyAppDelegate: NSObject, ObservableObject {
     var cancellables = Set<AnyCancellable>()
     let audioManager = AudioManager.shared
@@ -24,19 +27,17 @@ class AudioBuddyAppDelegate: NSObject, ObservableObject {
 
     private func setupModeVolumeSync() {
         // When volume changes, update current mode's volume settings
-        self.audioManager.$outputVolume
-            .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.modeManager.updateCurrentModeVolumes()
+        Task {
+            for await _ in await self.audioManager.outputVolumeStream {
+                self.modeManager.updateCurrentModeVolumes()
             }
-            .store(in: &self.cancellables)
+        }
 
-        self.audioManager.$inputVolume
-            .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.modeManager.updateCurrentModeVolumes()
+        Task {
+            for await _ in await self.audioManager.inputVolumeStream {
+                self.modeManager.updateCurrentModeVolumes()
             }
-            .store(in: &self.cancellables)
+        }
 
         self.logger.info("Volume sync manager configured")
     }
@@ -45,43 +46,13 @@ class AudioBuddyAppDelegate: NSObject, ObservableObject {
 @main
 struct AudioBuddyApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var audioBuddyDelegate = AudioBuddyAppDelegate()
-
-    // Add AppState
-    @StateObject private var appState: AppState
-    private let services: AppServices
-
-    init() {
-        print("\u{001B}[34m[APP]\u{001B}[0m Tuna app launched")
-
-        // Initialize services and state
-        let services = AppServices.createLive(
-            audioManager: AudioManager.shared,
-            dictationManager: DictationManager.shared,
-            settings: TunaSettings.shared
-        )
-        let state = AppState(
-            audio: services.audio.currentAudioState(),
-            speech: services.speech.currentSpeechState(),
-            settings: services.settings.load()
-        )
-
-        self._appState = StateObject(wrappedValue: state)
-        self.services = services
-
-        fflush(stdout)
-    }
 
     var body: some Scene {
-        Settings {
-            EmptyView()
-                .environmentObject(self.appState)
-        }
-        .onChange(of: NSApplication.shared.isActive) { isActive in
-            if isActive {
-                print("\u{001B}[34m[APP]\u{001B}[0m App became active")
-                fflush(stdout)
-            }
+        WindowGroup {
+            ContentView()
+                .environmentObject(TunaSettings.shared)
+                .environmentObject(DictationManager.shared)
+                .environmentObject(TabRouter.shared)
         }
     }
 }

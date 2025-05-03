@@ -1,10 +1,11 @@
 import Foundation
-import TunaCore
+import TunaTypes
 
 enum MagicTransformService {
-    static func transform(_ raw: String, template: PromptTemplate) async throws -> String {
+    static func transform(_ raw: String, style: PresetStyle) async throws -> String {
+        let template = PromptTemplate.forStyle(style)
         // TODO: replace with actual POST /v1/transform
         try await Task.sleep(nanoseconds: 300_000_000) // 0.3s fake latency
-        return "[MAGIC] " + raw // echo for now
+        return raw // For now, just return the raw text
     }
 }

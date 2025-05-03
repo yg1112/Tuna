@@ -67,7 +67,7 @@ class TunaSettingsWindow {
         window.makeKeyAndOrderFront(nil)
 
         // 窗口显示后，计算并设置最佳高度
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        await MainActor.runAfter(deadline: .now() + 0.1) { [weak self] in
             self?.adjustWindowHeight()
         }
     }
@@ -85,7 +85,7 @@ class TunaSettingsWindow {
             // 注意：这是为测试而实现的简化方法
             let mirror = Mirror(reflecting: hostingView.rootView)
             for child in mirror.children {
-                if child.label == "_selectedTab" {
+                if child.label == "_current" {
                     if let binding = child.value as? Binding<SettingsTab> {
                         binding.wrappedValue = tab
                         break
@@ -94,7 +94,7 @@ class TunaSettingsWindow {
             }
 
             // 标签切换后调整窗口高度
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            await MainActor.runAfter(deadline: .now() + 0.1) { [weak self] in
                 self?.adjustWindowHeight()
             }
         }

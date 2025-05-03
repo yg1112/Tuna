@@ -1,59 +1,73 @@
-// swift-tools-version:5.7
+// swift-tools-version: 5.9
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+
 import PackageDescription
 
 let package = Package(
-    name: "Tuna",
+    name: "tuna_v1",
     platforms: [
         .macOS(.v13),
     ],
     products: [
-        .executable(name: "Tuna", targets: ["TunaApp"]),
-        .executable(name: "SyncRules", targets: ["SyncRules"]),
-        .library(name: "TunaCore", targets: ["TunaCore"]),
-        .library(name: "TunaUI", targets: ["TunaUI"]),
-        .library(name: "TunaAudio", targets: ["TunaAudio"]),
-        .library(name: "TunaSpeech", targets: ["TunaSpeech"]),
-        .library(name: "TunaTypes", targets: ["TunaTypes"]),
+        .executable(
+            name: "TunaApp",
+            targets: ["TunaApp"]
+        ),
+        .executable(
+            name: "SyncRules",
+            targets: ["SyncRules"]
+        ),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.13.0"),
-        .package(url: "https://github.com/nalexn/ViewInspector.git", from: "0.9.8"),
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.15.1"),
+        .package(url: "https://github.com/nalexn/ViewInspector.git", from: "0.9.9"),
     ],
     targets: [
-        .executableTarget(
-            name: "SyncRules",
-            dependencies: [],
-            path: "Scripts/SyncRules"
-        ),
         .target(
             name: "TunaTypes",
             dependencies: [],
-            path: "Sources/TunaTypes"
-        ),
-        .target(
-            name: "TunaCore",
-            dependencies: ["TunaTypes", "TunaAudio", "TunaSpeech"],
-            path: "Sources/TunaCore"
+            exclude: ["Legacy"],
         ),
         .target(
             name: "TunaAudio",
-            dependencies: ["TunaTypes"],
-            path: "Sources/TunaAudio"
+            dependencies: [
+                "TunaTypes",
+            ],
+            exclude: ["Legacy"],
         ),
         .target(
             name: "TunaSpeech",
-            dependencies: ["TunaTypes", "TunaAudio"],
-            path: "Sources/TunaSpeech"
+            dependencies: ["TunaTypes"],
+            exclude: ["Legacy"],
+        ),
+        .target(
+            name: "TunaCore",
+            dependencies: [
+                "TunaTypes",
+                "TunaAudio",
+                "TunaSpeech",
+            ],
+            exclude: ["Legacy"],
+            swiftSettings: [
+                .define("TUNACORE_LIBRARY"),
+            ]
         ),
         .target(
             name: "TunaUI",
-            dependencies: ["TunaCore"],
-            path: "Sources/TunaUI"
+            dependencies: ["TunaTypes"],
+            exclude: ["Legacy"],
         ),
         .executableTarget(
             name: "TunaApp",
-            dependencies: ["TunaCore", "TunaUI", "TunaAudio", "TunaSpeech"],
+            dependencies: [
+                "TunaTypes",
+                "TunaCore",
+                "TunaAudio",
+                "TunaSpeech",
+                "TunaUI",
+            ],
             path: "Sources/Tuna",
+            exclude: ["../TunaUI/Legacy"],
             resources: [
                 .process("Resources"),
             ],
@@ -61,10 +75,19 @@ let package = Package(
                 .define("NEW_SETTINGS_UI"),
             ]
         ),
+        .executableTarget(
+            name: "SyncRules",
+            dependencies: [],
+            path: "Scripts/SyncRules"
+        ),
         .testTarget(
             name: "TunaTests",
             dependencies: [
-                "TunaApp",
+                "TunaTypes",
+                "TunaCore",
+                "TunaAudio",
+                "TunaSpeech",
+                "TunaUI",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
                 .product(name: "ViewInspector", package: "ViewInspector"),
             ],
@@ -72,13 +95,6 @@ let package = Package(
             resources: [
                 .process("__Snapshots__"),
             ]
-        ),
-        .testTarget(
-            name: "MenuBarPopoverTests",
-            dependencies: [
-                "TunaApp",
-            ],
-            path: "Tests/MenuBarPopoverTests"
         ),
     ]
 )

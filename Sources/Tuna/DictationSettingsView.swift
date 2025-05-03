@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import TunaCore
 import TunaSpeech
+import TunaTypes
 import TunaUI
 
 // import Views -- 已移至 Tuna 模块
@@ -16,6 +17,7 @@ enum TranscriptionExportFormat: String, CaseIterable, Identifiable {
 
 // DictationManager已在自身文件中实现了DictationManagerProtocol，这里不需要重复声明
 
+@available(macOS 14.0, *)
 struct DictationSettingsView: View {
     @ObservedObject private var dictationManager = DictationManager.shared
     @ObservedObject private var settings = TunaSettings.shared
@@ -72,81 +74,65 @@ struct DictationSettingsView: View {
 
     // 引擎部分
     private var engineSection: some View {
-        CollapsibleCard(
-            title: "Engine",
-            isExpanded: self.$settings.isEngineOpen,
-            collapsible: false
-        ) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    SecureField("OpenAI API Key", text: Binding(
-                        get: { self.settings.whisperAPIKey },
-                        set: { self.settings.whisperAPIKey = $0 }
-                    ))
-                    .font(.system(size: 14))
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: self.settings.whisperAPIKey) { _ in
-                        self.validateApiKey(self.settings.whisperAPIKey)
-                    }
-                    .onAppear {
-                        self.validateApiKey(self.settings.whisperAPIKey)
-                    }
-                    .accessibilityIdentifier("API Key")
-
-                    // API Key 验证状态指示器
-                    if !self.settings.whisperAPIKey.isEmpty {
-                        Image(
-                            systemName: self.isApiKeyValid ? "checkmark.circle.fill" :
-                                "exclamationmark.circle.fill"
-                        )
-                        .foregroundColor(self.isApiKeyValid ? .green : .red)
-                        .font(.system(size: 16))
-                        .help(self.isApiKeyValid ? "API key is valid" : "Invalid API key format")
-                    }
+        Section {
+            HStack {
+                SecureField("OpenAI API Key", text: Binding(
+                    get: { self.settings.whisperAPIKey },
+                    set: { self.settings.whisperAPIKey = $0 }
+                ))
+                .font(.system(size: 14))
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .onChange(of: self.settings.whisperAPIKey) { _ in
+                    self.validateApiKey(self.settings.whisperAPIKey)
                 }
+                .onAppear {
+                    self.validateApiKey(self.settings.whisperAPIKey)
+                }
+                .accessibilityIdentifier("API Key")
 
-                // API Key 说明文本
-                Text("Enter your OpenAI API key to enable transcription.")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                // API Key 验证状态指示器
+                if !self.settings.whisperAPIKey.isEmpty {
+                    Image(
+                        systemName: self.isApiKeyValid ? "checkmark.circle.fill" :
+                            "exclamationmark.circle.fill"
+                    )
+                    .foregroundColor(self.isApiKeyValid ? .green : .red)
+                    .font(.system(size: 16))
+                    .help(self.isApiKeyValid ? "API key is valid" : "Invalid API key format")
+                }
             }
-            .padding(.top, 4)
+
+            // API Key 说明文本
+            Text("Enter your OpenAI API key to enable transcription.")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
         }
-        .id("EngineCard")
         .onAppear { print("▶️ Engine appear") }
         .onDisappear { print("◀️ Engine disappear") }
-        .onChange(of: self.settings.isEngineOpen) { newValue in
+        .onChange(of: self.settings.isEngineOpen) { _, newValue in
             print("💚 Engine state ->", newValue)
         }
     }
 
     // 转录输出部分
     private var transcriptionOutputSection: some View {
-        CollapsibleCard(
-            title: "Transcription Output",
-            isExpanded: self.$settings.isTranscriptionOutputOpen,
-            collapsible: false
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                // 导出格式选择器
-                self.formatSelector
+        Section {
+            // 导出格式选择器
+            self.formatSelector
 
-                // 输出目录选择器
-                self.outputDirectorySelector
+            // 输出目录选择器
+            self.outputDirectorySelector
 
-                // 自动复制到剪贴板选项
-                Toggle("Auto-copy transcription to clipboard", isOn: Binding(
-                    get: { self.settings.autoCopyTranscriptionToClipboard },
-                    set: { self.settings.autoCopyTranscriptionToClipboard = $0 }
-                ))
-                .font(.system(size: 14))
-            }
-            .padding(.top, 4)
+            // 自动复制到剪贴板选项
+            Toggle("Auto-copy transcription to clipboard", isOn: Binding(
+                get: { self.settings.autoCopyTranscriptionToClipboard },
+                set: { self.settings.autoCopyTranscriptionToClipboard = $0 }
+            ))
+            .font(.system(size: 14))
         }
-        .id("TranscriptionOutputCard")
         .onAppear { print("▶️ TranscriptionOutput appear") }
         .onDisappear { print("◀️ TranscriptionOutput disappear") }
-        .onChange(of: self.settings.isTranscriptionOutputOpen) { newValue in
+        .onChange(of: self.settings.isTranscriptionOutputOpen) { _, newValue in
             print("💚 TranscriptionOutput state ->", newValue)
         }
     }
@@ -198,7 +184,9 @@ struct DictationSettingsView: View {
                     .id("OutputDirectoryField")
 
                 Button("Select") {
-                    self.selectOutputDirectory()
+                    Task {
+                        await self.selectOutputDirectory()
+                    }
                 }
                 .font(.system(size: 13))
                 .buttonStyle(GreenButtonStyle())
@@ -208,112 +196,28 @@ struct DictationSettingsView: View {
         }
     }
 
-    private func selectOutputDirectory() {
+    private func selectOutputDirectory() async {
         // 在打开面板前发送文件选择开始通知，确保设置窗口不会关闭
-        NotificationCenter.default.post(
-            name: NSNotification.Name("fileSelectionStarted"),
-            object: nil
-        )
+        await Task<Void, Never> {
+            await Notifier.post(NSNotification.Name.fileSelectionStarted)
+        }.value
 
-        // 创建并配置NSOpenPanel
         let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = true
         panel.canChooseFiles = false
-        panel.canCreateDirectories = true
-        panel.prompt = "Select Folder"
-        panel.title = "Select Output Directory for Transcriptions"
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = "选择转录文件保存目录"
+        panel.prompt = "选择"
 
-        // 防止窗口被自动关闭
-        panel.level = .modalPanel
-        panel.isReleasedWhenClosed = false
+        if panel.runModal() == .OK {
+            if let url = panel.url {
+                self.settings.transcriptionOutputDirectory = url
 
-        // 查找当前活动的窗口
-        var parentWindow: NSWindow?
-        for window in NSApplication.shared.windows {
-            if window.isVisible, !window.isMiniaturized {
-                if window.isKeyWindow {
-                    parentWindow = window
-                    break
-                }
-            }
-        }
-
-        // 如果没有找到键盘焦点窗口，则使用主窗口或第一个可见窗口
-        if parentWindow == nil {
-            parentWindow = NSApplication.shared.keyWindow ?? NSApplication.shared.mainWindow
-            if parentWindow == nil {
-                // 如果仍然找不到，使用第一个可见窗口
-                for window in NSApplication.shared.windows {
-                    if window.isVisible, !window.isMiniaturized {
-                        parentWindow = window
-                        break
-                    }
-                }
-            }
-        }
-
-        // 使用父窗口显示选择器，确保设置窗口在选择器显示期间保持活动状态
-        if let window = parentWindow {
-            // 保存当前窗口级别，稍后恢复
-            let originalLevel = window.level
-
-            // 提高窗口级别，确保在文件选择过程中保持可见
-            window.level = .popUpMenu
-            window.orderFrontRegardless()
-
-            // 使用beginSheetModal确保文件选择器作为附加面板显示，而不会关闭主窗口
-            NSApp.activate(ignoringOtherApps: true) // 确保应用程序处于活动状态
-            window.makeKeyAndOrderFront(nil) // 确保窗口可见
-
-            panel.beginSheetModal(for: window) { response in
-                // 恢复原来的窗口级别
-                window.level = originalLevel
-
-                // 选择完成后，确保父窗口重新获得焦点
-                NSApp.activate(ignoringOtherApps: true)
-                window.makeKeyAndOrderFront(nil)
-
-                if response == .OK, let url = panel.url {
-                    DispatchQueue.main.async {
-                        // 更新DictationManager而不是本地变量
-                        self.dictationManager.setOutputDirectory(url)
-
-                        // 确保设置窗口在选择完成后仍然保持打开状态
-                        window.makeKeyAndOrderFront(nil)
-
-                        // 延迟一段时间再发送结束通知，确保窗口有足够时间显示
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            NotificationCenter.default.post(
-                                name: NSNotification.Name("fileSelectionEnded"),
-                                object: nil
-                            )
-                        }
-                    }
-                } else {
-                    // 取消选择时也发送结束通知
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        NotificationCenter.default.post(
-                            name: NSNotification.Name("fileSelectionEnded"),
-                            object: nil
-                        )
-                    }
-                }
-            }
-        } else {
-            // 如果找不到任何合适的窗口，则使用标准模态显示
-            let response = panel.runModal()
-
-            if response == .OK, let url = panel.url {
-                DispatchQueue.main.async {
-                    // 更新DictationManager而不是本地变量
-                    self.dictationManager.setOutputDirectory(url)
-
-                    // 确保设置窗口在模态操作后重新获得焦点
-                    if let window = NSApplication.shared.keyWindow {
-                        window.makeKeyAndOrderFront(nil)
-                    }
-                }
+                // 延迟一段时间再发送结束通知，确保窗口有足够时间显示
+                await Task<Void, Never> {
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                    await Notifier.post(NSNotification.Name.fileSelectionEnded)
+                }.value
             }
         }
     }

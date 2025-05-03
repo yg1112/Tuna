@@ -1,57 +1,31 @@
 import SwiftUI
+import TunaTypes
 import TunaAudio
-import TunaCore
 import TunaSpeech
+import TunaUI
 
-struct MenuBarView: View {
-    @EnvironmentObject var state: AppState
     @ObservedObject var audioManager: AudioManager
     @ObservedObject var settings: TunaSettings
-
-    init(audioManager: AudioManager, settings: TunaSettings) {
-        self.audioManager = audioManager
-        self.settings = settings
-    }
-
+    @EnvironmentObject var dictationManager: DictationManager
+    @EnvironmentObject var tabRouter: TabRouter
+    
     var body: some View {
-        VStack {
-            // Audio Controls
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Output Device: \(self.state.audio.selectedOutput?.name ?? "None")")
-                    .padding(.horizontal)
-
-                Text("Output Volume: \(Int(self.state.audio.outputVolume * 100))%")
-                    .padding(.horizontal)
-
-                Slider(
-                    value: Binding(
-                        get: { self.audioManager.outputVolume },
-                        set: { self.audioManager.setOutputVolume($0) }
-                    ),
-                    in: 0 ... 1,
-                    step: 0.01
-                )
-                .padding(.horizontal)
-            }
-            .padding(.vertical)
-
-            // Speech Status
-            if !self.state.speech.transcribedText.isEmpty {
-                Text("Last Transcription:")
-                    .padding(.horizontal)
-                Text(self.state.speech.transcribedText)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
+        VStack(spacing: 16) {
             // Mode Selection
-            Picker("Mode", selection: self.$state.settings.mode) {
+            Picker("Mode", selection: self.$settings.currentMode) {
                 ForEach(Mode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.rawValue).tag(mode.rawValue)
                 }
             }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding()
+            .pickerStyle(.segmented)
+            
+            // Content based on mode
+            if Mode(rawValue: self.settings.currentMode) == .quickDictation {
+                TunaDictationView()
+            } else {
+                TunaSettingsView()
+            }
         }
+        .padding()
     }
 }

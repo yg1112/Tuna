@@ -6,9 +6,11 @@ import SwiftUI
 import TunaAudio
 import TunaCore
 import TunaSpeech
+import TunaTypes
 import TunaUI
 
-class MainWindowManager: NSObject {
+@MainActor
+class MainWindowManager: ObservableObject {
     static let shared = MainWindowManager()
 
     private var windowController: NSWindowController?
@@ -34,6 +36,7 @@ class MainWindowManager: NSObject {
     }
 
     // 创建并显示主窗口
+    @MainActor
     private func createAndShowMainWindow() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 400, height: 500),
@@ -49,6 +52,7 @@ class MainWindowManager: NSObject {
         let mainView = MainWindowView()
             .environmentObject(TabRouter.shared)
             .environmentObject(DictationManager.shared)
+            .environmentObject(TunaSettings.shared)
 
         // 创建一个NSHostingController来托管SwiftUI视图
         let hostingController = NSHostingController(rootView: mainView)
@@ -81,7 +85,7 @@ struct MainWindowView: View {
                 Spacer()
 
                 Button(action: {
-                    self.router.current = "devices"
+                    self.router.current = .devices
                 }) {
                     VStack {
                         Image(systemName: "speaker.wave.2.fill")
@@ -92,16 +96,16 @@ struct MainWindowView: View {
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
                     .background(
-                        self.router.current == "devices" ? Color.blue.opacity(0.6) : Color
+                        self.router.current == .devices ? Color.blue.opacity(0.6) : Color
                             .clear
                     )
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .foregroundColor(self.router.current == "devices" ? .white : .secondary)
+                .foregroundColor(self.router.current == .devices ? .white : .secondary)
 
                 Button(action: {
-                    self.router.current = "dictation"
+                    self.router.current = .dictation
                 }) {
                     VStack {
                         Image(systemName: "waveform")
@@ -112,13 +116,13 @@ struct MainWindowView: View {
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
                     .background(
-                        self.router.current == "dictation" ? Color.blue.opacity(0.6) : Color
+                        self.router.current == .dictation ? Color.blue.opacity(0.6) : Color
                             .clear
                     )
                     .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .foregroundColor(self.router.current == "dictation" ? .white : .secondary)
+                .foregroundColor(self.router.current == .dictation ? .white : .secondary)
 
                 Button(action: {
                     self.router.current = "settings"
@@ -148,7 +152,7 @@ struct MainWindowView: View {
             // 内容区域
             ZStack {
                 // 设备管理标签
-                if self.router.current == "devices" {
+                if self.router.current == .devices {
                     ScrollView {
                         VStack(spacing: 16) {
                             // 输出设备卡片
@@ -168,7 +172,7 @@ struct MainWindowView: View {
                 }
 
                 // 听写标签
-                if self.router.current == "dictation" {
+                if self.router.current == .dictation {
                     DictationView()
                         .environmentObject(self.dictationManager)
                 }

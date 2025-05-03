@@ -1,5 +1,6 @@
 import SwiftUI
 import TunaCore
+import TunaTypes
 
 struct TranscriptSettingsView: View {
     @EnvironmentObject var state: AppState
@@ -13,7 +14,9 @@ struct TranscriptSettingsView: View {
                     .toggleStyle(SwitchToggleStyle(tint: Color.blue))
 
                 Picker("Style", selection: self.$settings.magicPreset) {
-                    Text("A bit").tag(PresetStyle.abit)
+                    Text("None").tag(PresetStyle.none)
+                    Text("Formal").tag(PresetStyle.formal)
+                    Text("Casual").tag(PresetStyle.casual)
                     Text("Concise").tag(PresetStyle.concise)
                     Text("Custom").tag(PresetStyle.custom)
                 }

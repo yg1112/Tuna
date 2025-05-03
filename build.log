@@ -1,0 +1,1130 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write swift-version--58304C5D6DBC2206.txt
+[2/31] Compiling TunaApp MagicTransformService.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Networking/MagicTransformService.swift:6:13: warning: initialization of immutable value 'template' was never used; consider replacing with assignment to '_' or removing it
+ 4 | enum MagicTransformService {
+ 5 |     static func transform(_ raw: String, style: PresetStyle) async throws -> String {
+ 6 |         let template = PromptTemplate.forStyle(style)
+   |             `- warning: initialization of immutable value 'template' was never used; consider replacing with assignment to '_' or removing it
+ 7 |         // TODO: replace with actual POST /v1/transform
+ 8 |         try await Task.sleep(nanoseconds: 300_000_000) // 0.3s fake latency
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/SettingsWindowController.swift:37:28: error: cannot find 'TunaSettingsView' in scope
+35 | 
+36 |         // Display settings view
+37 |         let settingsView = TunaSettingsView()
+   |                            `- error: cannot find 'TunaSettingsView' in scope
+38 |         let hostingView = NSHostingView(rootView: settingsView)
+39 |         window.contentView = hostingView
+[3/31] Compiling TunaApp SettingsWindowController.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Networking/MagicTransformService.swift:6:13: warning: initialization of immutable value 'template' was never used; consider replacing with assignment to '_' or removing it
+ 4 | enum MagicTransformService {
+ 5 |     static func transform(_ raw: String, style: PresetStyle) async throws -> String {
+ 6 |         let template = PromptTemplate.forStyle(style)
+   |             `- warning: initialization of immutable value 'template' was never used; consider replacing with assignment to '_' or removing it
+ 7 |         // TODO: replace with actual POST /v1/transform
+ 8 |         try await Task.sleep(nanoseconds: 300_000_000) // 0.3s fake latency
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/SettingsWindowController.swift:37:28: error: cannot find 'TunaSettingsView' in scope
+35 | 
+36 |         // Display settings view
+37 |         let settingsView = TunaSettingsView()
+   |                            `- error: cannot find 'TunaSettingsView' in scope
+38 |         let hostingView = NSHostingView(rootView: settingsView)
+39 |         window.contentView = hostingView
+[4/31] Compiling TunaApp SharedStyles.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Networking/MagicTransformService.swift:6:13: warning: initialization of immutable value 'template' was never used; consider replacing with assignment to '_' or removing it
+ 4 | enum MagicTransformService {
+ 5 |     static func transform(_ raw: String, style: PresetStyle) async throws -> String {
+ 6 |         let template = PromptTemplate.forStyle(style)
+   |             `- warning: initialization of immutable value 'template' was never used; consider replacing with assignment to '_' or removing it
+ 7 |         // TODO: replace with actual POST /v1/transform
+ 8 |         try await Task.sleep(nanoseconds: 300_000_000) // 0.3s fake latency
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/SettingsWindowController.swift:37:28: error: cannot find 'TunaSettingsView' in scope
+35 | 
+36 |         // Display settings view
+37 |         let settingsView = TunaSettingsView()
+   |                            `- error: cannot find 'TunaSettingsView' in scope
+38 |         let hostingView = NSHostingView(rootView: settingsView)
+39 |         window.contentView = hostingView
+[5/33] Compiling TunaApp StatsStore.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:30:18: error: type 'String' has no member 'devices'
+28 |         switch self {
+29 |             case .devices:
+30 |                 .devices
+   |                  `- error: type 'String' has no member 'devices'
+31 |             case .whispen:
+32 |                 "dictation" // 保持与现有代码兼容
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:39:19: error: type 'Substring' has no member 'devices'
+37 |     static func fromRouterValue(_ value: String) -> TunaTab {
+38 |         switch value {
+39 |             case .devices:
+   |                   `- error: type 'Substring' has no member 'devices'
+40 |                 .devices
+41 |             case "dictation":
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:54:37: error: cannot convert value of type 'Tab' to expected argument type 'String'
+52 |     var currentTab: TunaTab {
+53 |         get {
+54 |             TunaTab.fromRouterValue(current)
+   |                                     `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+55 |         }
+56 |         set {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:57:21: error: cannot assign value of type 'String' to type 'Tab'
+55 |         }
+56 |         set {
+57 |             current = newValue.routerValue
+   |                     `- error: cannot assign value of type 'String' to type 'Tab'
+58 |         }
+59 |     }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:63:22: error: cannot convert value of type 'String' to expected argument type 'TabRouter'
+61 |     // 静态方法切换到指定标签页
+62 |     static func switchToTab(_ tab: TunaTab) {
+63 |         switchTo(tab.routerValue)
+   |                      `- error: cannot convert value of type 'String' to expected argument type 'TabRouter'
+64 |     }
+65 | }
+[6/33] Compiling TunaApp TunaTab.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:30:18: error: type 'String' has no member 'devices'
+28 |         switch self {
+29 |             case .devices:
+30 |                 .devices
+   |                  `- error: type 'String' has no member 'devices'
+31 |             case .whispen:
+32 |                 "dictation" // 保持与现有代码兼容
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:39:19: error: type 'Substring' has no member 'devices'
+37 |     static func fromRouterValue(_ value: String) -> TunaTab {
+38 |         switch value {
+39 |             case .devices:
+   |                   `- error: type 'Substring' has no member 'devices'
+40 |                 .devices
+41 |             case "dictation":
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:54:37: error: cannot convert value of type 'Tab' to expected argument type 'String'
+52 |     var currentTab: TunaTab {
+53 |         get {
+54 |             TunaTab.fromRouterValue(current)
+   |                                     `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+55 |         }
+56 |         set {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:57:21: error: cannot assign value of type 'String' to type 'Tab'
+55 |         }
+56 |         set {
+57 |             current = newValue.routerValue
+   |                     `- error: cannot assign value of type 'String' to type 'Tab'
+58 |         }
+59 |     }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:63:22: error: cannot convert value of type 'String' to expected argument type 'TabRouter'
+61 |     // 静态方法切换到指定标签页
+62 |     static func switchToTab(_ tab: TunaTab) {
+63 |         switchTo(tab.routerValue)
+   |                      `- error: cannot convert value of type 'String' to expected argument type 'TabRouter'
+64 |     }
+65 | }
+[7/33] Compiling TunaApp TunaTheme.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:30:18: error: type 'String' has no member 'devices'
+28 |         switch self {
+29 |             case .devices:
+30 |                 .devices
+   |                  `- error: type 'String' has no member 'devices'
+31 |             case .whispen:
+32 |                 "dictation" // 保持与现有代码兼容
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:39:19: error: type 'Substring' has no member 'devices'
+37 |     static func fromRouterValue(_ value: String) -> TunaTab {
+38 |         switch value {
+39 |             case .devices:
+   |                   `- error: type 'Substring' has no member 'devices'
+40 |                 .devices
+41 |             case "dictation":
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:54:37: error: cannot convert value of type 'Tab' to expected argument type 'String'
+52 |     var currentTab: TunaTab {
+53 |         get {
+54 |             TunaTab.fromRouterValue(current)
+   |                                     `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+55 |         }
+56 |         set {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:57:21: error: cannot assign value of type 'String' to type 'Tab'
+55 |         }
+56 |         set {
+57 |             current = newValue.routerValue
+   |                     `- error: cannot assign value of type 'String' to type 'Tab'
+58 |         }
+59 |     }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/TunaTab.swift:63:22: error: cannot convert value of type 'String' to expected argument type 'TabRouter'
+61 |     // 静态方法切换到指定标签页
+62 |     static func switchToTab(_ tab: TunaTab) {
+63 |         switchTo(tab.routerValue)
+   |                      `- error: cannot convert value of type 'String' to expected argument type 'TabRouter'
+64 |     }
+65 | }
+[8/33] Compiling TunaApp TunaSettingsWindow.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:11:48: error: cannot find type 'TunaSettingsView' in scope
+  9 |     // 窗口引用
+ 10 |     var windowController: NSWindowController?
+ 11 |     private var rootHostingView: NSHostingView<TunaSettingsView>?
+    |                                                `- error: cannot find type 'TunaSettingsView' in scope
+ 12 | 
+ 13 |     // 侧边栏宽度
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:81:20: error: cannot find type 'SettingsTab' in scope
+ 79 | 
+ 80 |     /// 切换到指定的标签页
+ 81 |     func show(tab: SettingsTab) {
+    |                    `- error: cannot find type 'SettingsTab' in scope
+ 82 |         // 实现标签切换的辅助方法，用于测试
+ 83 |         if let hostingView = rootHostingView {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:57:28: error: cannot find 'TunaSettingsView' in scope
+ 55 | 
+ 56 |         // 创建设置视图并设置为窗口内容
+ 57 |         let settingsView = TunaSettingsView()
+    |                            `- error: cannot find 'TunaSettingsView' in scope
+ 58 |         let hostingView = NSHostingView(rootView: settingsView)
+ 59 |         window.contentView = hostingView
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:70:25: error: type 'MainActor' has no member 'runAfter'
+ 68 | 
+ 69 |         // 窗口显示后，计算并设置最佳高度
+ 70 |         await MainActor.runAfter(deadline: .now() + 0.1) { [weak self] in
+    |                         `- error: type 'MainActor' has no member 'runAfter'
+ 71 |             self?.adjustWindowHeight()
+ 72 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:97:29: error: type 'MainActor' has no member 'runAfter'
+ 95 | 
+ 96 |             // 标签切换后调整窗口高度
+ 97 |             await MainActor.runAfter(deadline: .now() + 0.1) { [weak self] in
+    |                             `- error: type 'MainActor' has no member 'runAfter'
+ 98 |                 self?.adjustWindowHeight()
+ 99 |             }
+[9/33] Compiling TunaApp resource_bundle_accessor.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:11:48: error: cannot find type 'TunaSettingsView' in scope
+  9 |     // 窗口引用
+ 10 |     var windowController: NSWindowController?
+ 11 |     private var rootHostingView: NSHostingView<TunaSettingsView>?
+    |                                                `- error: cannot find type 'TunaSettingsView' in scope
+ 12 | 
+ 13 |     // 侧边栏宽度
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:81:20: error: cannot find type 'SettingsTab' in scope
+ 79 | 
+ 80 |     /// 切换到指定的标签页
+ 81 |     func show(tab: SettingsTab) {
+    |                    `- error: cannot find type 'SettingsTab' in scope
+ 82 |         // 实现标签切换的辅助方法，用于测试
+ 83 |         if let hostingView = rootHostingView {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:57:28: error: cannot find 'TunaSettingsView' in scope
+ 55 | 
+ 56 |         // 创建设置视图并设置为窗口内容
+ 57 |         let settingsView = TunaSettingsView()
+    |                            `- error: cannot find 'TunaSettingsView' in scope
+ 58 |         let hostingView = NSHostingView(rootView: settingsView)
+ 59 |         window.contentView = hostingView
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:70:25: error: type 'MainActor' has no member 'runAfter'
+ 68 | 
+ 69 |         // 窗口显示后，计算并设置最佳高度
+ 70 |         await MainActor.runAfter(deadline: .now() + 0.1) { [weak self] in
+    |                         `- error: type 'MainActor' has no member 'runAfter'
+ 71 |             self?.adjustWindowHeight()
+ 72 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:97:29: error: type 'MainActor' has no member 'runAfter'
+ 95 | 
+ 96 |             // 标签切换后调整窗口高度
+ 97 |             await MainActor.runAfter(deadline: .now() + 0.1) { [weak self] in
+    |                             `- error: type 'MainActor' has no member 'runAfter'
+ 98 |                 self?.adjustWindowHeight()
+ 99 |             }
+[10/33] Compiling TunaApp MagicTransformManager.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:182:21: error: cannot find 'TunaSettingsView' in scope
+180 |                 // 设置标签
+181 |                 if self.router.current == "settings" {
+182 |                     TunaSettingsView()
+    |                     `- error: cannot find 'TunaSettingsView' in scope
+183 |                 }
+184 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:128:41: error: cannot assign value of type 'String' to type 'Tab'
+126 | 
+127 |                 Button(action: {
+128 |                     self.router.current = "settings"
+    |                                         `- error: cannot assign value of type 'String' to type 'Tab'
+129 |                 }) {
+130 |                     VStack {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:139:37: error: cannot convert value of type 'Tab' to expected argument type 'String'
+137 |                     .padding(.horizontal, 12)
+138 |                     .background(
+139 |                         self.router.current == "settings" ? Color.blue.opacity(0.6) : Color
+    |                                     `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+140 |                             .clear
+141 |                     )
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:145:46: error: cannot convert value of type 'Tab' to expected argument type 'String'
+143 |                 }
+144 |                 .buttonStyle(PlainButtonStyle())
+145 |                 .foregroundColor(self.router.current == "settings" ? .white : .secondary)
+    |                                              `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+146 | 
+147 |                 Spacer()
+[11/33] Compiling TunaApp MainWindowManager.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:182:21: error: cannot find 'TunaSettingsView' in scope
+180 |                 // 设置标签
+181 |                 if self.router.current == "settings" {
+182 |                     TunaSettingsView()
+    |                     `- error: cannot find 'TunaSettingsView' in scope
+183 |                 }
+184 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:128:41: error: cannot assign value of type 'String' to type 'Tab'
+126 | 
+127 |                 Button(action: {
+128 |                     self.router.current = "settings"
+    |                                         `- error: cannot assign value of type 'String' to type 'Tab'
+129 |                 }) {
+130 |                     VStack {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:139:37: error: cannot convert value of type 'Tab' to expected argument type 'String'
+137 |                     .padding(.horizontal, 12)
+138 |                     .background(
+139 |                         self.router.current == "settings" ? Color.blue.opacity(0.6) : Color
+    |                                     `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+140 |                             .clear
+141 |                     )
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:145:46: error: cannot convert value of type 'Tab' to expected argument type 'String'
+143 |                 }
+144 |                 .buttonStyle(PlainButtonStyle())
+145 |                 .foregroundColor(self.router.current == "settings" ? .white : .secondary)
+    |                                              `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+146 | 
+147 |                 Spacer()
+[12/33] Compiling TunaApp MenuBarViewModel.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:182:21: error: cannot find 'TunaSettingsView' in scope
+180 |                 // 设置标签
+181 |                 if self.router.current == "settings" {
+182 |                     TunaSettingsView()
+    |                     `- error: cannot find 'TunaSettingsView' in scope
+183 |                 }
+184 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:128:41: error: cannot assign value of type 'String' to type 'Tab'
+126 | 
+127 |                 Button(action: {
+128 |                     self.router.current = "settings"
+    |                                         `- error: cannot assign value of type 'String' to type 'Tab'
+129 |                 }) {
+130 |                     VStack {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:139:37: error: cannot convert value of type 'Tab' to expected argument type 'String'
+137 |                     .padding(.horizontal, 12)
+138 |                     .background(
+139 |                         self.router.current == "settings" ? Color.blue.opacity(0.6) : Color
+    |                                     `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+140 |                             .clear
+141 |                     )
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/MainWindowManager.swift:145:46: error: cannot convert value of type 'Tab' to expected argument type 'String'
+143 |                 }
+144 |                 .buttonStyle(PlainButtonStyle())
+145 |                 .foregroundColor(self.router.current == "settings" ? .white : .secondary)
+    |                                              `- error: cannot convert value of type 'Tab' to expected argument type 'String'
+146 | 
+147 |                 Spacer()
+[13/33] Compiling TunaApp AppDelegate.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:275:56: error: consecutive statements on a line must be separated by ';'
+273 | 
+274 |                     // 直接修改popover窗口的位置
+275 |                     Task { @MainActor [self] in  [self] in
+    |                                                        `- error: consecutive statements on a line must be separated by ';'
+276 |                         if let popoverWindow = popover.contentViewController?.view.window {
+277 |                             // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:275:57: error: expected expression
+273 | 
+274 |                     // 直接修改popover窗口的位置
+275 |                     Task { @MainActor [self] in  [self] in
+    |                                                         `- error: expected expression
+276 |                         if let popoverWindow = popover.contentViewController?.view.window {
+277 |                             // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:298:56: error: consecutive statements on a line must be separated by ';'
+296 | 
+297 |                     // 检查是否需要应用固定状态
+298 |                     Task { @MainActor [self] in  [self] in
+    |                                                        `- error: consecutive statements on a line must be separated by ';'
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:298:57: error: expected expression
+296 | 
+297 |                     // 检查是否需要应用固定状态
+298 |                     Task { @MainActor [self] in  [self] in
+    |                                                         `- error: expected expression
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:406:52: error: consecutive statements on a line must be separated by ';'
+404 | 
+405 |                 // 直接修改popover窗口的位置
+406 |                 Task { @MainActor [self] in  [self] in
+    |                                                    `- error: consecutive statements on a line must be separated by ';'
+407 |                     if let popoverWindow = popover.contentViewController?.view.window {
+408 |                         // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:406:53: error: expected expression
+404 | 
+405 |                 // 直接修改popover窗口的位置
+406 |                 Task { @MainActor [self] in  [self] in
+    |                                                     `- error: expected expression
+407 |                     if let popoverWindow = popover.contentViewController?.view.window {
+408 |                         // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:429:52: error: consecutive statements on a line must be separated by ';'
+427 | 
+428 |                 // 检查是否需要应用固定状态
+429 |                 Task { @MainActor [self] in  [self] in
+    |                                                    `- error: consecutive statements on a line must be separated by ';'
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:429:53: error: expected expression
+427 | 
+428 |                 // 检查是否需要应用固定状态
+429 |                 Task { @MainActor [self] in  [self] in
+    |                                                     `- error: expected expression
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:86:28: error: cannot find 'AppServices' in scope
+ 84 | 
+ 85 |     // Add AppState and services
+ 86 |     private let services = AppServices(
+    |                            `- error: cannot find 'AppServices' in scope
+ 87 |         audioService: LiveAudioService(manager: AudioManager.shared),
+ 88 |         speechService: LiveSpeechService(dictationManager: DictationManager.shared),
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:288:91: error: extra argument 'userInfo' in call
+286 |                             if shouldPin {
+287 |                                 // 直接应用固定状态
+288 |                                 await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                           `- error: extra argument 'userInfo' in call
+289 |                                 print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
+290 |                             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:301:87: error: extra argument 'userInfo' in call
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+301 |                             await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                       `- error: extra argument 'userInfo' in call
+302 |                         }
+303 |                     }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:419:87: error: extra argument 'userInfo' in call
+417 |                         if shouldPin {
+418 |                             // 直接应用固定状态
+419 |                             await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                       `- error: extra argument 'userInfo' in call
+420 |                             print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
+421 |                         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:432:83: error: extra argument 'userInfo' in call
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+432 |                         await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                   `- error: extra argument 'userInfo' in call
+433 |                     }
+434 |                 }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:566:29: error: type 'MainActor' has no member 'runAfter'
+564 |         if !accessGranted {
+565 |             // 延迟1.5秒显示提示，确保UI已完全加载
+566 |             await MainActor.runAfter(deadline: .now() + 1.5) {
+    |                             `- error: type 'MainActor' has no member 'runAfter'
+567 |                 self.logger.notice("显示辅助功能权限提示")
+568 |                 let alert = NSAlert()
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:614:13: warning: no 'async' operations occur within 'await' expression
+612 |     @objc func showMainWindow() {
+613 |         Task {
+614 |             await MainWindowManager.shared.show()
+    |             `- warning: no 'async' operations occur within 'await' expression
+615 |         }
+616 |         self.logger.notice("通过AppDelegate显示主窗口")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:651:16: warning: value 'popoverWindow' was defined but never used; consider replacing with boolean test
+649 |     @MainActor
+650 |     private func updatePopoverPosition() {
+651 |         if let popoverWindow = popover.contentViewController?.view.window {
+    |                `- warning: value 'popoverWindow' was defined but never used; consider replacing with boolean test
+652 |             // ... existing code ...
+653 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:31:28: warning: no 'async' operations occur within 'await' expression
+29 |         // When volume changes, update current mode's volume settings
+30 |         Task {
+31 |             for await _ in await self.audioManager.outputVolumeStream {
+   |                            `- warning: no 'async' operations occur within 'await' expression
+32 |                 self.modeManager.updateCurrentModeVolumes()
+33 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:37:28: warning: no 'async' operations occur within 'await' expression
+35 |         
+36 |         Task {
+37 |             for await _ in await self.audioManager.inputVolumeStream {
+   |                            `- warning: no 'async' operations occur within 'await' expression
+38 |                 self.modeManager.updateCurrentModeVolumes()
+39 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:32:17: error: expression is 'async' but is not marked with 'await'
+30 |         Task {
+31 |             for await _ in await self.audioManager.outputVolumeStream {
+32 |                 self.modeManager.updateCurrentModeVolumes()
+   |                 |- error: expression is 'async' but is not marked with 'await'
+   |                 `- note: call is 'async'
+33 |             }
+34 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:38:17: error: expression is 'async' but is not marked with 'await'
+36 |         Task {
+37 |             for await _ in await self.audioManager.inputVolumeStream {
+38 |                 self.modeManager.updateCurrentModeVolumes()
+   |                 |- error: expression is 'async' but is not marked with 'await'
+   |                 `- note: call is 'async'
+39 |             }
+40 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/DictationSettingsView.swift:202:13: warning: no 'async' operations occur within 'await' expression
+200 |         // 在打开面板前发送文件选择开始通知，确保设置窗口不会关闭
+201 |         await Task<Void, Never> {
+202 |             await Notifier.post(NSNotification.Name.fileSelectionStarted)
+    |             `- warning: no 'async' operations occur within 'await' expression
+203 |         }.value
+204 |         
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/DictationSettingsView.swift:219:21: warning: no 'async' operations occur within 'await' expression
+217 |                 await Task<Void, Never> {
+218 |                     try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+219 |                     await Notifier.post(NSNotification.Name.fileSelectionEnded)
+    |                     `- warning: no 'async' operations occur within 'await' expression
+220 |                 }.value
+221 |             }
+[14/33] Compiling TunaApp AudioBuddyApp.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:275:56: error: consecutive statements on a line must be separated by ';'
+273 | 
+274 |                     // 直接修改popover窗口的位置
+275 |                     Task { @MainActor [self] in  [self] in
+    |                                                        `- error: consecutive statements on a line must be separated by ';'
+276 |                         if let popoverWindow = popover.contentViewController?.view.window {
+277 |                             // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:275:57: error: expected expression
+273 | 
+274 |                     // 直接修改popover窗口的位置
+275 |                     Task { @MainActor [self] in  [self] in
+    |                                                         `- error: expected expression
+276 |                         if let popoverWindow = popover.contentViewController?.view.window {
+277 |                             // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:298:56: error: consecutive statements on a line must be separated by ';'
+296 | 
+297 |                     // 检查是否需要应用固定状态
+298 |                     Task { @MainActor [self] in  [self] in
+    |                                                        `- error: consecutive statements on a line must be separated by ';'
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:298:57: error: expected expression
+296 | 
+297 |                     // 检查是否需要应用固定状态
+298 |                     Task { @MainActor [self] in  [self] in
+    |                                                         `- error: expected expression
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:406:52: error: consecutive statements on a line must be separated by ';'
+404 | 
+405 |                 // 直接修改popover窗口的位置
+406 |                 Task { @MainActor [self] in  [self] in
+    |                                                    `- error: consecutive statements on a line must be separated by ';'
+407 |                     if let popoverWindow = popover.contentViewController?.view.window {
+408 |                         // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:406:53: error: expected expression
+404 | 
+405 |                 // 直接修改popover窗口的位置
+406 |                 Task { @MainActor [self] in  [self] in
+    |                                                     `- error: expected expression
+407 |                     if let popoverWindow = popover.contentViewController?.view.window {
+408 |                         // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:429:52: error: consecutive statements on a line must be separated by ';'
+427 | 
+428 |                 // 检查是否需要应用固定状态
+429 |                 Task { @MainActor [self] in  [self] in
+    |                                                    `- error: consecutive statements on a line must be separated by ';'
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:429:53: error: expected expression
+427 | 
+428 |                 // 检查是否需要应用固定状态
+429 |                 Task { @MainActor [self] in  [self] in
+    |                                                     `- error: expected expression
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:86:28: error: cannot find 'AppServices' in scope
+ 84 | 
+ 85 |     // Add AppState and services
+ 86 |     private let services = AppServices(
+    |                            `- error: cannot find 'AppServices' in scope
+ 87 |         audioService: LiveAudioService(manager: AudioManager.shared),
+ 88 |         speechService: LiveSpeechService(dictationManager: DictationManager.shared),
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:288:91: error: extra argument 'userInfo' in call
+286 |                             if shouldPin {
+287 |                                 // 直接应用固定状态
+288 |                                 await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                           `- error: extra argument 'userInfo' in call
+289 |                                 print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
+290 |                             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:301:87: error: extra argument 'userInfo' in call
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+301 |                             await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                       `- error: extra argument 'userInfo' in call
+302 |                         }
+303 |                     }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:419:87: error: extra argument 'userInfo' in call
+417 |                         if shouldPin {
+418 |                             // 直接应用固定状态
+419 |                             await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                       `- error: extra argument 'userInfo' in call
+420 |                             print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
+421 |                         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:432:83: error: extra argument 'userInfo' in call
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+432 |                         await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                   `- error: extra argument 'userInfo' in call
+433 |                     }
+434 |                 }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:566:29: error: type 'MainActor' has no member 'runAfter'
+564 |         if !accessGranted {
+565 |             // 延迟1.5秒显示提示，确保UI已完全加载
+566 |             await MainActor.runAfter(deadline: .now() + 1.5) {
+    |                             `- error: type 'MainActor' has no member 'runAfter'
+567 |                 self.logger.notice("显示辅助功能权限提示")
+568 |                 let alert = NSAlert()
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:614:13: warning: no 'async' operations occur within 'await' expression
+612 |     @objc func showMainWindow() {
+613 |         Task {
+614 |             await MainWindowManager.shared.show()
+    |             `- warning: no 'async' operations occur within 'await' expression
+615 |         }
+616 |         self.logger.notice("通过AppDelegate显示主窗口")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:651:16: warning: value 'popoverWindow' was defined but never used; consider replacing with boolean test
+649 |     @MainActor
+650 |     private func updatePopoverPosition() {
+651 |         if let popoverWindow = popover.contentViewController?.view.window {
+    |                `- warning: value 'popoverWindow' was defined but never used; consider replacing with boolean test
+652 |             // ... existing code ...
+653 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:31:28: warning: no 'async' operations occur within 'await' expression
+29 |         // When volume changes, update current mode's volume settings
+30 |         Task {
+31 |             for await _ in await self.audioManager.outputVolumeStream {
+   |                            `- warning: no 'async' operations occur within 'await' expression
+32 |                 self.modeManager.updateCurrentModeVolumes()
+33 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:37:28: warning: no 'async' operations occur within 'await' expression
+35 |         
+36 |         Task {
+37 |             for await _ in await self.audioManager.inputVolumeStream {
+   |                            `- warning: no 'async' operations occur within 'await' expression
+38 |                 self.modeManager.updateCurrentModeVolumes()
+39 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:32:17: error: expression is 'async' but is not marked with 'await'
+30 |         Task {
+31 |             for await _ in await self.audioManager.outputVolumeStream {
+32 |                 self.modeManager.updateCurrentModeVolumes()
+   |                 |- error: expression is 'async' but is not marked with 'await'
+   |                 `- note: call is 'async'
+33 |             }
+34 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:38:17: error: expression is 'async' but is not marked with 'await'
+36 |         Task {
+37 |             for await _ in await self.audioManager.inputVolumeStream {
+38 |                 self.modeManager.updateCurrentModeVolumes()
+   |                 |- error: expression is 'async' but is not marked with 'await'
+   |                 `- note: call is 'async'
+39 |             }
+40 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/DictationSettingsView.swift:202:13: warning: no 'async' operations occur within 'await' expression
+200 |         // 在打开面板前发送文件选择开始通知，确保设置窗口不会关闭
+201 |         await Task<Void, Never> {
+202 |             await Notifier.post(NSNotification.Name.fileSelectionStarted)
+    |             `- warning: no 'async' operations occur within 'await' expression
+203 |         }.value
+204 |         
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/DictationSettingsView.swift:219:21: warning: no 'async' operations occur within 'await' expression
+217 |                 await Task<Void, Never> {
+218 |                     try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+219 |                     await Notifier.post(NSNotification.Name.fileSelectionEnded)
+    |                     `- warning: no 'async' operations occur within 'await' expression
+220 |                 }.value
+221 |             }
+[15/33] Compiling TunaApp DictationSettingsView.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:275:56: error: consecutive statements on a line must be separated by ';'
+273 | 
+274 |                     // 直接修改popover窗口的位置
+275 |                     Task { @MainActor [self] in  [self] in
+    |                                                        `- error: consecutive statements on a line must be separated by ';'
+276 |                         if let popoverWindow = popover.contentViewController?.view.window {
+277 |                             // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:275:57: error: expected expression
+273 | 
+274 |                     // 直接修改popover窗口的位置
+275 |                     Task { @MainActor [self] in  [self] in
+    |                                                         `- error: expected expression
+276 |                         if let popoverWindow = popover.contentViewController?.view.window {
+277 |                             // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:298:56: error: consecutive statements on a line must be separated by ';'
+296 | 
+297 |                     // 检查是否需要应用固定状态
+298 |                     Task { @MainActor [self] in  [self] in
+    |                                                        `- error: consecutive statements on a line must be separated by ';'
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:298:57: error: expected expression
+296 | 
+297 |                     // 检查是否需要应用固定状态
+298 |                     Task { @MainActor [self] in  [self] in
+    |                                                         `- error: expected expression
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:406:52: error: consecutive statements on a line must be separated by ';'
+404 | 
+405 |                 // 直接修改popover窗口的位置
+406 |                 Task { @MainActor [self] in  [self] in
+    |                                                    `- error: consecutive statements on a line must be separated by ';'
+407 |                     if let popoverWindow = popover.contentViewController?.view.window {
+408 |                         // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:406:53: error: expected expression
+404 | 
+405 |                 // 直接修改popover窗口的位置
+406 |                 Task { @MainActor [self] in  [self] in
+    |                                                     `- error: expected expression
+407 |                     if let popoverWindow = popover.contentViewController?.view.window {
+408 |                         // 获取当前位置
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:429:52: error: consecutive statements on a line must be separated by ';'
+427 | 
+428 |                 // 检查是否需要应用固定状态
+429 |                 Task { @MainActor [self] in  [self] in
+    |                                                    `- error: consecutive statements on a line must be separated by ';'
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:429:53: error: expected expression
+427 | 
+428 |                 // 检查是否需要应用固定状态
+429 |                 Task { @MainActor [self] in  [self] in
+    |                                                     `- error: expected expression
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:86:28: error: cannot find 'AppServices' in scope
+ 84 | 
+ 85 |     // Add AppState and services
+ 86 |     private let services = AppServices(
+    |                            `- error: cannot find 'AppServices' in scope
+ 87 |         audioService: LiveAudioService(manager: AudioManager.shared),
+ 88 |         speechService: LiveSpeechService(dictationManager: DictationManager.shared),
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:288:91: error: extra argument 'userInfo' in call
+286 |                             if shouldPin {
+287 |                                 // 直接应用固定状态
+288 |                                 await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                           `- error: extra argument 'userInfo' in call
+289 |                                 print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
+290 |                             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:301:87: error: extra argument 'userInfo' in call
+299 |                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+300 |                         if shouldPin {
+301 |                             await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                       `- error: extra argument 'userInfo' in call
+302 |                         }
+303 |                     }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:419:87: error: extra argument 'userInfo' in call
+417 |                         if shouldPin {
+418 |                             // 直接应用固定状态
+419 |                             await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                       `- error: extra argument 'userInfo' in call
+420 |                             print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
+421 |                         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:432:83: error: extra argument 'userInfo' in call
+430 |                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+431 |                     if shouldPin {
+432 |                         await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
+    |                                                                                   `- error: extra argument 'userInfo' in call
+433 |                     }
+434 |                 }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:566:29: error: type 'MainActor' has no member 'runAfter'
+564 |         if !accessGranted {
+565 |             // 延迟1.5秒显示提示，确保UI已完全加载
+566 |             await MainActor.runAfter(deadline: .now() + 1.5) {
+    |                             `- error: type 'MainActor' has no member 'runAfter'
+567 |                 self.logger.notice("显示辅助功能权限提示")
+568 |                 let alert = NSAlert()
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:614:13: warning: no 'async' operations occur within 'await' expression
+612 |     @objc func showMainWindow() {
+613 |         Task {
+614 |             await MainWindowManager.shared.show()
+    |             `- warning: no 'async' operations occur within 'await' expression
+615 |         }
+616 |         self.logger.notice("通过AppDelegate显示主窗口")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:651:16: warning: value 'popoverWindow' was defined but never used; consider replacing with boolean test
+649 |     @MainActor
+650 |     private func updatePopoverPosition() {
+651 |         if let popoverWindow = popover.contentViewController?.view.window {
+    |                `- warning: value 'popoverWindow' was defined but never used; consider replacing with boolean test
+652 |             // ... existing code ...
+653 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:31:28: warning: no 'async' operations occur within 'await' expression
+29 |         // When volume changes, update current mode's volume settings
+30 |         Task {
+31 |             for await _ in await self.audioManager.outputVolumeStream {
+   |                            `- warning: no 'async' operations occur within 'await' expression
+32 |                 self.modeManager.updateCurrentModeVolumes()
+33 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:37:28: warning: no 'async' operations occur within 'await' expression
+35 |         
+36 |         Task {
+37 |             for await _ in await self.audioManager.inputVolumeStream {
+   |                            `- warning: no 'async' operations occur within 'await' expression
+38 |                 self.modeManager.updateCurrentModeVolumes()
+39 |             }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:32:17: error: expression is 'async' but is not marked with 'await'
+30 |         Task {
+31 |             for await _ in await self.audioManager.outputVolumeStream {
+32 |                 self.modeManager.updateCurrentModeVolumes()
+   |                 |- error: expression is 'async' but is not marked with 'await'
+   |                 `- note: call is 'async'
+33 |             }
+34 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AudioBuddyApp.swift:38:17: error: expression is 'async' but is not marked with 'await'
+36 |         Task {
+37 |             for await _ in await self.audioManager.inputVolumeStream {
+38 |                 self.modeManager.updateCurrentModeVolumes()
+   |                 |- error: expression is 'async' but is not marked with 'await'
+   |                 `- note: call is 'async'
+39 |             }
+40 |         }
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/DictationSettingsView.swift:202:13: warning: no 'async' operations occur within 'await' expression
+200 |         // 在打开面板前发送文件选择开始通知，确保设置窗口不会关闭
+201 |         await Task<Void, Never> {
+202 |             await Notifier.post(NSNotification.Name.fileSelectionStarted)
+    |             `- warning: no 'async' operations occur within 'await' expression
+203 |         }.value
+204 |         
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/DictationSettingsView.swift:219:21: warning: no 'async' operations occur within 'await' expression
+217 |                 await Task<Void, Never> {
+218 |                     try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+219 |                     await Notifier.post(NSNotification.Name.fileSelectionEnded)
+    |                     `- warning: no 'async' operations occur within 'await' expression
+220 |                 }.value
+221 |             }
+[16/33] Compiling TunaApp TranscriptSettingsView.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/TunaBanner.swift:98:23: error: invalid conversion from 'async' function of type '() async -> Void' to synchronous function type '() -> Void'
+ 96 |             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+ 97 |             .offset(y: self.offset)
+ 98 |             .onAppear {
+    |                       `- error: invalid conversion from 'async' function of type '() async -> Void' to synchronous function type '() -> Void'
+ 99 |                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+100 |                     self.offset = 0
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/TunaBanner.swift:104:33: error: type 'MainActor' has no member 'runAfter'
+102 | 
+103 |                 // 设置自动关闭计时器（5秒）
+104 |                 await MainActor.runAfter(deadline: .now() + 5) {
+    |                                 `- error: type 'MainActor' has no member 'runAfter'
+105 |                     if self.isPresented {
+106 |                         withAnimation {
+[17/33] Compiling TunaApp StatsRibbonView.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/TunaBanner.swift:98:23: error: invalid conversion from 'async' function of type '() async -> Void' to synchronous function type '() -> Void'
+ 96 |             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+ 97 |             .offset(y: self.offset)
+ 98 |             .onAppear {
+    |                       `- error: invalid conversion from 'async' function of type '() async -> Void' to synchronous function type '() -> Void'
+ 99 |                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+100 |                     self.offset = 0
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/TunaBanner.swift:104:33: error: type 'MainActor' has no member 'runAfter'
+102 | 
+103 |                 // 设置自动关闭计时器（5秒）
+104 |                 await MainActor.runAfter(deadline: .now() + 5) {
+    |                                 `- error: type 'MainActor' has no member 'runAfter'
+105 |                     if self.isPresented {
+106 |                         withAnimation {
+[18/33] Compiling TunaApp TunaBanner.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/TunaBanner.swift:98:23: error: invalid conversion from 'async' function of type '() async -> Void' to synchronous function type '() -> Void'
+ 96 |             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+ 97 |             .offset(y: self.offset)
+ 98 |             .onAppear {
+    |                       `- error: invalid conversion from 'async' function of type '() async -> Void' to synchronous function type '() -> Void'
+ 99 |                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+100 |                     self.offset = 0
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/TunaBanner.swift:104:33: error: type 'MainActor' has no member 'runAfter'
+102 | 
+103 |                 // 设置自动关闭计时器（5秒）
+104 |                 await MainActor.runAfter(deadline: .now() + 5) {
+    |                                 `- error: type 'MainActor' has no member 'runAfter'
+105 |                     if self.isPresented {
+106 |                         withAnimation {
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[19/33] Compiling TunaApp SilenceMenuView.swift
+[20/33] Compiling TunaApp OutputDeviceCard.swift
+[21/33] Compiling TunaApp ShortcutTextField.swift
+[22/33] Emitting module TunaApp
+/Users/yukungao/github/tuna_v1/Sources/Tuna/AppDelegate.swift:86:28: error: cannot find 'AppServices' in scope
+ 84 | 
+ 85 |     // Add AppState and services
+ 86 |     private let services = AppServices(
+    |                            `- error: cannot find 'AppServices' in scope
+ 87 |         audioService: LiveAudioService(manager: AudioManager.shared),
+ 88 |         speechService: LiveSpeechService(dictationManager: DictationManager.shared),
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:11:48: error: cannot find type 'TunaSettingsView' in scope
+  9 |     // 窗口引用
+ 10 |     var windowController: NSWindowController?
+ 11 |     private var rootHostingView: NSHostingView<TunaSettingsView>?
+    |                                                `- error: cannot find type 'TunaSettingsView' in scope
+ 12 | 
+ 13 |     // 侧边栏宽度
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Windows/TunaSettingsWindow.swift:81:20: error: cannot find type 'SettingsTab' in scope
+ 79 | 
+ 80 |     /// 切换到指定的标签页
+ 81 |     func show(tab: SettingsTab) {
+    |                    `- error: cannot find type 'SettingsTab' in scope
+ 82 |         // 实现标签切换的辅助方法，用于测试
+ 83 |         if let hostingView = rootHostingView {
+[23/34] Compiling TunaApp KeyPopoverWindow.swift
+[24/34] Compiling TunaApp TunaCard.swift
+[25/34] Compiling TunaApp TunaDictationView.swift
+[26/34] Compiling TunaApp ContentView.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/ContentView.swift:20:13: error: cannot find 'TunaSettingsView' in scope
+18 |                 .tag(Tab.dictation)
+19 |             
+20 |             TunaSettingsView()
+   |             `- error: cannot find 'TunaSettingsView' in scope
+21 |                 .tabItem {
+22 |                     Label("Settings", systemImage: "gear")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/MenuBarView.swift:27:17: error: cannot find 'TunaSettingsView' in scope
+25 |                 TunaDictationView()
+26 |             } else {
+27 |                 TunaSettingsView()
+   |                 `- error: cannot find 'TunaSettingsView' in scope
+28 |             }
+29 |         }
+[27/34] Compiling TunaApp DictationView.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/ContentView.swift:20:13: error: cannot find 'TunaSettingsView' in scope
+18 |                 .tag(Tab.dictation)
+19 |             
+20 |             TunaSettingsView()
+   |             `- error: cannot find 'TunaSettingsView' in scope
+21 |                 .tabItem {
+22 |                     Label("Settings", systemImage: "gear")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/MenuBarView.swift:27:17: error: cannot find 'TunaSettingsView' in scope
+25 |                 TunaDictationView()
+26 |             } else {
+27 |                 TunaSettingsView()
+   |                 `- error: cannot find 'TunaSettingsView' in scope
+28 |             }
+29 |         }
+[28/34] Compiling TunaApp MenuBarView.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/ContentView.swift:20:13: error: cannot find 'TunaSettingsView' in scope
+18 |                 .tag(Tab.dictation)
+19 |             
+20 |             TunaSettingsView()
+   |             `- error: cannot find 'TunaSettingsView' in scope
+21 |                 .tabItem {
+22 |                     Label("Settings", systemImage: "gear")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Views/MenuBarView.swift:27:17: error: cannot find 'TunaSettingsView' in scope
+25 |                 TunaDictationView()
+26 |             } else {
+27 |                 TunaSettingsView()
+   |                 `- error: cannot find 'TunaSettingsView' in scope
+28 |             }
+29 |         }
+[29/34] Compiling TunaApp ModeSettingsView.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/ModeSettingsView.swift:24:25: error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+ 22 |     @State private var modes: [AudioMode] = []
+ 23 | 
+ 24 |     var body: some View {
+    |                         `- error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+ 25 |         VStack(alignment: .leading, spacing: 16) {
+ 26 |             Text("Mode Settings")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/ModeSettingsView.swift:248:25: error: cannot assign to property: 'name' is a 'let' constant
+246 |         } else if let mode = editingMode {
+247 |             var updatedMode = mode
+248 |             updatedMode.name = newModeName
+    |                         `- error: cannot assign to property: 'name' is a 'let' constant
+249 |             updatedMode.outputDeviceUID = selectedOutputUID
+250 |             updatedMode.inputDeviceUID = selectedInputUID
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:46:37: error: type 'Notification.Name' (aka 'NSNotification.Name') has no member 'dictationShortcutSettingsChanged'
+ 44 |             self,
+ 45 |             selector: #selector(self.handleDictationShortcutSettingsChanged),
+ 46 |             name: Notification.Name.dictationShortcutSettingsChanged,
+    |                                     `- error: type 'Notification.Name' (aka 'NSNotification.Name') has no member 'dictationShortcutSettingsChanged'
+ 47 |             object: nil
+ 48 |         )
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:365:13: error: cannot find 'QuickDictationWindow' in scope
+363 |         if self.settings.showDictationPageOnShortcut {
+364 |             // 使用简化版的QuickDictationWindow而不是完整的主窗口
+365 |             QuickDictationWindow.shared.show()
+    |             `- error: cannot find 'QuickDictationWindow' in scope
+366 |         }
+367 |         
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:432:14: warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+430 | 
+431 |     deinit {
+432 |         Task { @MainActor in
+    |              `- warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+433 |             await unregisterDictationShortcut()
+434 |         }
+[30/34] Compiling TunaApp DeterministicProviders.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/ModeSettingsView.swift:24:25: error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+ 22 |     @State private var modes: [AudioMode] = []
+ 23 | 
+ 24 |     var body: some View {
+    |                         `- error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+ 25 |         VStack(alignment: .leading, spacing: 16) {
+ 26 |             Text("Mode Settings")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/ModeSettingsView.swift:248:25: error: cannot assign to property: 'name' is a 'let' constant
+246 |         } else if let mode = editingMode {
+247 |             var updatedMode = mode
+248 |             updatedMode.name = newModeName
+    |                         `- error: cannot assign to property: 'name' is a 'let' constant
+249 |             updatedMode.outputDeviceUID = selectedOutputUID
+250 |             updatedMode.inputDeviceUID = selectedInputUID
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:46:37: error: type 'Notification.Name' (aka 'NSNotification.Name') has no member 'dictationShortcutSettingsChanged'
+ 44 |             self,
+ 45 |             selector: #selector(self.handleDictationShortcutSettingsChanged),
+ 46 |             name: Notification.Name.dictationShortcutSettingsChanged,
+    |                                     `- error: type 'Notification.Name' (aka 'NSNotification.Name') has no member 'dictationShortcutSettingsChanged'
+ 47 |             object: nil
+ 48 |         )
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:365:13: error: cannot find 'QuickDictationWindow' in scope
+363 |         if self.settings.showDictationPageOnShortcut {
+364 |             // 使用简化版的QuickDictationWindow而不是完整的主窗口
+365 |             QuickDictationWindow.shared.show()
+    |             `- error: cannot find 'QuickDictationWindow' in scope
+366 |         }
+367 |         
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:432:14: warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+430 | 
+431 |     deinit {
+432 |         Task { @MainActor in
+    |              `- warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+433 |             await unregisterDictationShortcut()
+434 |         }
+[31/34] Compiling TunaApp KeyboardShortcutManager.swift
+/Users/yukungao/github/tuna_v1/Sources/Tuna/ModeSettingsView.swift:24:25: error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+ 22 |     @State private var modes: [AudioMode] = []
+ 23 | 
+ 24 |     var body: some View {
+    |                         `- error: the compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions
+ 25 |         VStack(alignment: .leading, spacing: 16) {
+ 26 |             Text("Mode Settings")
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/ModeSettingsView.swift:248:25: error: cannot assign to property: 'name' is a 'let' constant
+246 |         } else if let mode = editingMode {
+247 |             var updatedMode = mode
+248 |             updatedMode.name = newModeName
+    |                         `- error: cannot assign to property: 'name' is a 'let' constant
+249 |             updatedMode.outputDeviceUID = selectedOutputUID
+250 |             updatedMode.inputDeviceUID = selectedInputUID
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:46:37: error: type 'Notification.Name' (aka 'NSNotification.Name') has no member 'dictationShortcutSettingsChanged'
+ 44 |             self,
+ 45 |             selector: #selector(self.handleDictationShortcutSettingsChanged),
+ 46 |             name: Notification.Name.dictationShortcutSettingsChanged,
+    |                                     `- error: type 'Notification.Name' (aka 'NSNotification.Name') has no member 'dictationShortcutSettingsChanged'
+ 47 |             object: nil
+ 48 |         )
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:365:13: error: cannot find 'QuickDictationWindow' in scope
+363 |         if self.settings.showDictationPageOnShortcut {
+364 |             // 使用简化版的QuickDictationWindow而不是完整的主窗口
+365 |             QuickDictationWindow.shared.show()
+    |             `- error: cannot find 'QuickDictationWindow' in scope
+366 |         }
+367 |         
+
+/Users/yukungao/github/tuna_v1/Sources/Tuna/Models/KeyboardShortcutManager.swift:432:14: warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+430 | 
+431 |     deinit {
+432 |         Task { @MainActor in
+    |              `- warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+433 |             await unregisterDictationShortcut()
+434 |         }
+[32/36] Compiling TunaApp InputDeviceCard.swift
+[33/36] Compiling TunaApp AboutCardView.swift

@@ -1,12 +1,9 @@
-// @module: MenuBarViewModel
 // @created_by_cursor: yes
-// @summary: MenuBarView的视图模型
 // @depends_on: None
 
 import Combine
 import SwiftUI
 
-class MenuBarViewModel: ObservableObject {
     @Published var isExpanded: Bool = true
 
     private var cancellables = Set<AnyCancellable>()
@@ -16,8 +13,6 @@ class MenuBarViewModel: ObservableObject {
     }
 
     // 创建预览用实例
-    static func preview() -> MenuBarViewModel {
-        let viewModel = MenuBarViewModel()
         return viewModel
     }
 }

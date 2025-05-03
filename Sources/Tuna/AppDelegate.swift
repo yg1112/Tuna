@@ -7,6 +7,7 @@ import TunaAudio
 import TunaCore
 import TunaSpeech
 import TunaUI
+import TunaTypes
 
 // 事件监视器 - 监听鼠标点击事件
 class EventMonitor {
@@ -60,6 +61,7 @@ extension NSImage {
     }
 }
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     // 添加shared静态属性
     static var shared: AppDelegate? {
@@ -81,12 +83,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let defaults = UserDefaults.standard
 
     // Add AppState and services
-    private let services = AppServices.live
-    private lazy var appState: AppState = .init(
-        audio: services.audio.currentAudioState(),
-        speech: services.speech.currentSpeechState(),
-        settings: services.settings.load()
+    private let services = AppServices(
+        audioService: LiveAudioService(manager: AudioManager.shared),
+        speechService: LiveSpeechService(dictationManager: DictationManager.shared),
+        settingsService: LiveSettingsService(settings: TunaSettings.shared)
     )
+    
+    // 初始化窗口控制器
+    private lazy var windowController: NSWindowController = {
+            audioManager: AudioManager.shared,
+            settings: TunaSettings.shared
+        )
+        .environmentObject(DictationManager.shared)
+        .environmentObject(TabRouter.shared)
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = NSHostingView(rootView: contentView)
+        window.title = "Tuna"
+        window.center()
+        
+        return NSWindowController(window: window)
+    }()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("\u{001B}[34m[APP]\u{001B}[0m Application finished launching")
@@ -113,7 +135,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(self.showSettingsWindow(_:)),
-            name: Notification.Name.showSettings,
+            name: NSNotification.Name("showSettings"),
             object: nil
         )
 
@@ -121,7 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(self.handlePinToggle(_:)),
-            name: Notification.Name.togglePinned,
+            name: NSNotification.Name("togglePinned"),
             object: nil
         )
 
@@ -177,13 +199,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // 预先创建内容视图，提高首次显示速度
-        let contentView = MenuBarView(
             audioManager: AudioManager.shared,
             settings: TunaSettings.shared
         )
         .environmentObject(DictationManager.shared)
         .environmentObject(TabRouter.shared)
-        .environmentObject(self.appState)
+        .environmentObject(self.services)
         let hostingController = NSHostingController(rootView: contentView)
         self.popover.contentViewController = hostingController
 
@@ -249,7 +270,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     )
 
                     // 直接修改popover窗口的位置
-                    DispatchQueue.main.async { [self] in
+                    Task { @MainActor [self] in  [self] in
                         if let popoverWindow = popover.contentViewController?.view.window {
                             // 获取当前位置
                             var frame = popoverWindow.frame
@@ -262,11 +283,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                             let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                             if shouldPin {
                                 // 直接应用固定状态
-                                NotificationCenter.default.post(
-                                    name: Notification.Name.togglePinned,
-                                    object: nil,
-                                    userInfo: ["isPinned": true]
-                                )
+                                await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
                                 print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
                             }
                         }
@@ -276,20 +293,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
                     // 检查是否需要应用固定状态
-                    DispatchQueue.main.async { [self] in
+                    Task { @MainActor [self] in  [self] in
                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                         if shouldPin {
-                            NotificationCenter.default.post(
-                                name: Notification.Name.togglePinned,
-                                object: nil,
-                                userInfo: ["isPinned": true]
-                            )
+                            await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
                         }
                     }
                 }
 
                 // 在显示popover后处理视觉效果
-                DispatchQueue.main.async {
+                Task { @MainActor [self] in 
                     // 移除箭头和阴影
                     self.popover.setValue(true, forKeyPath: "shouldHideAnchor")
 
@@ -330,18 +343,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // 重建Popover以确保它使用最新的视图树
+    @MainActor
     private func rebuildPopover() {
         Logger(subsystem: "ai.tuna", category: "Shortcut").notice("[P] rebuildPopover")
         print("🔄 [DEBUG] 重建Popover，确保视图树更新")
-
-        let contentView = MenuBarView(
+        
             audioManager: AudioManager.shared,
             settings: TunaSettings.shared
         )
         .environmentObject(DictationManager.shared)
         .environmentObject(TabRouter.shared)
-
+        
         print("👁 [DEBUG] 新Popover的router id: \(ObjectIdentifier(TabRouter.shared))")
         print("ROUTER-DBG [2]", ObjectIdentifier(TabRouter.shared), TabRouter.shared.current)
 
@@ -388,7 +400,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 )
 
                 // 直接修改popover窗口的位置
-                DispatchQueue.main.async { [self] in
+                Task { @MainActor [self] in  [self] in
                     if let popoverWindow = popover.contentViewController?.view.window {
                         // 获取当前位置
                         var frame = popoverWindow.frame
@@ -401,11 +413,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                         if shouldPin {
                             // 直接应用固定状态
-                            NotificationCenter.default.post(
-                                name: Notification.Name.togglePinned,
-                                object: nil,
-                                userInfo: ["isPinned": true]
-                            )
+                            await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
                             print("\u{001B}[36m[UI]\u{001B}[0m Applied saved pin state")
                         }
                     }
@@ -415,20 +423,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
                 // 检查是否需要应用固定状态
-                DispatchQueue.main.async { [self] in
+                Task { @MainActor [self] in  [self] in
                     let shouldPin = self.defaults.bool(forKey: "popoverPinned")
                     if shouldPin {
-                        NotificationCenter.default.post(
-                            name: Notification.Name.togglePinned,
-                            object: nil,
-                            userInfo: ["isPinned": true]
-                        )
+                        await Notifier.post(.togglePinned, object: nil, userInfo: ["isPinned": true])
                     }
                 }
             }
 
             // 在显示popover后处理视觉效果
-            DispatchQueue.main.async {
+            Task { @MainActor [self] in 
                 // 移除箭头和阴影
                 self.popover.setValue(true, forKeyPath: "shouldHideAnchor")
 
@@ -464,6 +468,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         self.popover.performClose(nil)
     }
 
+    @MainActor
     @objc func showSettingsWindow(_ notification: Notification) {
         print("\u{001B}[36m[SETTINGS]\u{001B}[0m User requested settings window")
         fflush(stdout)
@@ -481,17 +486,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @MainActor
     @objc func handleDeviceSelection(_ sender: NSMenuItem) {
         guard let info = sender.representedObject as? DeviceSelectionInfo else { return }
-
-        print("Switching device: \(info.device.name), is input: \(info.isInput)")
-
-        // Use AudioManager to switch device
-        AudioManager.shared.setDefaultDevice(info.device, forInput: info.isInput)
-
-        // Close menu
-        if let menu = sender.menu {
-            menu.cancelTracking()
+        Task {
+            await AudioManager.shared.setDefaultDevice(info.device, forInput: info.isInput)
         }
     }
 
@@ -561,7 +560,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if !accessGranted {
             // 延迟1.5秒显示提示，确保UI已完全加载
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            await MainActor.runAfter(deadline: .now() + 1.5) {
                 self.logger.notice("显示辅助功能权限提示")
                 let alert = NSAlert()
                 alert.messageText = "请为 Tuna 启用辅助功能权限"
@@ -606,12 +605,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @MainActor
     @objc func showMainWindow() {
-        // 使用MainWindowManager显示主窗口
-        MainWindowManager.shared.show()
+        Task {
+            await MainWindowManager.shared.show()
+        }
         self.logger.notice("通过AppDelegate显示主窗口")
         print("\u{001B}[34m[WINDOW]\u{001B}[0m 通过AppDelegate显示主窗口")
-        fflush(stdout)
     }
 
     /// For unit tests: sets up statusItem without relying on NSApplication run‑loop.
@@ -641,5 +641,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = hostingController
 
         self.popover = popover
+    }
+
+    @MainActor
+    private func updatePopoverPosition() {
+        if let popoverWindow = popover.contentViewController?.view.window {
+            // ... existing code ...
+        }
+    }
+    
+    @MainActor
+    private func checkAndApplyPinState() {
+        let shouldPin = self.defaults.bool(forKey: "popoverPinned")
+        if shouldPin {
+            // ... existing code ...
+        }
     }
 }

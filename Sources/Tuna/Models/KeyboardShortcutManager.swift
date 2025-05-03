@@ -9,14 +9,17 @@ import Foundation
 import os.log
 import TunaCore
 import TunaSpeech
+import TunaTypes
+import TunaUI
 
 struct KeyCombo {
     let keyCode: UInt16
     let modifiers: UInt32
 }
 
-class KeyboardShortcutManager {
-    static let shared = KeyboardShortcutManager()
+@MainActor
+public class KeyboardShortcutManager {
+    public static let shared = KeyboardShortcutManager()
 
     private let logger = Logger(subsystem: "ai.tuna", category: "Shortcut")
     private let settings = TunaSettings.shared
@@ -218,7 +221,7 @@ class KeyboardShortcutManager {
             print("🔴 [Shortcut] 辅助功能权限被拒绝，快捷键将无法工作")
 
             // 显示提示窗口，指导用户开启权限
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 let alert = NSAlert()
                 alert.messageText = "需要辅助功能权限"
                 alert
@@ -338,10 +341,9 @@ class KeyboardShortcutManager {
         if let handler = dictationEventHandler {
             RemoveEventHandler(handler)
             self.dictationEventHandler = nil
+            self.currentDictationKeyCombo = nil
             self.logger.debug("Unregistered dictation shortcut event handler")
         }
-
-        self.currentDictationKeyCombo = nil
     }
 
     func handleDictationShortcutPressed() {
@@ -355,24 +357,15 @@ class KeyboardShortcutManager {
         print("🔶 [Shortcut] 快捷键触发: \(self.settings.dictationShortcutKeyCombo)")
 
         // 使用TabRouter来跟踪当前状态，即使我们不显示完整UI
-        TabRouter.switchTo("dictation")
-        self.logger.notice("✅ 已使用TabRouter切换到听写页面")
-        print("✅ [Shortcut] 已使用TabRouter切换到听写页面")
+        TabRouter.shared.current = .dictation
 
         // A. UI 处理 - 根据设置决定是否显示UI
-        if self.settings.showDictationPageOnShortcut {
-            // 使用简化版的QuickDictationWindow而不是完整的主窗口
-            QuickDictationWindow.shared.show()
-            self.logger.notice("🖼 已显示快速听写窗口")
-            print("🖼 [Shortcut] 已显示快速听写窗口")
-        } else {
-            // 不显示UI，只记录日志
-            self.logger.notice("👻 静默录音模式 (showDictationPageOnShortcut=false)")
-            print("🔷 [Shortcut] 静默录音模式 (不显示Dictation页面)")
-        }
+        if self.settings.showDictationPageOnShortcut {}
 
         // B. 业务逻辑 - 切换录音状态
-        DictationManager.shared.toggle()
+        Task {
+            await self.dictationManager.toggle()
+        }
         self.logger.notice("🎙 已调用 DictationManager.toggle()")
         print("🎙 [Shortcut] 已调用 DictationManager.toggle()")
     }
@@ -407,9 +400,35 @@ class KeyboardShortcutManager {
         self.logger.notice("✅ 已添加全局键盘监听")
     }
 
-    deinit {
-        unregisterDictationShortcut()
+    private func handleDictationShortcut() async {
+        // 使用TabRouter来跟踪当前状态，即使我们不显示完整UI
+        Task { @MainActor in
+            TabRouter.shared.switchTo(.dictation)
+        }
 
+        // A. UI 处理 - 根据设置决定是否显示UI
+        if self.settings.showDictationPageOnShortcut {
+            // 显示UI
+            await self.dictationManager.showDictationWindow()
+        }
+
+        // B. 功能处理 - 开始录音
+        await self.dictationManager.startDictation()
+    }
+
+    private func unregisterDictationShortcut() async {
+        // 卸载事件处理器
+        if let handler = dictationEventHandler {
+            RemoveEventHandler(handler)
+            self.dictationEventHandler = nil
+            self.currentDictationKeyCombo = nil
+        }
+    }
+
+    deinit {
+        Task { @MainActor in
+            await unregisterDictationShortcut()
+        }
         NotificationCenter.default.removeObserver(self)
     }
 }

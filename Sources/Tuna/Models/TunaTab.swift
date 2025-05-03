@@ -1,3 +1,5 @@
+import TunaUI
+
 // @module: TunaTab
 // @created_by_cursor: yes
 // @summary: 定义 Tuna 主视图的标签页
@@ -26,7 +28,7 @@ enum TunaTab: String, CaseIterable, Identifiable {
     var routerValue: String {
         switch self {
             case .devices:
-                "devices"
+                .devices
             case .whispen:
                 "dictation" // 保持与现有代码兼容
         }
@@ -35,7 +37,7 @@ enum TunaTab: String, CaseIterable, Identifiable {
     // 从 TabRouter 的字符串值创建 TunaTab
     static func fromRouterValue(_ value: String) -> TunaTab {
         switch value {
-            case "devices":
+            case .devices:
                 .devices
             case "dictation":
                 .whispen

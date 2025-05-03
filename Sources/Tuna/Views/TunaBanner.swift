@@ -1,4 +1,3 @@
-// @module: TunaBanner
 // @created_by_cursor: yes
 // @summary: 定义通知横幅组件，用于显示错误信息等
 // @depends_on: TunaTheme
@@ -32,7 +31,6 @@ enum BannerType {
 }
 
 /// 通知横幅组件
-struct TunaBanner: View {
     let message: String
     let type: BannerType
     var action: (() -> Void)? = nil
@@ -101,7 +99,7 @@ struct TunaBanner: View {
                 }
 
                 // 设置自动关闭计时器（5秒）
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                await MainActor.runAfter(deadline: .now() + 5) {
                     if self.isPresented {
                         withAnimation {
                             self.isPresented = false
@@ -119,10 +117,8 @@ struct TunaBanner: View {
 }
 
 // 用于预览的示例
-struct TunaBanner_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
-            TunaBanner(
                 message: "No API key provided. Please add your OpenAI API key in Settings.",
                 type: .error,
                 action: { print("Settings tapped") },

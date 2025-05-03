@@ -2,28 +2,23 @@ import AVFoundation
 import Combine
 import CoreAudio
 import Foundation
+import os
 import SwiftUI
 import TunaTypes
 
 // import TunaCore
 
-public class AudioManager: ObservableObject {
-    public static let shared = AudioManager()
+@MainActor
+public class AudioManager: ObservableObject, AudioManagerProtocol {
+    @MainActor public static let shared = AudioManager()
 
-    @Published public private(set) var outputDevices: [AudioDeviceImpl] = []
-    @Published public private(set) var inputDevices: [AudioDeviceImpl] = []
-    @Published public private(set) var selectedOutputDeviceImpl: AudioDeviceImpl?
-    @Published public private(set) var selectedInputDeviceImpl: AudioDeviceImpl?
-    @Published public private(set) var outputVolume: Float = 0.0
-    @Published public private(set) var inputVolume: Float = 0.0
-
-    public var selectedOutputDevice: AudioDevice? {
-        self.selectedOutputDeviceImpl?.device
-    }
-
-    public var selectedInputDevice: AudioDevice? {
-        self.selectedInputDeviceImpl?.device
-    }
+    // MARK: - Published Properties (Main Actor Only)
+    @Published private var _outputDevices: [any AudioDevice] = []
+    @Published private var _inputDevices: [any AudioDevice] = []
+    @Published private var _selectedOutputDevice: (any AudioDevice)? = nil
+    @Published private var _selectedInputDevice: (any AudioDevice)? = nil
+    @Published private var _inputVolume: Float = 0.5
+    @Published private var _outputVolume: Float = 0.5
 
     private var deviceListener: AudioObjectPropertyListenerBlock?
     private var volumeListenerProc: AudioObjectPropertyListenerProc?
@@ -32,18 +27,120 @@ public class AudioManager: ObservableObject {
     private var userSelectedInputUID: String?
     private var userSelectedOutputUID: String?
 
+    // MARK: - Private Properties
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "AudioManager")
+
+    // Thread-safe storage using actor
+    private actor ThreadSafeStorage {
+        var inputDevices: [any AudioDevice] = []
+        var outputDevices: [any AudioDevice] = []
+        var selectedInputDevice: (any AudioDevice)? = nil
+        var selectedOutputDevice: (any AudioDevice)? = nil
+        var inputVolume: Float = 0.0
+        var outputVolume: Float = 0.0
+
+        func updateState(
+            inputDevices: [any AudioDevice]? = nil,
+            outputDevices: [any AudioDevice]? = nil,
+            selectedInputDevice: (any AudioDevice)? = nil,
+            selectedOutputDevice: (any AudioDevice)? = nil,
+            inputVolume: Float? = nil,
+            outputVolume: Float? = nil
+        ) {
+            if let inputDevices {
+                self.inputDevices = inputDevices
+            }
+            if let outputDevices {
+                self.outputDevices = outputDevices
+            }
+            if let selectedInputDevice {
+                self.selectedInputDevice = selectedInputDevice
+            }
+            if let selectedOutputDevice {
+                self.selectedOutputDevice = selectedOutputDevice
+            }
+            if let inputVolume {
+                self.inputVolume = inputVolume
+            }
+            if let outputVolume {
+                self.outputVolume = outputVolume
+            }
+        }
+    }
+
+    private let storage = ThreadSafeStorage()
+
+    // MARK: - AudioManagerProtocol Nonisolated Implementation
+    public nonisolated var inputDevices: [any AudioDevice] {
+        get async {
+            await self.storage.inputDevices
+        }
+    }
+
+    public nonisolated var outputDevices: [any AudioDevice] {
+        get async {
+            await self.storage.outputDevices
+        }
+    }
+
+    public nonisolated var selectedInputDevice: (any AudioDevice)? {
+        get async {
+            await self.storage.selectedInputDevice
+        }
+    }
+
+    public nonisolated var selectedOutputDevice: (any AudioDevice)? {
+        get async {
+            await self.storage.selectedOutputDevice
+        }
+    }
+
+    public nonisolated var inputVolume: Float {
+        get async {
+            await self.storage.inputVolume
+        }
+    }
+
+    public nonisolated var outputVolume: Float {
+        get async {
+            await self.storage.outputVolume
+        }
+    }
+
+    public nonisolated func currentAudioState() async -> AudioState {
+        async let inputDevices = self.storage.inputDevices
+        async let outputDevices = self.storage.outputDevices
+        async let selectedInputDevice = self.storage.selectedInputDevice
+        async let selectedOutputDevice = self.storage.selectedOutputDevice
+        async let inputVolume = self.storage.inputVolume
+        async let outputVolume = self.storage.outputVolume
+
+        return await AudioState(
+            inputDevices: inputDevices,
+            outputDevices: outputDevices,
+            selectedInputDevice: selectedInputDevice,
+            selectedOutputDevice: selectedOutputDevice,
+            inputVolume: inputVolume,
+            outputVolume: outputVolume
+        )
+    }
+
     private init() {
         self.setupDeviceListener()
         self.setupSystemAudioVolumeListener()
-        self.updateDevices()
+        self.refreshDevices()
     }
+
+    // MARK: - Device Management
 
     private func setupDeviceListener() {
         self.deviceListener = { [weak self] (
             deviceID: AudioObjectID,
             addresses: UnsafePointer<AudioObjectPropertyAddress>
         ) in
-            self?.updateDevices()
+            Task { @MainActor [weak self] in
+                self?.refreshDevices()
+            }
         }
 
         var address = AudioObjectPropertyAddress(
@@ -69,7 +166,9 @@ public class AudioManager: ObservableObject {
 
         self.volumeListenerProc = { deviceID, _, _, clientData in
             let manager = Unmanaged<AudioManager>.fromOpaque(clientData!).takeUnretainedValue()
-            manager.handleVolumeChange(deviceID: deviceID, isInput: true)
+            Task { @MainActor in
+                await manager.handleVolumeChange(deviceID: deviceID, isInput: true)
+            }
             return noErr
         }
 
@@ -91,113 +190,118 @@ public class AudioManager: ObservableObject {
         }
     }
 
-    private func handleVolumeChange(deviceID: AudioObjectID, isInput: Bool) {
-        DispatchQueue.main.async {
-            if isInput {
-                if let device = self.selectedInputDeviceImpl, device.id == deviceID {
-                    self.inputVolume = device.getVolume()
-                }
-            } else {
-                if let device = self.selectedOutputDeviceImpl, device.id == deviceID {
-                    self.outputVolume = device.getVolume()
-                }
+    private func handleVolumeChange(deviceID: AudioObjectID, isInput: Bool) async {
+        if isInput {
+            if let device = await selectedInputDevice, device.id == deviceID {
+                let volume = device.getVolume()
+                await self.updateInputVolume(volume)
+            }
+        } else {
+            if let device = await selectedOutputDevice, device.id == deviceID {
+                let volume = device.getVolume()
+                await self.updateOutputVolume(volume)
             }
         }
     }
 
-    private func updateDevices() {
-        // Get current devices
-        let currentOutputDevices = self.getAudioDevices(scope: kAudioDevicePropertyScopeOutput)
-        let currentInputDevices = self.getAudioDevices(scope: kAudioDevicePropertyScopeInput)
+    private func updateInputVolume(_ volume: Float) async {
+        Task { @MainActor in
+            self._inputVolume = volume
+        }
+        await self.storage.updateState(inputVolume: volume)
+    }
 
-        // Update current devices
-        DispatchQueue.main.async {
-            self.outputDevices = currentOutputDevices.compactMap { device in
-                AudioDeviceImpl(deviceID: device.id)
+    private func updateOutputVolume(_ volume: Float) async {
+        Task { @MainActor in
+            self._outputVolume = volume
+        }
+        await self.storage.updateState(outputVolume: volume)
+    }
+
+    private func refreshDevices() {
+        // Update published properties
+        self._inputDevices = AudioDeviceImpl.allInputDevices
+        self._outputDevices = AudioDeviceImpl.allOutputDevices
+
+        // Update thread-safe storage
+        Task {
+            await self.storage.updateState(
+                inputDevices: self._inputDevices,
+                outputDevices: self._outputDevices,
+                selectedInputDevice: self._selectedInputDevice,
+                selectedOutputDevice: self._selectedOutputDevice,
+                inputVolume: self._inputVolume,
+                outputVolume: self._outputVolume
+            )
+        }
+
+        // Update selected devices
+        if let inputUID = userSelectedInputUID,
+           let device = self._inputDevices.first(where: { $0.uid == inputUID })
+        {
+            Task {
+                await self.selectInputDevice(device)
             }
+        }
 
-            self.inputDevices = currentInputDevices.compactMap { device in
-                AudioDeviceImpl(deviceID: device.id)
-            }
-
-            // Update selected devices if needed
-            if let selectedOutput = self.selectedOutputDevice,
-               !currentOutputDevices.contains(where: { $0.uid == selectedOutput.uid })
-            {
-                self.selectedOutputDeviceImpl = nil
-            }
-
-            if let selectedInput = self.selectedInputDevice,
-               !currentInputDevices.contains(where: { $0.uid == selectedInput.uid })
-            {
-                self.selectedInputDeviceImpl = nil
+        if let outputUID = userSelectedOutputUID,
+           let device = self._outputDevices.first(where: { $0.uid == outputUID })
+        {
+            Task {
+                await self.selectOutputDevice(device)
             }
         }
     }
 
-    private func getAudioDevices(scope: AudioObjectPropertyScope) -> [AudioDevice] {
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDevices,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        var propertySize: UInt32 = 0
-        var status = AudioObjectGetPropertyDataSize(
-            AudioObjectID(kAudioObjectSystemObject),
-            &address,
-            0,
-            nil,
-            &propertySize
-        )
-
-        if status != noErr {
-            print("Error getting devices size: \(status)")
-            return []
-        }
-
-        let deviceCount = Int(propertySize) / MemoryLayout<AudioDeviceID>.size
-        var deviceIDs = [AudioDeviceID](repeating: 0, count: deviceCount)
-
-        status = AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject),
-            &address,
-            0,
-            nil,
-            &propertySize,
-            &deviceIDs
-        )
-
-        if status != noErr {
-            print("Error getting device IDs: \(status)")
-            return []
-        }
-
-        return deviceIDs.compactMap { deviceID in
-            if let impl = AudioDeviceImpl(deviceID: deviceID) {
-                return impl.device
-            }
-            return nil
+    public func selectOutputDevice(_ device: any AudioDevice) async {
+        await self.storage.updateState(selectedOutputDevice: device)
+        Task { @MainActor in
+            self._selectedOutputDevice = device
+            self.userSelectedOutputUID = device.uid
         }
     }
 
-    private func directSystemVolumeQuery(device: AudioDeviceImpl, isInput: Bool) -> Float {
-        device.getVolume()
-    }
-
-    public func selectOutputDevice(_ device: AudioDevice) {
-        if let impl = AudioDeviceImpl(deviceID: device.id) {
-            self.selectedOutputDeviceImpl = impl
-            self.outputVolume = impl.getVolume()
+    public func selectInputDevice(_ device: any AudioDevice) async {
+        await self.storage.updateState(selectedInputDevice: device)
+        Task { @MainActor in
+            self._selectedInputDevice = device
+            self.userSelectedInputUID = device.uid
         }
     }
 
-    public func selectInputDevice(_ device: AudioDevice) {
-        if let impl = AudioDeviceImpl(deviceID: device.id) {
-            self.selectedInputDeviceImpl = impl
-            self.inputVolume = impl.getVolume()
+    public func setVolumeForDevice(_ device: any AudioDevice, volume: Float) async {
+        let isInput = await inputDevices.contains { $0.id == device.id }
+        device.setVolume(volume)
+
+        if isInput {
+            await self.storage.updateState(inputVolume: volume)
+            Task { @MainActor in self._inputVolume = volume }
+        } else {
+            await self.storage.updateState(outputVolume: volume)
+            Task { @MainActor in self._outputVolume = volume }
         }
     }
+
+    /// 设置默认设备
+    public func setDefaultDevice(_ device: any AudioDevice, forInput: Bool) async {
+        if forInput {
+            await self.selectInputDevice(device)
+        } else {
+            await self.selectOutputDevice(device)
+        }
+    }
+
+    /// 根据UID查找设备
+    public func findDevice(byUID uid: String, isInput: Bool) async -> (any AudioDevice)? {
+        let devices = await (isInput ? self.inputDevices : self.outputDevices)
+        return devices.first { $0.uid == uid }
+    }
+
+    /// 历史输入设备
+    @Published public var historicalInputDevices: [any AudioDevice] = []
+
+    /// 历史输出设备
+    @Published public var historicalOutputDevices: [any AudioDevice] = []
 
     deinit {
         if let deviceListener {
@@ -228,6 +332,40 @@ public class AudioManager: ObservableObject {
                 volumeListenerProc,
                 Unmanaged.passUnretained(self).toOpaque()
             )
+        }
+    }
+
+    // MARK: - Volume Control Protocol Methods
+    public func setOutputVolume(_ volume: Float) async {
+        if let device = await selectedOutputDevice {
+            await self.setVolumeForDevice(device, volume: volume)
+        }
+    }
+
+    public func setInputVolume(_ volume: Float) async {
+        if let device = await selectedInputDevice {
+            await self.setVolumeForDevice(device, volume: volume)
+        }
+    }
+
+    // MARK: - Volume Streams
+    public var outputVolumeStream: AsyncStream<Float> {
+        AsyncStream { continuation in
+            Task { @MainActor in
+                for await volume in self.$_outputVolume.values {
+                    continuation.yield(volume)
+                }
+            }
+        }
+    }
+
+    public var inputVolumeStream: AsyncStream<Float> {
+        AsyncStream { continuation in
+            Task { @MainActor in
+                for await volume in self.$_inputVolume.values {
+                    continuation.yield(volume)
+                }
+            }
         }
     }
 }
