@@ -25,20 +25,17 @@ let package = Package(
     targets: [
         .target(
             name: "TunaTypes",
-            dependencies: [],
-            exclude: ["Legacy"],
+            dependencies: []
         ),
         .target(
             name: "TunaAudio",
             dependencies: [
                 "TunaTypes",
-            ],
-            exclude: ["Legacy"],
+            ]
         ),
         .target(
             name: "TunaSpeech",
-            dependencies: ["TunaTypes"],
-            exclude: ["Legacy"],
+            dependencies: ["TunaTypes"]
         ),
         .target(
             name: "TunaCore",
@@ -47,15 +44,13 @@ let package = Package(
                 "TunaAudio",
                 "TunaSpeech",
             ],
-            exclude: ["Legacy"],
             swiftSettings: [
                 .define("TUNACORE_LIBRARY"),
             ]
         ),
         .target(
             name: "TunaUI",
-            dependencies: ["TunaTypes"],
-            exclude: ["Legacy"],
+            dependencies: ["TunaTypes"]
         ),
         .executableTarget(
             name: "TunaApp",
@@ -67,7 +62,6 @@ let package = Package(
                 "TunaUI",
             ],
             path: "Sources/Tuna",
-            exclude: ["../TunaUI/Legacy"],
             resources: [
                 .process("Resources"),
             ],
