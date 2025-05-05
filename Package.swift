@@ -50,7 +50,8 @@ let package = Package(
         ),
         .target(
             name: "TunaUI",
-            dependencies: ["TunaTypes"]
+            dependencies: ["TunaTypes"],
+            exclude: ["Legacy", "Legacy_TMP"]
         ),
         .executableTarget(
             name: "TunaApp",
@@ -73,6 +74,11 @@ let package = Package(
             name: "SyncRules",
             dependencies: [],
             path: "Scripts/SyncRules"
+        ),
+        .target(
+            name: "Tuna",
+            dependencies: ["TunaCore"],
+            exclude: ["../../TunaUI", "../../TunaUI/Legacy", "../../TunaUI/Legacy_TMP"]
         ),
         .testTarget(
             name: "TunaTests",
