@@ -51,24 +51,12 @@ let package = Package(
         .target(
             name: "TunaUI",
             dependencies: ["TunaTypes"],
-            exclude: ["Legacy", "Legacy_TMP"]
+            exclude: ["Legacy"]
         ),
         .executableTarget(
             name: "TunaApp",
-            dependencies: [
-                "TunaTypes",
-                "TunaCore",
-                "TunaAudio",
-                "TunaSpeech",
-                "TunaUI",
-            ],
-            path: "Sources/Tuna",
-            resources: [
-                .process("Resources"),
-            ],
-            swiftSettings: [
-                .define("NEW_SETTINGS_UI"),
-            ]
+            dependencies: ["TunaCore"],
+            path: "Sources/TunaApp"
         ),
         .executableTarget(
             name: "SyncRules",
@@ -77,8 +65,7 @@ let package = Package(
         ),
         .target(
             name: "Tuna",
-            dependencies: ["TunaCore"],
-            exclude: ["../../TunaUI", "../../TunaUI/Legacy", "../../TunaUI/Legacy_TMP"]
+            dependencies: ["TunaCore"]
         ),
         .testTarget(
             name: "TunaTests",
