@@ -65,7 +65,12 @@ let package = Package(
         ),
         .target(
             name: "Tuna",
-            dependencies: ["TunaCore"]
+            dependencies: ["TunaTypes"],
+            exclude: [
+                "../TunaUI/Legacy",
+                "../TunaUI/Legacy_TMP",
+                "Tests/run_quickdict.sh",
+            ]
         ),
         .testTarget(
             name: "TunaTests",
