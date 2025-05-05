@@ -211,3 +211,24 @@ Verification:
 
 ## Previous Entries
 // ... existing code ... 
+
+## Module: StateFinalCleanup
+
+- **Status:** Ready for Commit
+- **Prompt:** Final cleanup of duplicate sources and resource warnings for SPM build
+
+### Tasks
+- [x] Switch to feature/state-final-cleanup branch
+- [x] Locate and move duplicate Swift files (AppServices.swift)
+- [x] Move AboutImage.png to TunaApp/Resources (already resolved)
+- [x] Update Package.swift exclude paths (confirmed correct)
+- [x] Run dependency resolution, pre-patch checks, build, and tests
+- [x] Stage, commit, and push changes
+
+### Manual Verification
+- Duplicate file warning resolved: ✅
+- Resource warning resolved: ✅ (AboutImage.png already moved previously)
+- Build and test: ✅
+
+### Files Moved to precommit/StateFinalCleanup
+- Sources/TunaUI/Legacy_TMP/dup/AppServices.swift 

@@ -68,6 +68,8 @@ let package = Package(
             dependencies: ["TunaTypes"],
             exclude: [
                 "../TunaUI/Legacy",
+                "../TunaUI/Legacy_TMP",
+                "../TunaUI/Legacy_TMP/dup",
                 "Tests/run_quickdict.sh",
             ],
         ),
